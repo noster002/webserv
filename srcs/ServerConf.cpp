@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/04 13:29:25 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/06 12:38:54 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ ServerConf::~ServerConf(void) {}
 
 int				ServerConf::parse(void)
 {
-	...
 	return (0);
 }
 

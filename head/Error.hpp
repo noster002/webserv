@@ -1,36 +1,29 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ServerConf.hpp                                     :+:      :+:    :+:   */
+/*   Error.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/02/04 12:31:47 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/06 13:34:42 by nosterme         ###   ########.fr       */
+/*   Created: 2023/02/06 14:42:55 by nosterme          #+#    #+#             */
+/*   Updated: 2023/02/06 15:01:43 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef SERVERCONF_HPP
-# define SERVERCONF_HPP
-# include <string>
+#ifndef ERROR_HPP
+# define ERROR_HPP
+# include <iostream>
 
-class	ServerConf
+class	Error
 {
 	public:
 
-		ServerConf(char const * filename);
-		~ServerConf(void);
-
-		int		parse(void);
-
-	private:
-
-		std::string		_file;
-
-		// canonical class form
-		ServerConf(void);
-		ServerConf(ServerConf const & other);
-		ServerConf &	operator=(ServerConf const & rhs);
+		static int		arg(void);
+		static int		conf_file(void);
+		static int		socket(void);
+		static int		bind(void);
+		static int		listen(void);
+		static int		accept(void);
 
 };
 
