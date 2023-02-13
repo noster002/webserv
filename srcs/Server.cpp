@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/06 15:19:00 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/13 15:55:47 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,65 +26,113 @@ Server::Server(ServerConf const & conf, int fd)\
 	return ;
 }
 
+Server::Server()\
+ : _sock()
+{
+	_addr.sin_family = AF_INET;
+	_addr.sin_addr.s_addr = /* address */;
+	_addr.sin_port = htons(/* port */);
+
+	_sock = socket(AF_INET, SOCK_STREAM, 0);
+
+	if (_sock < 0)
+	{
+		return ;
+	}
+
+	fcntl(fd, F_SETFL, O_NONBLOCK);
+}
+
 Server::~Server(void)
 {
 	delete [] this->_buffer;
 	return ;
 }
 
-// getter & setter
 
-int						Server::get_fd(void) const
+int			Server::bind(void)
 {
-	return (this->_fd);
+	int		err = ::bind(_sock, \
+						 reinterpret_cast<struct sockaddr *>(&_address), \
+						 sizeof(_address));
+
+	if (err < 0)
+	{
+		std::cerr << "bind: " << strerror(errno) << std::endl;
+	}
+
+	return (err);
 }
 
-struct sockaddr *		Server::get_addr(void)
+int			Server::listen(void)
 {
-	return (reinterpret_cast<struct sockaddr *>(&(this->_addr)));
+	int		err = ::listen(_sock, _max_pending_clients);
+
+	if (err < 0)
+	{
+		std::cerr << "listen: " << strerror(errno) << std::endl;
+	}
+
+	return (err);
 }
 
-socklen_t				Server::get_addr_len(void) const
+int			Server::setupRun(void)
 {
-	return (this->_addr_len);
+	int		err = 0;
+	
+	if (err = bind())
+		return (err);
+	if (err = listen())
+		return (err);
+
+	_kq = kqueue();
+
+	EV_SET = (&_event_set, _sock, EVFILT_READ, EV_ADD, 0, 0, NULL);
+
+	err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
+
+	if (err < 0)
+	{
+		std::cerr << "kqueue setup: " << strerror(errno) << std::endl;
+	}
+
+	return (err);
 }
 
-socklen_t *				Server::get_mutable_addr_len(void)
+void		Server::run(void)
 {
-	return (&this->_addr_len);
+	if (setupRun() < 0)
+		return ;
+
+	int		event_count = 0;
+
+	while (1)
+	{
+		event_count = kevent(_kq, NULL, 0, &_event, 1, NULL);
+
+		if (event_count < 0)
+		{
+			std::cerr << "kevent: " << stderror(errno) << std::endl;
+		}
+
+		for (int i = 0; i < event_count; ++i)
+		{
+			if (_event.ident == _sock)
+				clientConnect(_event);
+			else if (_event.flags & EV_EOF)
+				eof(_event);
+			else if (_event.filter == EVFILT_READ)
+				read(_event);
+		}
+	}
 }
 
-int						Server::get_max_pending_clients(void) const
+void		Server::clientConnect(struct kevent const & event)
 {
-	return (this->_max_pending_clients);
+	int		client = ::accept(event.ident, );
 }
 
-int						Server::get_socket(void) const
-{
-	return (this->_socket);
-}
 
-void					Server::set_socket(int fd)
-{
-	this->_socket = fd;
-	return ;
-}
-
-void					Server::set_request_size(ssize_t size)
-{
-	this->_request_size = size;
-	return ;
-}
-
-long unsigned			Server::get_max_buffer_size(void) const
-{
-	return (this->_max_buffer_size);
-}
-
-char *					Server::get_buffer(void) const
-{
-	return (this->_buffer);
-}
 
 // canonical class form
 
