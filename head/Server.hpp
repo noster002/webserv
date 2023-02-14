@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/13 15:43:06 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/14 13:05:04 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,15 +25,17 @@ class	Server
 {
 	public:
 
-		Server(ServerConf const & conf, int fd);
+		Server(std::string filename);
 		~Server(void);
 
 		void	run(void);
 
 	private:
 
+		int							_err;
 		int							_sock;
-		struct sockaddr_in			_addr;
+		struct addrinfo *			_addr;
+		int							_kq;
 		struct kevent				_event_set;
 		struct kevent				_event;
 		int const					_max_pending_clients;
