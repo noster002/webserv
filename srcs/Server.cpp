@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/14 13:13:10 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/15 15:39:13 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 // constructor & destructor
 
-Server::Server(std::string filename)\
+Server::Server(std::string const & filename)\
  : _err(0), _sock()
 {
 	
@@ -63,12 +63,25 @@ int			Server::setNonBlocking(int fd)
 	return (_err);
 }
 
+int			Server::setsockopt(void)
+{
+	int		option = 1;
+
+	_err = ::setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR,\
+						reinterpret_cast<void const *>(&option), sizeof(int) );
+
+	if (_err < 0)
+	{
+		std::cerr << "setsockopt: " << strerror(errno) << std::endl;
+	}
+
+	return (_err);
+}
+
 int			Server::socket(void)
 {
 	if (_err = getaddrinfo())
-	{
 		return (_err);
-	}
 
 	_err = ::socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
 
@@ -80,7 +93,10 @@ int			Server::socket(void)
 
 	_sock = _err;
 
-	_err = setNonBlocking(_sock);
+	if (_err = setNonBlocking(_sock) < 0)
+		return (_err);
+
+	_err = setoptsock();
 
 	return (_err);
 }
@@ -177,7 +193,7 @@ void		Server::run(void)
 	}
 }
 
-void		Server::clientConnect(struct kevent const & event)
+void		Server::eventClientConnect(struct kevent const & event)
 {
 	int		client = ::accept(event.ident, NULL, NULL);
 }
