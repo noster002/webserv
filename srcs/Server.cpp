@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/15 15:39:13 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/16 14:51:10 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -159,7 +159,7 @@ int			Server::setupRun(void)
 
 	if (_err < 0)
 	{
-		std::cerr << "kqueue setup: " << strerror(errno) << std::endl;
+		std::cerr << "kevent server: " << strerror(errno) << std::endl;
 	}
 
 	return (_err);
@@ -193,9 +193,59 @@ void		Server::run(void)
 	}
 }
 
-void		Server::eventClientConnect(struct kevent const & event)
+int			Server::eventClientConnect(struct kevent const & event)
 {
-	int		client = ::accept(event.ident, NULL, NULL);
+	_err = ::accept(event.ident, NULL, NULL);
+
+	if (_err < 0)
+	{
+		std::cerr << "accept: " << strerror(errno) << std::endl;
+		return (_err);
+	}
+
+	int		client = _err;
+
+	if (_err = setNonBlocking(client) < 0)
+		return (_err);
+
+	EV_SET(&_event_set, client, EVFILT_READ, EV_ADD, 0, 0, NULL);
+
+	_err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
+
+	if (_err < 0)
+	{
+		std::cerr << "kevent client connect: " << strerror(errno) << std::endl;
+	}
+
+	return (_err);
+}
+
+int			Server::eventClientDisconnect(struct kevent const & event)
+{
+	EV_SET(&_event_set, event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+
+	_err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
+
+	if (_err < 0)
+	{
+		std::cerr << "kevent client disconnect: " << strerror(errno) << std::endl;
+		return (_err);
+	}
+
+	// close fd
+
+	return (_err);
+}
+
+void		Server::eventEof(struct kevent const & event)
+{
+	eventClientDisconnect(event);
+	return ;
+}
+
+void		Server::eventRead(struct kevent const & event)
+{
+	return ;
 }
 
 

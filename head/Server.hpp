@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/14 13:05:04 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/16 14:42:37 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ class	Server
 {
 	public:
 
-		Server(std::string filename);
+		Server(std::string const & filename);
 		~Server(void);
 
 		void	run(void);
@@ -39,10 +39,8 @@ class	Server
 		struct kevent				_event_set;
 		struct kevent				_event;
 		int const					_max_pending_clients;
-		int							_socket;
-		ssize_t						_request_size;
-		long unsigned const			_max_buffer_size;
-		char *						_buffer;
+
+		// std::map<int, Client *>		_client;
 
 		// canonical class form
 		Server(void);
