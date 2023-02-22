@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConf.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fakouyat <fakouyat@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/22 02:52:03 by fakouyat         ###   ########.fr       */
+/*   Updated: 2023/02/22 14:02:11 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 // constructor & destructor
 
 ServerConf::ServerConf(char const * filename)\
- : _file(filename) 
+ : _file(filename), validation(true)
  {
 	Helpers::parse_file(this, filename);
 	

@@ -32,7 +32,8 @@ typedef struct s_params {
 	std::string							host;
 	int 								port;
 	std::vector<std::string>			names;
-	std::map<std::string, std::string>	err_pages;	
+	std::map<std::vector<std::string>,\
+			 std::string>				err_pages;
 	int									client_max_body_size;
 	std::map<std::string, route_t>		routes;
 	std::vector<std::string>			files_extensions;
@@ -53,7 +54,7 @@ class	Helpers {
 		static int						count_servers(const std::vector<std::string> & config_data);
 		static void						skipe_spaces(const std::string & str, size_t* cursor);
 		static int						find_close_symbol(const std::vector<std::string> & config_data, 
-														  size_t* cursor, int ni);
+														  size_t* cursor, int level);
 };
 
 #endif

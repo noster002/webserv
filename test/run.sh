@@ -1,1 +1,0 @@
-c++ main.cpp ../srcs/ServerConf.cpp ../srcs/Helpers.cpp && ./a.out
