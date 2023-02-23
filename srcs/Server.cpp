@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/16 14:51:10 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/23 13:06:39 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,160 +15,94 @@
 // constructor & destructor
 
 Server::Server(std::string const & filename)\
- : _err(0), _sock()
+ : _socket(), _kq(-1), _event(), _max_pending_clients(0)
 {
-	
+	return ;
 }
 
 Server::~Server(void)
 {
-	freeaddrinfo(_addr);
-
 	return ;
 }
 
 
-int			Server::getaddrinfo(void)
+void		Server::setaddrinfo(void)
 {
 	struct addrinfo		hints;
+	struct protoent *	protocol;
+
+	protocol = getprotobyname("ip");
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IP;
+	hints.ai_protocol = protocol.p_proto;
 	hints.ai_flags = 0;
 	hints.ai_addrlen = 0;
 	hints.ai_addr = NULL;
 	hints.ai_canonname = NULL;
 	hints.ai_next = NULL;
 
-	_err = ::getaddrinfo(/* hostname */, /* port */, &hints, &_addr);
+	_socket.getaddrinfo(/* hostname */, /* port */, &hints);
 
-	if (_err < 0)
-	{
-		std::cerr << "getaddrinfo: " << gai_strerror(err) << std::endl;
-	}
-
-	return (_err);
+	return ;
 }
 
-int			Server::setNonBlocking(int fd)
+int			Server::setupSocket(void)
 {
-	_err = ::fcntl(fd, F_SETFL, O_NONBLOCK);
-
-	if (_err < 0)
+	try
 	{
-		std::cerr << "fcntl: " << strerror(errno) << std::endl;
+		setaddrinfo();
+		_socket.create();
+		_socket.setnonblocking();
+		_socket.setopt(EVFILT_READ, EV_ADD);
+		_socket.bind();
+		_socket.listen(_max_pending_clients);
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
+		return (-1);
 	}
 
-	return (_err);
+	return (0);
 }
 
-int			Server::setsockopt(void)
+int			Server::setupKqueue(void)
 {
-	int		option = 1;
+	_kq = ::kqueue();
 
-	_err = ::setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR,\
-						reinterpret_cast<void const *>(&option), sizeof(int) );
-
-	if (_err < 0)
-	{
-		std::cerr << "setsockopt: " << strerror(errno) << std::endl;
-	}
-
-	return (_err);
-}
-
-int			Server::socket(void)
-{
-	if (_err = getaddrinfo())
-		return (_err);
-
-	_err = ::socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
-
-	if (_err < 0)
-	{
-		std::cerr << "socket: " << strerror(errno) << std::endl;
-		return (_err);
-	}
-
-	_sock = _err;
-
-	if (_err = setNonBlocking(_sock) < 0)
-		return (_err);
-
-	_err = setoptsock();
-
-	return (_err);
-}
-
-int			Server::bind(void)
-{
-	_err = ::bind(_sock, _addr.ai_addr, _addr.ai_addrlen);
-
-	if (_err < 0)
-	{
-		std::cerr << "bind: " << strerror(errno) << std::endl;
-	}
-
-	return (_err);
-}
-
-int			Server::listen(void)
-{
-	_err = ::listen(_sock, _max_pending_clients);
-
-	if (_err < 0)
-	{
-		std::cerr << "listen: " << strerror(errno) << std::endl;
-	}
-
-	return (_err);
-}
-
-int			Server::kqueue(void)
-{
-	_err = ::kqueue();
-
-	if (_err < 0)
+	if (_kq < 0)
 	{
 		std::cerr << "kqueue: " << strerror(errno) << std::endl;
-		return (_err);
+		return (_kq);
 	}
 
-	_kq = _err;
-
-	_err = 0;
-
-	return (_err);
-}
-
-int			Server::setupRun(void)
-{
-	if (_err = socket() < 0)
-		return (err);
-	if (_err = bind() < 0)
-		return (err);
-	if (_err = listen() < 0)
-		return (err);
-	if (_err = kqueue() < 0)
-		return (err);
-
-	EV_SET = (&_event_set, _sock, EVFILT_READ, EV_ADD, 0, 0, NULL);
-
-	_err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
-
-	if (_err < 0)
+	try
 	{
-		std::cerr << "kevent server: " << strerror(errno) << std::endl;
+		_socket.setkevent(_kq, EVFILT_READ, EV_ADD);
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
+		if (::close(_kq) < 0)
+		{
+			std::cerr << "close kq: " << _kq << strerror(errno) << std::endl;
+		}
+		return (-1);
 	}
 
-	return (_err);
+	return (0);
 }
 
 void		Server::run(void)
 {
-	if (setupRun() < 0)
+	if (setupSocket() < 0 || setupKqueue() < 0)
+	{
+		std::cerr << "server setup failed" << std::endl\
+				  << "Aborting..." << std::endl;
+		_socket.clean();
 		return ;
+	}
 
 	int		event_count = 0;
 
@@ -178,7 +112,7 @@ void		Server::run(void)
 
 		if (event_count < 0)
 		{
-			std::cerr << "kevent: " << stderror(errno) << std::endl;
+			std::cerr << "kevent: " << strerror(errno) << std::endl;
 		}
 
 		for (int i = 0; i < event_count; ++i)
@@ -193,48 +127,52 @@ void		Server::run(void)
 	}
 }
 
-int			Server::eventClientConnect(struct kevent const & event)
+void		Server::eventClientConnect(struct kevent const & event)
 {
-	_err = ::accept(event.ident, NULL, NULL);
+	struct sockaddr		addr;
+	socklen_t			addrlen = sizeof(addr);
 
-	if (_err < 0)
+	int		fd = ::accept(event.ident, &addr, &addrlen);
+
+	if (fd < 0)
 	{
 		std::cerr << "accept: " << strerror(errno) << std::endl;
-		return (_err);
+		return (-1);
 	}
 
-	int		client = _err;
+	_client[fd] = new Client(fd, addr, addrlen);
 
-	if (_err = setNonBlocking(client) < 0)
-		return (_err);
-
-	EV_SET(&_event_set, client, EVFILT_READ, EV_ADD, 0, 0, NULL);
-
-	_err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
-
-	if (_err < 0)
+	try
 	{
-		std::cerr << "kevent client connect: " << strerror(errno) << std::endl;
+		_client[fd]->setnonblocking();
+		_client[fd]->setopt(EVFILT_READ, EV_ADD);
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
+		_client[fd]->disconnect();
+		return (-1);
 	}
 
-	return (_err);
+	return (0);
 }
 
-int			Server::eventClientDisconnect(struct kevent const & event)
+void		Server::eventClientDisconnect(struct kevent const & event)
 {
-	EV_SET(&_event_set, event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+	int		fd = event.ident;
 
-	_err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
-
-	if (_err < 0)
+	try
 	{
-		std::cerr << "kevent client disconnect: " << strerror(errno) << std::endl;
-		return (_err);
+		_client[fd]->setkevent(EVFILT_READ, EV_DELETE);
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
 	}
 
-	// close fd
+	_client[fd]->disconnect();
 
-	return (_err);
+	return ;
 }
 
 void		Server::eventEof(struct kevent const & event)
@@ -245,6 +183,12 @@ void		Server::eventEof(struct kevent const & event)
 
 void		Server::eventRead(struct kevent const & event)
 {
+	int		fd = event.ident;
+
+	_client[fd]->read(fd, /* max_size */);
+
+	_client[fd]->write(fd);
+
 	return ;
 }
 
@@ -252,14 +196,26 @@ void		Server::eventRead(struct kevent const & event)
 
 // canonical class form
 
-Server::Server(void) : _fd(), _max_pending_clients(), _max_buffer_size() {}
+Server::Server(void)\
+ : _socket(), _kq(), _event(), _max_pending_clients(), _client()
+{
+	return ;
+}
 
 Server::Server(Server const & other)\
- : _fd(other._fd), _max_pending_clients(other._max_pending_clients), \
-   _max_buffer_size(other._max_buffer_size) {}
+ : _socket(), _kq(other._kq), _event(other._event), \
+   _max_pending_clients(other._max_pending_clients), \
+   _client(other._client);
+{
+	return ;
+}
 
 Server &				Server::operator=(Server const & rhs)
 {
-	new (this) Server(rhs);
+	_kq = rhs._kq;
+	_event = rhs._event;
+	_max_pending_clients = rhs._max_pending_clients;
+	_client = rhs._client;
+
 	return (*this);
 }

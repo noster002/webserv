@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:08 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/22 15:02:52 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/23 14:40:47 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ void		Socket::close(void)
 	if (_err < 0)
 	{
 		std::cerr << "close fd: " << _fd << ": " << strerror(errno) << std::endl;
-		_level = e_close;
+		_level = close;
 		throw Exception;
 	}
 }
@@ -73,7 +73,7 @@ void		Socket::getaddrinfo(char const * hostname, \
 	if (_err)
 	{
 		std::cerr << "getaddrinfo: " << gai_strerror(_err) << std::endl;
-		_level = e_getaddrinfo;
+		_level = getaddrinfo;
 		throw Exception;
 	}
 }
@@ -85,7 +85,7 @@ void		Socket::create(void)
 	if (_err < 0)
 	{
 		std::cerr << "socket: " << strerror(errno) << std::endl;
-		_level = e_create;
+		_level = create;
 		throw Exception;
 	}
 
@@ -99,7 +99,7 @@ void		Socket::setnonblocking(void)
 	if (_err < 0)
 	{
 		std::cerr << "fcntl: " << strerror(errno) << std::endl;
-		_level = e_setnonblocking;
+		_level = setnonblocking;
 		throw Exception;
 	}
 }
@@ -115,7 +115,7 @@ void		Socket::setopt(int level, int option)
 	{
 		std::cerr << "setsockopt: level: " << level << " option: " << option;
 		std::cerr << ": " << strerror(errno) << std::endl;
-		_level = e_setopt;
+		_level = setopt;
 		throw Exception;
 	}
 }
@@ -127,7 +127,7 @@ void		Socket::bind(void)
 	if (_err < 0)
 	{
 		std::cerr << "bind: " << strerror(errno) << std::endl;
-		_level = e_bind;
+		_level = bind;
 		throw Exception;
 	}
 }
@@ -139,7 +139,7 @@ void		Socket::listen(int max_pending_clients)
 	if (_err < 0)
 	{
 		std::cerr << "listen: " << strerror(errno) << std::endl;
-		_level = e_listen;
+		_level = listen;
 		throw Exception;
 	}
 }
@@ -153,9 +153,29 @@ void		Socket::setkevent(int kq, int filter, int flags)
 	if (_err < 0)
 	{
 		std::cerr << "kevent: " << strerror(errno) << std::endl;
-		_level = e_setkevent;
+		_level = setkevent;
 		throw Exception;
 	}
+}
+
+
+// canonical class form
+
+Socket::Socket(Socket const & other)\
+ : _err(other._err), _fd(other._fd), _addr(other._addr),\
+   _event_set(other._event_set)
+{
+	return ;
+}
+
+Socket &			Socket::operator=(Socket const & rhs)
+{
+	_err = rhs._err;
+	_fd = rhs._fd;
+	_addr = rhs._addr;
+	_event_set = rhs._event_set;
+
+	return (*this);
 }
 
 
@@ -165,21 +185,21 @@ char const *		Socket::Exception::what(void) const throw()
 {
 	switch (_level)
 	{
-		case e_close:
+		case close:
 			return (Exception::close());
-		case e_getaddrinfo:
+		case getaddrinfo:
 			return (Exception::getaddrinfo());
-		case e_create:
+		case create:
 			return (Exception::create());
-		case e_setnonblocking:
+		case setnonblocking:
 			return (Exception::setnonblocking());
-		case e_setopt:
+		case setopt:
 			return (Exception::setopt());
-		case e_bind:
+		case bind:
 			return (Exception::bind());
-		case e_listen:
+		case listen:
 			return (Exception::listen());
-		case e_setkevent:
+		case setkevent:
 			return (Exception::setkevent());
 	}
 }

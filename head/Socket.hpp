@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:21 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/22 15:00:20 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/23 13:28:58 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,11 @@
 
 // C++98
 
-# include <iostream>
+# include <exception>
 # include <string>
+# include <iostream>
+# include <cstring>
+# include <cerrno>
 
 class	Socket
 {
@@ -68,16 +71,16 @@ class	Socket
 
 };
 
-enum		Level
+enum		e_level
 {
-	e_close, \
-	e_getaddrinfo, \
-	e_create, \
-	e_setnonblocking, \
-	e_setopt, \
-	e_bind, \
-	e_listen, \
-	e_setkevent
+	close, \
+	getaddrinfo, \
+	create, \
+	setnonblocking, \
+	setopt, \
+	bind, \
+	listen, \
+	setkevent
 };
 
 class		Socket::Exception : public std::exception

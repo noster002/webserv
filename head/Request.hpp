@@ -6,16 +6,33 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/22 15:00:23 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/23 14:40:04 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef REQUEST_HPP
 # define REQUEST_HPP
 
-# include <string>
+// C POSIX
 
-class	Response;
+# include <sys/socket.h>
+# include <sys/types.h>
+
+// C++98
+
+# include <string>
+# include <iostream>
+# include <cstring>
+# include <cerrno>
+
+// private
+
+# include "Response.hpp"
+
+enum e_method
+{
+	GET, POST, DELETE
+};
 
 class	Request
 {
@@ -30,11 +47,23 @@ class	Request
 
 	private:
 
+		struct			_header;
+		std::string		_body;
+
+
 		// canonical class form
 
 		Request(Request const & other);
 		Request &	operator=(Request const & rhs);
 
+};
+
+struct	Request::_header
+{
+	int					method;
+	std::string			uri;
+	std::string			protocol;
+	std::string			host;
 };
 
 #endif

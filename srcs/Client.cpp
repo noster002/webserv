@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/22 15:01:36 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/23 12:47:27 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ void		Client::disconnect(void)
 	{
 		std::cerr << e.what() << std::endl;
 	}
+
 	return ;
 }
 
@@ -58,6 +59,7 @@ void		Client::read(int fd, size_t max_size)
 	if (bytes_read < 0)
 	{
 		std::cerr << "recv: " << strerror(errno) << std::endl;
+		return ;
 	}
 
 	_request.parse(input, bytes_read);
@@ -79,4 +81,22 @@ void		Client::write(int fd)
 	}
 
 	return ;
+}
+
+
+// canonical class form
+
+Client::Client(Client const & other)\
+ : _socket(), _request(), _response()
+{
+	(void)other;
+
+	return ;
+}
+
+Client &	Client::operator=(Client const & rhs)
+{
+	(void)rhs;
+
+	return (*this);
 }
