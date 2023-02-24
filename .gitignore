@@ -1,3 +1,4 @@
 test
 test/*.cpp
 test/run.sh
+test/a.out
