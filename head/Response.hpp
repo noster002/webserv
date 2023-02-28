@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 14:39:56 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/28 15:00:52 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,10 @@ class	Response
 
 	private:
 
-		struct				_header;
+		std::string			_protocol;
+		int					_status;
+		std::map<std::string, std::string>\
+							_header;
 		std::string			_body;
 
 		static std::map<int, std::string>	_status;
@@ -49,13 +52,6 @@ class	Response
 		Response(Response const & other);
 		Response &	operator=(Response const & rhs);
 
-};
-
-struct	Response::_header
-{
-	std::string		protocol;
-	int				status;
-	std::string		location;
 };
 
 #endif

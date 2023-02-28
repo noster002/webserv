@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 14:40:04 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/28 13:07:23 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,8 +47,15 @@ class	Request
 
 	private:
 
-		struct			_header;
-		std::string		_body;
+		int					_method;
+		std::string			_version;
+		std::string			_path;
+		std::string			_query;
+		std::string			_host;
+		int					_port;
+		std::map<std::string, std::string>\
+							_header;
+		std::string			_body;
 
 
 		// canonical class form
@@ -56,14 +63,6 @@ class	Request
 		Request(Request const & other);
 		Request &	operator=(Request const & rhs);
 
-};
-
-struct	Request::_header
-{
-	int					method;
-	std::string			uri;
-	std::string			protocol;
-	std::string			host;
 };
 
 #endif
