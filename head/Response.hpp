@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/28 15:00:52 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/02 09:18:24 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ class	Response
 		std::string			_body;
 
 		static std::map<int, std::string>	_status;
-		void								_initstatus(void);
+		static std::map<int, std::string>	_init_status(void);
 
 		// canonical class form
 

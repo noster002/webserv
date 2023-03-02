@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 14:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 13:07:15 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/01 09:59:01 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,8 +39,8 @@ class	Client
 		~Client(void);
 
 		void		disconnect(void);
-		void		setnonblocking(void);
-		void		setkevent(int kq, int filter, int flags);
+		void		set_non_blocking(void);
+		void		set_kevent(int kq, int filter, int flags);
 		void		read(int fd);
 		void		write(int fd);
 

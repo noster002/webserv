@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 14:38:27 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/02 09:20:55 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,76 +29,82 @@ void		Response::build(Request const & request, std::string & output)
 	return ;
 }
 
-void		Response::_initstatus(void)
+std::map<int, std::string>		Response::_init_status(void)
 {
-	_status[100] = "Continue";
-	_status[101] = "Switching Protocols";
-	_status[102] = "Processing";
-	_status[103] = "Early Hints";
+	std::map<int, std::string>	status;
 
-	_status[200] = "OK";
-	_status[201] = "Created";
-	_status[202] = "Accepted";
-	_status[203] = "Non-Authoritative Information";
-	_status[204] = "No Content";
-	_status[205] = "Reset Content";
-	_status[206] = "Partial Content";
-	_status[207] = "Multi-Status";
-	_status[208] = "Already Reported";
-	_status[226] = "IM Used";
+	status[100] = "Continue";
+	status[101] = "Switching Protocols";
+	status[102] = "Processing";
+	status[103] = "Early Hints";
 
-	_status[300] = "Multiple Choices";
-	_status[301] = "Moved Permanently";
-	_status[302] = "Found";
-	_status[303] = "See Other";
-	_status[304] = "Not Modified";
-	_status[305] = "Use Proxy";
-	_status[306] = "Switch Proxy";
-	_status[307] = "Temporary Redirect";
-	_status[308] = "Permanent Redirect";
+	status[200] = "OK";
+	status[201] = "Created";
+	status[202] = "Accepted";
+	status[203] = "Non-Authoritative Information";
+	status[204] = "No Content";
+	status[205] = "Reset Content";
+	status[206] = "Partial Content";
+	status[207] = "Multi-Status";
+	status[208] = "Already Reported";
+	status[226] = "IM Used";
 
-	_status[400] = "Bad Request";
-	_status[401] = "Unauthorized";
-	_status[402] = "Payment Required";
-	_status[403] = "Forbidden";
-	_status[404] = "Not Found";
-	_status[405] = "Method Not Allowed";
-	_status[406] = "Not Acceptable";
-	_status[407] = "Proxy Authentication Required";
-	_status[408] = "Request Timeout";
-	_status[409] = "Conflict";
-	_status[410] = "Gone";
-	_status[411] = "Length Required";
-	_status[412] = "Precondition Failed";
-	_status[413] = "Payload Too Large";
-	_status[414] = "URI Too Long";
-	_status[415] = "Unsupported Media Type";
-	_status[416] = "Range Not Satisfiable";
-	_status[417] = "Expectation Failed";
-	_status[418] = "I'm a teapot";
-	_status[421] = "Misdirected Request";
-	_status[422] = "Unprocessable Entity";
-	_status[423] = "Locked";
-	_status[424] = "Failed Dependency";
-	_status[425] = "Too Early";
-	_status[426] = "Upgrade Required";
-	_status[428] = "Precondition Required";
-	_status[429] = "Too Many Requests";
-	_status[431] = "Request Header Fields Too Large";
-	_status[451] = "Unavailable For Legal Reasons";
+	status[300] = "Multiple Choices";
+	status[301] = "Moved Permanently";
+	status[302] = "Found";
+	status[303] = "See Other";
+	status[304] = "Not Modified";
+	status[305] = "Use Proxy";
+	status[306] = "Switch Proxy";
+	status[307] = "Temporary Redirect";
+	status[308] = "Permanent Redirect";
 
-	_status[500] = "Internal Server Error";
-	_status[501] = "Not Implemented";
-	_status[502] = "Bad Gateway";
-	_status[503] = "Service Unavailable";
-	_status[504] = "Gateway Timeout";
-	_status[505] = "HTTP Version Not Supported";
-	_status[506] = "Variant Also Negotiates";
-	_status[507] = "Insufficient Storage";
-	_status[508] = "Loop Detected";
-	_status[510] = "Not Extended";
-	_status[511] = "Network Authentication Required";
+	status[400] = "Bad Request";
+	status[401] = "Unauthorized";
+	status[402] = "Payment Required";
+	status[403] = "Forbidden";
+	status[404] = "Not Found";
+	status[405] = "Method Not Allowed";
+	status[406] = "Not Acceptable";
+	status[407] = "Proxy Authentication Required";
+	status[408] = "Request Timeout";
+	status[409] = "Conflict";
+	status[410] = "Gone";
+	status[411] = "Length Required";
+	status[412] = "Precondition Failed";
+	status[413] = "Payload Too Large";
+	status[414] = "URI Too Long";
+	status[415] = "Unsupported Media Type";
+	status[416] = "Range Not Satisfiable";
+	status[417] = "Expectation Failed";
+	status[418] = "I'm a teapot";
+	status[421] = "Misdirected Request";
+	status[422] = "Unprocessable Entity";
+	status[423] = "Locked";
+	status[424] = "Failed Dependency";
+	status[425] = "Too Early";
+	status[426] = "Upgrade Required";
+	status[428] = "Precondition Required";
+	status[429] = "Too Many Requests";
+	status[431] = "Request Header Fields Too Large";
+	status[451] = "Unavailable For Legal Reasons";
+
+	status[500] = "Internal Server Error";
+	status[501] = "Not Implemented";
+	status[502] = "Bad Gateway";
+	status[503] = "Service Unavailable";
+	status[504] = "Gateway Timeout";
+	status[505] = "HTTP Version Not Supported";
+	status[506] = "Variant Also Negotiates";
+	status[507] = "Insufficient Storage";
+	status[508] = "Loop Detected";
+	status[510] = "Not Extended";
+	status[511] = "Network Authentication Required";
+
+	return (status);
 }
+
+std::map<int, std::string>		Response::_status = Response::_init_status();
 
 
 // canonical class form

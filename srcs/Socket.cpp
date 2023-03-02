@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:08 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 14:40:47 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/01 10:16:41 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,22 +58,22 @@ void		Socket::close(void)
 
 	if (_err < 0)
 	{
-		std::cerr << "close fd: " << _fd << ": " << strerror(errno) << std::endl;
+		std::cerr << "close fd: " << _fd << ": " << std::strerror(errno) << std::endl;
 		_level = close;
 		throw Exception;
 	}
 }
 
-void		Socket::getaddrinfo(char const * hostname, \
+void		Socket::get_addr_info(char const * hostname, \
 								char const * port, \
 								struct addrinfo * hints)
 {
-	_err = ::getaddrinfo(hostname, port, hints, &_addr);
+	_err = ::get_addr_info(hostname, port, hints, &_addr);
 
 	if (_err)
 	{
-		std::cerr << "getaddrinfo: " << gai_strerror(_err) << std::endl;
-		_level = getaddrinfo;
+		std::cerr << "get_addr_info: " << ::gai_strerror(_err) << std::endl;
+		_level = get_addr_info;
 		throw Exception;
 	}
 }
@@ -84,7 +84,7 @@ void		Socket::create(void)
 
 	if (_err < 0)
 	{
-		std::cerr << "socket: " << strerror(errno) << std::endl;
+		std::cerr << "socket: " << std::strerror(errno) << std::endl;
 		_level = create;
 		throw Exception;
 	}
@@ -92,30 +92,30 @@ void		Socket::create(void)
 	_fd = _err;
 }
 
-void		Socket::setnonblocking(void)
+void		Socket::set_non_blocking(void)
 {
 	_err = ::fcntl(_fd, F_SETFL, O_NONBLOCK);
 
 	if (_err < 0)
 	{
-		std::cerr << "fcntl: " << strerror(errno) << std::endl;
-		_level = setnonblocking;
+		std::cerr << "fcntl: " << std::strerror(errno) << std::endl;
+		_level = set_non_blocking;
 		throw Exception;
 	}
 }
 
-void		Socket::setopt(int level, int option)
+void		Socket::set_opt(int level, int option)
 {
 	int		one = 1;
 
-	_err = setsockopt(_fd, level, option,\
-					  reinterpret_cast<void const *>(&one), sizeof(int) );
+	_err = ::setsockopt(_fd, level, option,\
+						reinterpret_cast<void const *>(&one), sizeof(int) );
 
 	if (_err < 0)
 	{
 		std::cerr << "setsockopt: level: " << level << " option: " << option;
-		std::cerr << ": " << strerror(errno) << std::endl;
-		_level = setopt;
+		std::cerr << ": " << std::strerror(errno) << std::endl;
+		_level = set_opt;
 		throw Exception;
 	}
 }
@@ -126,7 +126,7 @@ void		Socket::bind(void)
 
 	if (_err < 0)
 	{
-		std::cerr << "bind: " << strerror(errno) << std::endl;
+		std::cerr << "bind: " << std::strerror(errno) << std::endl;
 		_level = bind;
 		throw Exception;
 	}
@@ -138,13 +138,13 @@ void		Socket::listen(int max_pending_clients)
 
 	if (_err < 0)
 	{
-		std::cerr << "listen: " << strerror(errno) << std::endl;
+		std::cerr << "listen: " << std::strerror(errno) << std::endl;
 		_level = listen;
 		throw Exception;
 	}
 }
 
-void		Socket::setkevent(int kq, int filter, int flags)
+void		Socket::set_kevent(int kq, int filter, int flags)
 {
 	EV_SET(&_event_set, _fd, filter, flags, 0, 0, NULL);
 
@@ -152,8 +152,8 @@ void		Socket::setkevent(int kq, int filter, int flags)
 
 	if (_err < 0)
 	{
-		std::cerr << "kevent: " << strerror(errno) << std::endl;
-		_level = setkevent;
+		std::cerr << "kevent: " << std::strerror(errno) << std::endl;
+		_level = set_kevent;
 		throw Exception;
 	}
 }
@@ -187,20 +187,20 @@ char const *		Socket::Exception::what(void) const throw()
 	{
 		case close:
 			return (Exception::close());
-		case getaddrinfo:
-			return (Exception::getaddrinfo());
+		case get_addr_info:
+			return (Exception::get_addr_info());
 		case create:
 			return (Exception::create());
-		case setnonblocking:
-			return (Exception::setnonblocking());
-		case setopt:
-			return (Exception::setopt());
+		case set_non_blocking:
+			return (Exception::set_non_blocking());
+		case set_opt:
+			return (Exception::set_opt());
 		case bind:
 			return (Exception::bind());
 		case listen:
 			return (Exception::listen());
-		case setkevent:
-			return (Exception::setkevent());
+		case set_kevent:
+			return (Exception::set_kevent());
 	}
 }
 
@@ -209,7 +209,7 @@ char const *		Socket::Exception::close(void)
 	return ("Socket: error while closing");
 }
 
-char const *		Socket::Exception::getaddrinfo(void)
+char const *		Socket::Exception::get_addr_info(void)
 {
 	return ("Socket: cannot get addrinfo struct");
 }
@@ -219,12 +219,12 @@ char const *		Socket::Exception::create(void)
 	return ("Socket: cannot create socket");
 }
 
-char const *		Socket::Exception::setnonblocking(void)
+char const *		Socket::Exception::set_non_blocking(void)
 {
 	return ("Socket: cannot set socket nonblocking");
 }
 
-char const *		Socket::Exception::setopt(void)
+char const *		Socket::Exception::set_opt(void)
 {
 	return ("Socket: cannot set socket to user defined options");
 }
@@ -239,7 +239,7 @@ char const *		Socket::Exception::listen(void)
 	return ("Socket: cannot listen");
 }
 
-char const *		Socket::Exception::setkevent(void)
+char const *		Socket::Exception::set_kevent(void)
 {
 	return ("Socket: cannot set kevent");
 }

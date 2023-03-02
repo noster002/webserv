@@ -1,5 +1,5 @@
 CPP				= c++
-CPPFLAGS		= -Wall -Werror -Wextra -std=c++98 -pedantic
+CPPFLAGS		= -Wall -Werror -Wextra -std=c++98 -pedantic -I$(HEADDIR)
 RM				= rm -f
 NAME			= webserv
 SRCDIR			= srcs

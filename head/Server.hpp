@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 13:03:54 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/01 10:00:00 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,13 +46,13 @@ class	Server
 
 		void	run(void);
 
-		int		setupSocket(void);
-		int		setupKqueue(void);
+		int		setup_socket(void);
+		int		setup_kqueue(void);
 
-		void	eventClientConnect(struct kevent const & event);
-		void	eventClientDisconnect(struct kevent const & event);
-		void	eventEof(struct kevent const & event);
-		void	eventRead(struct kevent const & event);
+		void	event_client_connect(struct kevent const & event);
+		void	event_client_disconnect(struct kevent const & event);
+		void	event_eof(struct kevent const & event);
+		void	event_read(struct kevent const & event);
 
 	private:
 
@@ -63,7 +63,7 @@ class	Server
 
 		std::map<int, Client *>		_client;
 
-		void	setaddrinfo(void);
+		void	set_addr_info(void);
 
 
 		// canonical class form

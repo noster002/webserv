@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 12:47:27 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/01 12:07:16 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,15 +38,15 @@ void		Client::disconnect(void)
 	return ;
 }
 
-void		Client::setnonblocking(void)
+void		Client::set_non_blocking(void)
 {
-	_socket.setnonblocking();
+	_socket.set_non_blocking();
 	return ;
 }
 
-void		Client::setkevent(int kq, int filter, int flags)
+void		Client::set_kevent(int kq, int filter, int flags)
 {
-	_socket.setkevent(kq, filter, flags);
+	_socket.set_kevent(kq, filter, flags);
 	return ;
 }
 
@@ -58,7 +58,7 @@ void		Client::read(int fd, size_t max_size)
 
 	if (bytes_read < 0)
 	{
-		std::cerr << "recv: " << strerror(errno) << std::endl;
+		std::cerr << "recv: " << std::strerror(errno) << std::endl;
 		return ;
 	}
 
@@ -77,7 +77,7 @@ void		Client::write(int fd)
 
 	if (bytes_sent < 0)
 	{
-		std::cerr << "send: " << strerror(errno) << std::endl;
+		std::cerr << "send: " << std::strerror(errno) << std::endl;
 	}
 
 	return ;

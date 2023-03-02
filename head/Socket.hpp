@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:21 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 13:28:58 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/01 10:07:02 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,19 +36,19 @@ class	Socket
 		Socket(int fd, struct sockaddr addr, socklen_t addrlen);
 		~Socket(void);
 
-		int			getFd(void);
+		int			get_fd(void);
 
 		void		clean(void);
 		void		close(void);
-		void		getaddrinfo(char const * hostname, \
+		void		get_addr_info(char const * hostname, \
 								char const * port, \
 								struct addrinfo * hints);
 		void		create(void);
-		void		setnonblocking(void);
-		void		setopt(int level, int option);
+		void		set_non_blocking(void);
+		void		set_opt(int level, int option);
 		void		bind(void);
 		void		listen(int max_pending_clients);
-		void		setkevent(int kq, int filter, int flags);
+		void		set_kevent(int kq, int filter, int flags);
 
 	private:
 
@@ -74,13 +74,13 @@ class	Socket
 enum		e_level
 {
 	close, \
-	getaddrinfo, \
+	get_addr_info, \
 	create, \
-	setnonblocking, \
-	setopt, \
+	set_non_blocking, \
+	set_opt, \
 	bind, \
 	listen, \
-	setkevent
+	set_kevent
 };
 
 class		Socket::Exception : public std::exception
@@ -90,13 +90,13 @@ class		Socket::Exception : public std::exception
 		char const *			what(void) const throw();
 
 		static char const *		close(void);
-		static char const *		getaddrinfo(void);
+		static char const *		get_addr_info(void);
 		static char const *		create(void);
-		static char const *		setnonblocking(void);
-		static char const *		setopt(void);
+		static char const *		set_non_blocking(void);
+		static char const *		set_opt(void);
 		static char const *		bind(void);
 		static char const *		listen(void);
-		static char const *		setkevent(void);
+		static char const *		set_kevent(void);
 
 };
 
