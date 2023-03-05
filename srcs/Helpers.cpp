@@ -94,6 +94,8 @@ void			Helpers::parse_file(ServerConf* servconf,\
 			{
 				std::cout << routes->second.method[value] << " ";
 			}
+			std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
+			std::cout << " ROOT : " << routes->second.root;
 			std::cout << "--\n";
 			++routes;
 		}
@@ -234,7 +236,7 @@ void			Helpers::fill_server_name(std::string line, ServerConf* servconf, size_t 
 	bool	status = false;
 	std::string names = get_inline_value(servconf, line, cursor);
 	servconf->servers[i].s_names = split_by_space_or_tab(
-					std::string(names.begin(), names.end() - 1)
+					std::string(names.begin(), names.end())
 				);
 }
 
@@ -247,7 +249,7 @@ std::string		Helpers::get_inline_value(ServerConf* servconf, const std::string &
 		return value;
 	}
 	skipe_spaces(line, cursor);
-	while (*cursor < line.size())
+	while (*cursor < line.size() - 1)
 	{
 		value += line[*cursor];
 		*cursor += 1;
@@ -286,7 +288,7 @@ void			Helpers::fill_errors_pages(
 	*cursor += 10;
 	std::string tmp = get_inline_value(servconf, line, cursor);
 	std::vector<std::string> data = split_by_space_or_tab(
-					std::string(tmp.begin(), tmp.end() - 1)
+					std::string(tmp.begin(), tmp.end())
 				);
 	std::vector<std::string> errors_code(data.begin(), data.end() - 1);
 	std::string errors_page = *(data.end() - 1);
@@ -303,7 +305,7 @@ void					Helpers::fill_client_max_body_size(
 {
 	*cursor += 20;
 	std::string tmp = get_inline_value(servconf, line, cursor);
-	servconf->servers[i].client_max_body_size = std::atoi(tmp.substr(0, tmp.size() - 1).c_str());
+	servconf->servers[i].client_max_body_size = std::atoi(tmp.substr(0, tmp.size()).c_str());
 }
 
 void					Helpers::fill_routes(std::vector<std::string> & data,
@@ -315,16 +317,38 @@ void					Helpers::fill_routes(std::vector<std::string> & data,
 	*cursor += 5;
 	std::string route_name = get_route_name(servconf, data, i, cursor);
 	route_t routes;
+	servconf->servers[i].routes.insert(servconf->servers[i].routes.end(),
+								std::pair<std::string, route_t>(route_name, routes));
 	if (!is_route_well_formated(data, servconf, i, cursor))
 		return ;
 	servconf->servers[i].start_data += 1;
-	*cursor = 0;
-	skipe_spaces(data[servconf->servers[i].start_data], cursor);
-	if (data[servconf->servers[i].start_data].substr(*cursor, 6) == KEY_METHOD)
-		routes.method = get_methods(servconf, data[servconf->servers[i].start_data], cursor);
-	servconf->servers[i].routes.insert(
-							servconf->servers[i].routes.end(),
-							std::pair<std::string, route_t>(route_name, routes));
+	size_t end_route = servconf->servers[i].start_data += 1;
+	if (find_close_symbol(data, &end_route, 1) < 0)
+	{
+		servconf->setValidation(false);
+		return ;
+	}
+	while (servconf->servers[i].start_data < end_route)
+	{
+		skipe_empty_line(data, &servconf->servers[i].start_data);
+		*cursor = 0;
+		skipe_spaces(data[servconf->servers[i].start_data], cursor);
+		if (data[servconf->servers[i].start_data].substr(*cursor, 6) == KEY_METHOD)
+		{
+			routes.method = get_methods(servconf, data[servconf->servers[i].start_data], cursor);
+		}
+		else if (data[servconf->servers[i].start_data].substr(*cursor, 17) == KEY_DIRECTORY_LISTING)
+		{
+			set_directory_listing_options(data[servconf->servers[i].start_data],\
+						 servconf, &servconf->servers[i].routes[route_name], cursor);
+		}
+		else if (data[servconf->servers[i].start_data].substr(*cursor, 4) == KEY_ROOT)
+		{
+			set_root(data[servconf->servers[i].start_data], servconf, 
+					&servconf->servers[i].routes[route_name], cursor);
+		}
+		servconf->servers[i].start_data += 1;
+	}
 }
 
 std::string				Helpers::get_route_name(
@@ -398,5 +422,25 @@ std::vector<std::string>  Helpers::get_methods(ServerConf* servconf,
 {
 	*cursor += 6;
 	std::string data = get_inline_value(servconf, str, cursor);
-	return split_by_space_or_tab(std::string(data.begin(), data.end() - 1));
+	return split_by_space_or_tab(std::string(data.begin(), data.end()));
+}
+
+void	Helpers::set_directory_listing_options(std::string & str, ServerConf* servconf, 
+												route_t* route, size_t* cursor)
+{
+	*cursor += 17;
+	std::string value = get_inline_value(servconf, str, cursor);
+	if (value != "on" && value != "off")
+	{
+		servconf->setValidation(false);
+		return ;
+	}
+	route->directory_listing = (value == "on")? true : false;
+}
+
+void	Helpers::set_root(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+{
+	*cursor += 4;
+	std::string value = get_inline_value(servconf, str, cursor);
+	route->root = value;
 }

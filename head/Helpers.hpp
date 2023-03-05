@@ -92,7 +92,10 @@ class	Helpers {
 		static bool						is_route_well_formated(std::vector<std::string> & data, \
 												ServerConf* servconf, size_t i, size_t* cursor);
 		static std::vector<std::string> get_methods(ServerConf* servconf,
-												std::string & str, size_t *cursor);				
+												std::string & str, size_t *cursor);
+		static void						set_directory_listing_options(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);	
+		static void						set_root(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
+
 };
 
 #endif
