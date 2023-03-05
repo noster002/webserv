@@ -88,7 +88,11 @@ class	Helpers {
 		static	void					fill_routes(std::vector<std::string> & data, ServerConf* servconf, size_t i, size_t* cursor);
 		static std::vector<std::string> split_by_space_or_tab(std::string str);
 		static std::string				get_route_name(ServerConf* servconf, std::vector<std::string> & data, size_t i, size_t* cursor);
-		//static	std::string				get_inline_value(ServerConf* servconf, const std::string & line, size_t* cursor);
+		static bool						is_not_empty(const std::string & str);
+		static bool						is_route_well_formated(std::vector<std::string> & data, \
+												ServerConf* servconf, size_t i, size_t* cursor);
+		static std::vector<std::string> get_methods(ServerConf* servconf,
+												std::string & str, size_t *cursor);				
 };
 
 #endif

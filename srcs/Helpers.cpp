@@ -17,14 +17,13 @@ std::vector<std::string>	Helpers::get_config_data(const std::string & fileconf)
 	std::vector<std::string>	data;
 	std::ifstream				conf(fileconf);
 	std::string					line;
+	std::string					tmp = "";
 
 	if (conf.is_open())
 	{
 		while(getline(conf, line))
 		{
 			data.push_back(line);
-			std::cout << "-" <<line.size() << "-";
-			std::cout << line << "\n";
 		}
 	}
 	conf.close();
@@ -41,7 +40,6 @@ void			Helpers::parse_file(ServerConf* servconf,\
 
 	data = get_config_data(fileconf);
 	nb_server = count_servers(data, servconf);
-	exit(0);
 	size_t j;
 	if (nb_server < 0)
 	{
@@ -66,8 +64,8 @@ void			Helpers::parse_file(ServerConf* servconf,\
 				fill_errors_pages(data[servconf->servers[i].start_data], servconf, i, &j);
 			else if (data[servconf->servers[i].start_data].substr(j, 20) == KEY_MAX_BODY_SIZE)
 				fill_client_max_body_size(data[servconf->servers[i].start_data], servconf, i, &j);
-			//else if (data[servconf->servers[i].start_data].substr(j, 5) == KEY_ROUTE)
-			//	std::cout << "ICI\n";
+			else if (data[servconf->servers[i].start_data].substr(j, 5) == KEY_ROUTE)
+				fill_routes(data,servconf, i, &j);
 			if (!servconf->getValidation())
 				return ;
 			servconf->servers[i].start_data += 1;
@@ -88,6 +86,17 @@ void			Helpers::parse_file(ServerConf* servconf,\
 			++err;
 		}
 		std::cout << "MAX BODY : " << "  " << servconf->servers[i].client_max_body_size << "\n";
+		std::map<std::string, route_t>::iterator routes = servconf->servers[i].routes.begin();
+		while (routes != servconf->servers[i].routes.end())
+		{
+			std::cout << "--ROUTE =>  " << routes->first << "  Methods:  ";
+			for (size_t value = 0; value < routes->second.method.size(); ++value)
+			{
+				std::cout << routes->second.method[value] << " ";
+			}
+			std::cout << "--\n";
+			++routes;
+		}
 	}
 
 }
@@ -114,8 +123,6 @@ int  			Helpers::count_servers(	const std::vector<std::string> & config_data,
 			}
 			if (config_data[i][j] == OPEN_SYMBOL)
 			{
-				if (j = 0)
-					std::cout << "NO\n";
 				params_t param;
 				param.start_data = i + 1;
 				if (find_close_symbol(config_data, &i, 0) >= 0)
@@ -170,7 +177,9 @@ int 			Helpers::find_close_symbol(const std::vector<std::string> & config_data,\
 }
 
 
-void			Helpers::skipe_empty_line(const std::vector<std::string> & config_data, size_t* cursor)
+void			Helpers::skipe_empty_line (
+				const std::vector<std::string> & config_data,
+				size_t* cursor)
 {
 	size_t len = config_data.size(), j;
 
@@ -181,8 +190,14 @@ void			Helpers::skipe_empty_line(const std::vector<std::string> & config_data, s
 		else
 		{
 			j = 0;
-			while (config_data[*cursor][j] == SPACE || config_data[*cursor][j] == TAB)
+			while (
+					j < config_data[*cursor].size()\
+					&& (config_data[*cursor][j] == SPACE\
+					|| config_data[*cursor][j] == TAB)
+				)
+			{
 				j++;
+			}
 			if (config_data[*cursor][j] != '\0')
 				return ;
 			*cursor += 1;
@@ -299,15 +314,89 @@ void					Helpers::fill_routes(std::vector<std::string> & data,
 {
 	*cursor += 5;
 	std::string route_name = get_route_name(servconf, data, i, cursor);
-	exit(0);
+	route_t routes;
+	if (!is_route_well_formated(data, servconf, i, cursor))
+		return ;
+	servconf->servers[i].start_data += 1;
+	*cursor = 0;
+	skipe_spaces(data[servconf->servers[i].start_data], cursor);
+	if (data[servconf->servers[i].start_data].substr(*cursor, 6) == KEY_METHOD)
+		routes.method = get_methods(servconf, data[servconf->servers[i].start_data], cursor);
+	servconf->servers[i].routes.insert(
+							servconf->servers[i].routes.end(),
+							std::pair<std::string, route_t>(route_name, routes));
 }
 
 std::string				Helpers::get_route_name(
-						ServerConf* servconf,
-						std::vector<std::string> & data,
-						size_t i,
+						ServerConf* servconf,\
+						std::vector<std::string> & data,\
+						size_t i,\
 						size_t* cursor
 					)
 {
-	return "";
+	std::string curr_line = data[servconf->servers[i].start_data].substr(*cursor);
+	size_t count = 0;
+	std::string routes_name;
+
+	skipe_spaces(curr_line, &count);
+	std::string::iterator it = curr_line.begin() + count;
+	std::string::iterator start_name = it;
+	while(it != curr_line.end() && (*it != SPACE && *it != TAB))
+	{
+		++it;
+		++count;
+	}
+	skipe_spaces(curr_line, &count);
+	routes_name = std::string(start_name, it);
+	*cursor += count;
+	return routes_name;
+}
+
+bool	Helpers::is_not_empty(const std::string & str)
+{
+	size_t i = 1;
+	skipe_spaces(str, &i);
+	if (str[i] != '\0')
+		return false;
+	return (true);
+}
+
+bool	Helpers::is_route_well_formated(
+		std::vector<std::string> & data, \
+		ServerConf* servconf, \
+		size_t i,\
+		size_t* cursor )
+{
+	if (data[servconf->servers[i].start_data][*cursor] != OPEN_SYMBOL)
+	{
+		if (data[servconf->servers[i].start_data][*cursor] != '\0')
+		{
+			servconf->setValidation(false);
+			return false;
+		}
+		servconf->servers[i].start_data += 1;
+		size_t tmp_cursor = 0;
+		skipe_spaces(data[servconf->servers[i].start_data], &tmp_cursor);
+		if (data[servconf->servers[i].start_data][tmp_cursor] != OPEN_SYMBOL \
+			|| !is_not_empty(data[servconf->servers[i].start_data].substr(tmp_cursor))
+			)
+		{
+			servconf->setValidation(false);
+			return false;
+		}
+	}
+	else if (!is_not_empty(data[servconf->servers[i].start_data].substr(*cursor)))
+	{
+		servconf->setValidation(false);
+		return false;
+	}
+	return true;
+}
+
+std::vector<std::string>  Helpers::get_methods(ServerConf* servconf,
+									std::string & str, size_t *cursor)
+{
+	*cursor += 6;
+	std::string data = get_inline_value(servconf, str, cursor);
+	return split_by_space_or_tab(std::string(data.begin(), data.end() - 1));
 }
