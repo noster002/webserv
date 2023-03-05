@@ -14,10 +14,10 @@
 
 // constructor & destructor
 
-ServerConf::ServerConf(char const * filename)\
- : _file(filename), validation(true), servers()
+ServerConf::ServerConf(char const * filename): servers()
  {
-	std::vector<std::string> v_s();
+	this->_file = filename;
+	this->validation = true;
 	Helpers::parse_file(this, filename);
  }
 

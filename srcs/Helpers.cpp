@@ -17,7 +17,6 @@ std::vector<std::string>	Helpers::get_config_data(const std::string & fileconf)
 	std::vector<std::string>	data;
 	std::ifstream				conf(fileconf);
 	std::string					line;
-	std::string					tmp = "";
 
 	if (conf.is_open())
 	{
@@ -31,24 +30,20 @@ std::vector<std::string>	Helpers::get_config_data(const std::string & fileconf)
 }
 
 
-void			Helpers::parse_file(ServerConf* servconf,\
-	const std::string & fileconf)
+void			Helpers::parse_file(ServerConf* servconf, const std::string & fileconf)
 {
 	int							nb_server;
 	std::fstream				conf_file(fileconf);
 	std::vector<std::string>	data;
+	size_t j;
 
 	data = get_config_data(fileconf);
 	nb_server = count_servers(data, servconf);
-	size_t j;
-	if (nb_server < 0)
-	{
-		servconf->setValidation(false);
+	if (!is_valid_server_nb(servconf, nb_server))
 		return ;
-	}
-	for (size_t i = 0; i < nb_server; ++i)
+	for (int i = 0; i < nb_server; ++i)
 	{
-		std::cout << "**********SERVER[ " << i << " ]*******************\n";
+		//std::cout << "**********SERVER[ " << i << " ]*******************\n";
 		while (servconf->servers[i].start_data <= servconf->servers[i].end_data)
 		{
 			j = 0;
@@ -70,50 +65,50 @@ void			Helpers::parse_file(ServerConf* servconf,\
 				return ;
 			servconf->servers[i].start_data += 1;
 		}
-		std::cout << "HOST : " << "  " << servconf->servers[i].host << "\n";
-		std::cout << "PORT : " << "  " << servconf->servers[i].port[0] << "\n";
-		std::cout << "PORT : " << "  " << servconf->servers[i].port[1] << "\n";
-		std::cout << "SERVER NAME : " << "  " << servconf->servers[i].s_names[0] << "\n";
-		std::cout << "SERVER NAME : " << "  " << servconf->servers[i].s_names[1] << "\n";
-		std::map<std::vector<std::string>, std::string>::iterator err = servconf->servers[i].err_pages.begin();
-		while (err != servconf->servers[i].err_pages.end())
-		{
-			for (size_t key = 0; key < err->first.size(); ++key)
-			{
-				std::cout << err->first[key] << " ";
-			}
-			std::cout << " == > " << err->second << "\n";
-			++err;
-		}
-		std::cout << "MAX BODY : " << "  " << servconf->servers[i].client_max_body_size << "\n";
-		std::map<std::string, route_t>::iterator routes = servconf->servers[i].routes.begin();
-		while (routes != servconf->servers[i].routes.end())
-		{
-			std::cout << "--ROUTE =>  " << routes->first << "  Methods:  ";
-			for (size_t value = 0; value < routes->second.method.size(); ++value)
-			{
-				std::cout << routes->second.method[value] << " ";
-			}
-			std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
-			std::cout << " ROOT : " << routes->second.root;
-			std::cout << " INDEX : " << routes->second.index;
-			std::cout << " UPLOAD : " << routes->second.upload;
-			std::cout << " REDIRECT : " << routes->second.redirect;
-			std::cout << " CGI_EXT : " << routes->second.cgi_ext;
-			std::cout << " CGI_PASS : " << routes->second.cgi_pass;
-			std::cout << "--\n";
-			++routes;
-		}
+		//std::cout << "HOST : " << "  " << servconf->servers[i].host << "\n";
+		//std::cout << "PORT : " << "  " << servconf->servers[i].port[0] << "\n";
+		//std::cout << "PORT : " << "  " << servconf->servers[i].port[1] << "\n";
+		//std::cout << "SERVER NAME : " << "  " << servconf->servers[i].s_names[0] << "\n";
+		//std::cout << "SERVER NAME : " << "  " << servconf->servers[i].s_names[1] << "\n";
+		//std::map<std::vector<std::string>, std::string>::iterator err = servconf->servers[i].err_pages.begin();
+		//while (err != servconf->servers[i].err_pages.end())
+		//{
+		//	for (size_t key = 0; key < err->first.size(); ++key)
+		//	{
+		//		std::cout << err->first[key] << " ";
+		//	}
+		//	std::cout << " == > " << err->second << "\n";
+		//	++err;
+		//}
+		//std::cout << "MAX BODY : " << "  " << servconf->servers[i].client_max_body_size << "\n";
+		//std::map<std::string, route_t>::iterator routes = servconf->servers[i].routes.begin();
+		//while (routes != servconf->servers[i].routes.end())
+		//{
+		//	std::cout << "--ROUTE =>  " << routes->first << "  Methods:  ";
+		//	for (size_t value = 0; value < routes->second.method.size(); ++value)
+		//	{
+		//		std::cout << routes->second.method[value] << " ";
+		//	}
+		//	std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
+		//	std::cout << " ROOT : " << routes->second.root;
+		//	std::cout << " INDEX : " << routes->second.index;
+		//	std::cout << " UPLOAD : " << routes->second.upload;
+		//	std::cout << " REDIRECT : " << routes->second.redirect;
+		//	std::cout << " CGI_EXT : " << routes->second.cgi_ext;
+		//	std::cout << " CGI_PASS : " << routes->second.cgi_pass;
+		//	std::cout << "--\n";
+		//	++routes;
+		//}
 	}
 
 }
 
-int  			Helpers::count_servers(	const std::vector<std::string> & config_data,
-										ServerConf* servconf )
+int  			Helpers::count_servers( const std::vector<std::string> & config_data,\
+																ServerConf* servconf )
 {
 	int				nb = 0;
-	int				serv_open = -1;
 	size_t			data_len = config_data.size(), j;
+
 	for (size_t i = 0; i < data_len; ++i)
 	{
 		j = KEY_SERVER_LEN;
@@ -157,7 +152,7 @@ void			Helpers::skipe_spaces(const std::string & str, size_t* cursor)
 }
 
 int 			Helpers::find_close_symbol(const std::vector<std::string> & config_data,\
-	size_t* cursor, int level)
+																size_t* cursor, int level)
 {
 	size_t				data_len = config_data.size(), j;
 	*cursor += 1;
@@ -191,9 +186,8 @@ int 			Helpers::find_close_symbol(const std::vector<std::string> & config_data,\
 }
 
 
-void			Helpers::skipe_empty_line (
-				const std::vector<std::string> & config_data,
-				size_t* cursor)
+void			Helpers::skipe_empty_line ( const std::vector<std::string> & config_data,\
+																		size_t* cursor )
 {
 	size_t len = config_data.size(), j;
 
@@ -204,11 +198,9 @@ void			Helpers::skipe_empty_line (
 		else
 		{
 			j = 0;
-			while (
-					j < config_data[*cursor].size()\
+			while ( j < config_data[*cursor].size() \
 					&& (config_data[*cursor][j] == SPACE\
-					|| config_data[*cursor][j] == TAB)
-				)
+					|| config_data[*cursor][j] == TAB) )
 			{
 				j++;
 			}
@@ -219,13 +211,15 @@ void			Helpers::skipe_empty_line (
 	}
 }
 
-void			Helpers::fill_host_value(std::string line, ServerConf* servconf, size_t i, size_t* cursor)
+void			Helpers::fill_host_value( std::string line, ServerConf* servconf,\
+														 size_t i, size_t* cursor)
 {
 	*cursor += 4;
 	servconf->servers[i].host = get_inline_value(servconf, line, cursor);
 }
 
-void			Helpers::fill_port_value(std::string line, ServerConf* servconf, size_t i, size_t* cursor)
+void			Helpers::fill_port_value( std::string line, ServerConf* servconf,\
+														size_t i, size_t* cursor)
 {
 	*cursor += 6;
 	std::string str_port = get_inline_value(servconf, line, cursor);
@@ -241,18 +235,18 @@ void			Helpers::fill_port_value(std::string line, ServerConf* servconf, size_t i
 	servconf->servers[i].port.push_back(port);
 }
 
-void			Helpers::fill_server_name(std::string line, ServerConf* servconf, size_t i, size_t* cursor)
+void			Helpers::fill_server_name( std::string line, ServerConf* servconf,\
+															size_t i, size_t* cursor)
 {
 	*cursor += 11;
-	size_t 	first = 0;
-	bool	status = false;
 	std::string names = get_inline_value(servconf, line, cursor);
 	servconf->servers[i].s_names = split_by_space_or_tab(
 					std::string(names.begin(), names.end())
 				);
 }
 
-std::string		Helpers::get_inline_value(ServerConf* servconf, const std::string & line, size_t* cursor)
+std::string		Helpers::get_inline_value(ServerConf* servconf, const std::string & line,\
+																			size_t* cursor)
 {
 	std::string value = "";
 	if (line[line.size() - 1] != SEMI_COLUMN)
@@ -269,13 +263,13 @@ std::string		Helpers::get_inline_value(ServerConf* servconf, const std::string &
 	return value;
 }
 
-
 std::vector<std::string> Helpers::split_by_space_or_tab(std::string str)
 {
 	std::vector<std::string> splited;
 	std::string::iterator it = str.begin();
 	std::string::iterator it_end = str.end();
 	std::string::iterator tmp;
+
 	while (it != it_end)
 	{
 		if (*it != SPACE && *it != TAB)
@@ -291,44 +285,33 @@ std::vector<std::string> Helpers::split_by_space_or_tab(std::string str)
 	return (splited);
 }
 
-void			Helpers::fill_errors_pages(
-					std::string line,ServerConf* servconf,
-					size_t i,
-					size_t* cursor
-				)
+void			Helpers::fill_errors_pages( std::string line,ServerConf* servconf,\
+															size_t i, size_t* cursor)
 {
 	*cursor += 10;
 	std::string tmp = get_inline_value(servconf, line, cursor);
-	std::vector<std::string> data = split_by_space_or_tab(
-					std::string(tmp.begin(), tmp.end())
-				);
+	std::vector<std::string> data = split_by_space_or_tab( std::string(tmp.begin(),\
+																		tmp.end()) );
 	std::vector<std::string> errors_code(data.begin(), data.end() - 1);
 	std::string errors_page = *(data.end() - 1);
-	servconf->servers[i].err_pages.insert(
-					servconf->servers[i].err_pages.end(),
-					std::pair<std::vector<std::string>, std::string>(errors_code, errors_page)
-				);
+	servconf->servers[i].err_pages.insert( servconf->servers[i].err_pages.end(),\
+		std::pair<std::vector<std::string>, std::string>(errors_code, errors_page) );
 }
 
-void					Helpers::fill_client_max_body_size(
-		std::string line,ServerConf* servconf, size_t i,
-		size_t* cursor
-		)
+void					Helpers::fill_client_max_body_size( std::string line,\
+									ServerConf* servconf, size_t i, size_t* cursor)
 {
 	*cursor += 20;
 	std::string tmp = get_inline_value(servconf, line, cursor);
 	servconf->servers[i].client_max_body_size = std::atoi(tmp.substr(0, tmp.size()).c_str());
 }
 
-void					Helpers::fill_routes(std::vector<std::string> & data,
-							ServerConf* servconf,
-							size_t i,
-							size_t* cursor
-						)
+void					Helpers::fill_routes( std::vector<std::string> & data,\
+							ServerConf* servconf, size_t i, size_t* cursor )
 {
 	*cursor += 5;
-	std::string route_name = get_route_name(servconf, data, i, cursor);
 	route_t routes;
+	std::string route_name = get_route_name(servconf, data, i, cursor);
 	servconf->servers[i].routes.insert(servconf->servers[i].routes.end(),
 								std::pair<std::string, route_t>(route_name, routes));
 	if (!is_route_well_formated(data, servconf, i, cursor))
@@ -342,48 +325,9 @@ void					Helpers::fill_routes(std::vector<std::string> & data,
 	}
 	while (servconf->servers[i].start_data < end_route)
 	{
-		skipe_empty_line(data, &servconf->servers[i].start_data);
-		*cursor = 0;
-		skipe_spaces(data[servconf->servers[i].start_data], cursor);
-		if (data[servconf->servers[i].start_data].substr(*cursor, 6) == KEY_METHOD)
-		{
-			routes.method = get_methods(servconf, data[servconf->servers[i].start_data], cursor);
-		}
-		if (data[servconf->servers[i].start_data].substr(*cursor, 17) == KEY_DIRECTORY_LISTING)
-		{
-			set_directory_listing_options(data[servconf->servers[i].start_data],\
-						 servconf, &servconf->servers[i].routes[route_name], cursor);
-		}
-		if (data[servconf->servers[i].start_data].substr(*cursor, 4) == KEY_ROOT)
-		{
-			set_root(data[servconf->servers[i].start_data], servconf, 
-					&servconf->servers[i].routes[route_name], cursor);
-		}
-		if (data[servconf->servers[i].start_data].substr(*cursor, 5) == KEY_INDEX)
-		{
-			set_index(data[servconf->servers[i].start_data], servconf, 
-					&servconf->servers[i].routes[route_name], cursor);
-		}
-		if (data[servconf->servers[i].start_data].substr(*cursor, 6) == KEY_UPLOAD)
-		{
-			set_upload(data[servconf->servers[i].start_data], servconf, 
-					&servconf->servers[i].routes[route_name], cursor);
-		}
-		if (data[servconf->servers[i].start_data].substr(*cursor, 8) == KEY_REDIRECT)
-		{
-			set_redirect(data[servconf->servers[i].start_data], servconf, 
-					&servconf->servers[i].routes[route_name], cursor);
-		}
-		if (data[servconf->servers[i].start_data].substr(*cursor, 7) == KEY_CGI_EXT)
-		{
-			set_cgi_ext(data[servconf->servers[i].start_data], servconf, 
-					&servconf->servers[i].routes[route_name], cursor);
-		}
-		if (data[servconf->servers[i].start_data].substr(*cursor, 8) == KEY_CGI_PASS)
-		{
-			set_cgi_pass(data[servconf->servers[i].start_data], servconf, 
-					&servconf->servers[i].routes[route_name], cursor);
-		}
+		fill_route_params(data, servconf, i, cursor, route_name);
+		if (!servconf->getValidation())
+			return ;
 		servconf->servers[i].start_data += 1;
 	}
 }
@@ -462,7 +406,7 @@ std::vector<std::string>  Helpers::get_methods(ServerConf* servconf,
 	return split_by_space_or_tab(std::string(data.begin(), data.end()));
 }
 
-void	Helpers::set_directory_listing_options(std::string & str, ServerConf* servconf, 
+void	Helpers::set_dir_listing_options(std::string & str, ServerConf* servconf, 
 												route_t* route, size_t* cursor)
 {
 	*cursor += 17;
@@ -498,7 +442,7 @@ void	Helpers::set_upload(std::string & str, ServerConf* servconf, route_t* route
 
 void	Helpers::set_redirect(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
 {
-	*cursor += 6;
+	*cursor += 8;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->upload = value;
 }
@@ -515,4 +459,67 @@ void	Helpers::set_cgi_pass(std::string & str, ServerConf* servconf, route_t* rou
 	*cursor += 8;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->cgi_pass = value;
+}
+
+bool						Helpers::is_valid_server_nb(ServerConf* servconf, int nb_servers)
+{
+	if (nb_servers < 0)
+	{
+		servconf->setValidation(false);
+		return false;
+	}
+	return true;
+}
+
+void	Helpers::fill_route_params(std::vector<std::string> & data, ServerConf* servconf,\
+										size_t i, size_t* cursor, std::string & route_name)
+{
+	skipe_empty_line(data, &servconf->servers[i].start_data);
+	*cursor = 0;
+	skipe_spaces(data[servconf->servers[i].start_data], cursor);
+	if (data[servconf->servers[i].start_data].substr(*cursor, 6) == KEY_METHOD)
+	{
+		servconf->servers[i].routes[route_name].method = get_methods(servconf, \
+									data[servconf->servers[i].start_data], cursor);
+	}
+	else if (data[servconf->servers[i].start_data].substr(*cursor, 17) == KEY_DIRECTORY_LISTING)
+	{
+		set_dir_listing_options(data[servconf->servers[i].start_data],\
+						servconf, &servconf->servers[i].routes[route_name], cursor);
+	}
+	else if (data[servconf->servers[i].start_data].substr(*cursor, 4) == KEY_ROOT)
+	{
+		set_root(data[servconf->servers[i].start_data], servconf, 
+				&servconf->servers[i].routes[route_name], cursor);
+	}
+	else if (data[servconf->servers[i].start_data].substr(*cursor, 5) == KEY_INDEX)
+	{
+		set_index(data[servconf->servers[i].start_data], servconf, 
+				&servconf->servers[i].routes[route_name], cursor);
+	}
+	else if (data[servconf->servers[i].start_data].substr(*cursor, 6) == KEY_UPLOAD)
+	{
+		set_upload(data[servconf->servers[i].start_data], servconf, 
+				&servconf->servers[i].routes[route_name], cursor);
+	}
+	else if (data[servconf->servers[i].start_data].substr(*cursor, 8) == KEY_REDIRECT)
+	{
+		set_redirect(data[servconf->servers[i].start_data], servconf, 
+				&servconf->servers[i].routes[route_name], cursor);
+	}
+	else if (data[servconf->servers[i].start_data].substr(*cursor, 7) == KEY_CGI_EXT)
+	{
+		set_cgi_ext(data[servconf->servers[i].start_data], servconf, 
+				&servconf->servers[i].routes[route_name], cursor);
+	}
+	else if (data[servconf->servers[i].start_data].substr(*cursor, 8) == KEY_CGI_PASS)
+	{
+		set_cgi_pass(data[servconf->servers[i].start_data], servconf, 
+				&servconf->servers[i].routes[route_name], cursor);
+	}
+	else
+	{
+		servconf->setValidation(false);
+		return ;
+	}
 }

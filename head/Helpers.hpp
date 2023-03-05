@@ -70,36 +70,57 @@ class ServerConf;
 
 class	Helpers {
 
-	public:
-		static void						parse_file(ServerConf* servconf, 
-														const std::string & fileconf);
-		static std::vector<std::string>	get_config_data(const std::string & fileconf);
-		static int						count_servers(const std::vector<std::string> & config_data, ServerConf* servconf);
-		static void						skipe_spaces(const std::string & str, size_t* cursor);
-		static int						find_close_symbol(const std::vector<std::string> & config_data, 
-														  size_t* cursor, int level);
-		static	void					skipe_empty_line(const std::vector<std::string> & config_data, size_t* cursor);
-		static	void					fill_host_value(std::string line, ServerConf* servconf, size_t i, size_t* cursor);
-		static	std::string				get_inline_value(ServerConf* servconf, const std::string & line, size_t* cursor);
-		static	void					fill_port_value(std::string line, ServerConf* servconf, size_t i, size_t* cursor);
-		static	void					fill_server_name(std::string line, ServerConf* servconf, size_t i, size_t* cursor);
-		static	void					fill_errors_pages(std::string line, ServerConf* servconf, size_t i, size_t* cursor);
-		static	void					fill_client_max_body_size(std::string line, ServerConf* servconf, size_t i, size_t* cursor);
-		static	void					fill_routes(std::vector<std::string> & data, ServerConf* servconf, size_t i, size_t* cursor);
-		static std::vector<std::string> split_by_space_or_tab(std::string str);
-		static std::string				get_route_name(ServerConf* servconf, std::vector<std::string> & data, size_t i, size_t* cursor);
-		static bool						is_not_empty(const std::string & str);
-		static bool						is_route_well_formated(std::vector<std::string> & data, \
+public:
+	static void						parse_file(ServerConf* servconf, 
+													const std::string & fileconf);
+	static std::vector<std::string>	get_config_data(const std::string & fileconf);
+	static int						count_servers(const std::vector<std::string> & config_data,\
+																			ServerConf* servconf);
+	static void						skipe_spaces(const std::string & str, size_t* cursor);
+	static int						find_close_symbol(const std::vector<std::string> & config_data,\
+																		size_t* cursor, int level);
+	static	void					skipe_empty_line(const std::vector<std::string> & config_data,\
+																				  size_t* cursor);
+	static	void					fill_host_value(std::string line, ServerConf* servconf,\
+																		size_t i, size_t* cursor);
+	static	std::string				get_inline_value(ServerConf* servconf,\
+														const std::string & line, size_t* cursor);
+	static	void					fill_port_value(std::string line, ServerConf* servconf,\
+																		size_t i, size_t* cursor);
+	static	void					fill_server_name(std::string line, ServerConf* servconf,\
+																		size_t i,size_t* cursor);
+	static	void					fill_errors_pages(std::string line, ServerConf* servconf,\
+																		size_t i,size_t* cursor);
+	static	void					fill_client_max_body_size(std::string line,\
 												ServerConf* servconf, size_t i, size_t* cursor);
-		static std::vector<std::string> get_methods(ServerConf* servconf,
-												std::string & str, size_t *cursor);
-		static void						set_directory_listing_options(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);	
-		static void						set_root(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
-		static void						set_index(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
-		static void						set_upload(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
-		static void						set_redirect(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
-		static void						set_cgi_ext(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
-		static void						set_cgi_pass(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
+	static	void					fill_routes(std::vector<std::string> & data,\
+												ServerConf* servconf, size_t i, size_t* cursor);
+	static std::vector<std::string> split_by_space_or_tab(std::string str);
+	static std::string				get_route_name(ServerConf* servconf,\
+									std::vector<std::string> & data, size_t i, size_t* cursor);
+																				
+	static bool						is_not_empty(const std::string & str);
+	static bool						is_route_well_formated(std::vector<std::string> & data,\
+												ServerConf* servconf, size_t i, size_t* cursor);
+	static std::vector<std::string> get_methods(ServerConf* servconf,
+											std::string & str, size_t *cursor);
+	static void						set_dir_listing_options(std::string & str,\
+									ServerConf* servconf, route_t* route, size_t* cursor);
+	static void						set_root(std::string & str, ServerConf* servconf,\
+															route_t* route, size_t* cursor);
+	static void						set_index(std::string & str, ServerConf* servconf,\
+															route_t* route, size_t* cursor);	
+	static void						set_upload(std::string & str, ServerConf* servconf,\
+															route_t* route, size_t* cursor);
+	static void						set_redirect(std::string & str, ServerConf* servconf,\
+																route_t* route, size_t* cursor);
+	static void						set_cgi_ext(std::string & str, ServerConf* servconf,\
+																route_t* route, size_t* cursor);
+	static void						set_cgi_pass(std::string & str, ServerConf* servconf,\
+																route_t* route, size_t* cursor);
+	static bool						is_valid_server_nb(ServerConf* servconf, int nb_servers);
+	static void						fill_route_params(std::vector<std::string> & data,\
+					ServerConf* servconf, size_t i, size_t* cursor, std::string & route_name);
 
 };
 
