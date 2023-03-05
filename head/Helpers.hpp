@@ -95,6 +95,11 @@ class	Helpers {
 												std::string & str, size_t *cursor);
 		static void						set_directory_listing_options(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);	
 		static void						set_root(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
+		static void						set_index(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
+		static void						set_upload(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
+		static void						set_redirect(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
+		static void						set_cgi_ext(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
+		static void						set_cgi_pass(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor);
 
 };
 

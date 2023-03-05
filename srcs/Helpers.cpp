@@ -96,6 +96,11 @@ void			Helpers::parse_file(ServerConf* servconf,\
 			}
 			std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
 			std::cout << " ROOT : " << routes->second.root;
+			std::cout << " INDEX : " << routes->second.index;
+			std::cout << " UPLOAD : " << routes->second.upload;
+			std::cout << " REDIRECT : " << routes->second.redirect;
+			std::cout << " CGI_EXT : " << routes->second.cgi_ext;
+			std::cout << " CGI_PASS : " << routes->second.cgi_pass;
 			std::cout << "--\n";
 			++routes;
 		}
@@ -162,7 +167,14 @@ int 			Helpers::find_close_symbol(const std::vector<std::string> & config_data,\
 		if (config_data[*cursor].substr(0, KEY_SERVER_LEN) == KEY_SERVER)
 			return (-1);
 		if (level > 0)
+		{
 			skipe_spaces(config_data[*cursor], &j);
+			if (config_data[*cursor].substr(j, 5) == KEY_ROUTE)
+			{
+				std::cout << config_data[*cursor].substr(j) << "\n";
+				return (-1);
+			}
+		}
 		if (config_data[*cursor][j] == CLOSE_SYMBOL)
 		{
 			if (j + 1 == config_data[*cursor].size())
@@ -322,7 +334,7 @@ void					Helpers::fill_routes(std::vector<std::string> & data,
 	if (!is_route_well_formated(data, servconf, i, cursor))
 		return ;
 	servconf->servers[i].start_data += 1;
-	size_t end_route = servconf->servers[i].start_data += 1;
+	size_t end_route = servconf->servers[i].start_data;
 	if (find_close_symbol(data, &end_route, 1) < 0)
 	{
 		servconf->setValidation(false);
@@ -337,14 +349,39 @@ void					Helpers::fill_routes(std::vector<std::string> & data,
 		{
 			routes.method = get_methods(servconf, data[servconf->servers[i].start_data], cursor);
 		}
-		else if (data[servconf->servers[i].start_data].substr(*cursor, 17) == KEY_DIRECTORY_LISTING)
+		if (data[servconf->servers[i].start_data].substr(*cursor, 17) == KEY_DIRECTORY_LISTING)
 		{
 			set_directory_listing_options(data[servconf->servers[i].start_data],\
 						 servconf, &servconf->servers[i].routes[route_name], cursor);
 		}
-		else if (data[servconf->servers[i].start_data].substr(*cursor, 4) == KEY_ROOT)
+		if (data[servconf->servers[i].start_data].substr(*cursor, 4) == KEY_ROOT)
 		{
 			set_root(data[servconf->servers[i].start_data], servconf, 
+					&servconf->servers[i].routes[route_name], cursor);
+		}
+		if (data[servconf->servers[i].start_data].substr(*cursor, 5) == KEY_INDEX)
+		{
+			set_index(data[servconf->servers[i].start_data], servconf, 
+					&servconf->servers[i].routes[route_name], cursor);
+		}
+		if (data[servconf->servers[i].start_data].substr(*cursor, 6) == KEY_UPLOAD)
+		{
+			set_upload(data[servconf->servers[i].start_data], servconf, 
+					&servconf->servers[i].routes[route_name], cursor);
+		}
+		if (data[servconf->servers[i].start_data].substr(*cursor, 8) == KEY_REDIRECT)
+		{
+			set_redirect(data[servconf->servers[i].start_data], servconf, 
+					&servconf->servers[i].routes[route_name], cursor);
+		}
+		if (data[servconf->servers[i].start_data].substr(*cursor, 7) == KEY_CGI_EXT)
+		{
+			set_cgi_ext(data[servconf->servers[i].start_data], servconf, 
+					&servconf->servers[i].routes[route_name], cursor);
+		}
+		if (data[servconf->servers[i].start_data].substr(*cursor, 8) == KEY_CGI_PASS)
+		{
+			set_cgi_pass(data[servconf->servers[i].start_data], servconf, 
 					&servconf->servers[i].routes[route_name], cursor);
 		}
 		servconf->servers[i].start_data += 1;
@@ -443,4 +480,39 @@ void	Helpers::set_root(std::string & str, ServerConf* servconf, route_t* route, 
 	*cursor += 4;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->root = value;
+}
+
+void	Helpers::set_index(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+{
+	*cursor += 5;
+	std::string value = get_inline_value(servconf, str, cursor);
+	route->index = value;
+}
+
+void	Helpers::set_upload(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+{
+	*cursor += 6;
+	std::string value = get_inline_value(servconf, str, cursor);
+	route->upload = value;
+}
+
+void	Helpers::set_redirect(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+{
+	*cursor += 6;
+	std::string value = get_inline_value(servconf, str, cursor);
+	route->upload = value;
+}
+
+void	Helpers::set_cgi_ext(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+{
+	*cursor += 7;
+	std::string value = get_inline_value(servconf, str, cursor);
+	route->cgi_ext = value;
+}
+
+void	Helpers::set_cgi_pass(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+{
+	*cursor += 8;
+	std::string value = get_inline_value(servconf, str, cursor);
+	route->cgi_pass = value;
 }
