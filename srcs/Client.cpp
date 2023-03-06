@@ -6,14 +6,14 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/01 12:07:16 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/06 16:34:57 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 Client::Client(int fd, struct sockaddr addr, socklen_t addrlen)\
- : _socket(fd, addr, addrlen)
+ : _socket(fd, addr, addrlen), _request(client_max_body_size)
 {
 	return ;
 }
@@ -62,7 +62,14 @@ void		Client::read(int fd, size_t max_size)
 		return ;
 	}
 
-	_request.parse(input, bytes_read);
+	try
+	{
+		_request.parse(input, bytes_read);
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
 
 	return ;
 }

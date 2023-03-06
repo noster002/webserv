@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/02 08:55:42 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/06 17:47:35 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,11 @@
 
 # include <map>
 # include <set>
+# include <exception>
 # include <string>
 # include <iostream>
+# include <cstdlib>
+# include <cctype>
 # include <cstring>
 # include <cerrno>
 
@@ -35,7 +38,7 @@ class	Request
 {
 	public:
 
-		Request(void);
+		Request(size_t client_max_body_size);
 		~Request(void);
 
 		void		parse(std::string const & input, ssize_t len);
@@ -43,6 +46,8 @@ class	Request
 		//friend void	Response::build(Request const & request, std::string & output);
 
 	private:
+
+		int					_error;
 
 		std::string			_method;
 		int					_version;
@@ -54,22 +59,42 @@ class	Request
 							_header;
 		std::string			_body;
 
+		size_t				_client_max_body_size;
+
+		void				_read_first_line(std::string const & input);
+		void				_read_method(std::string const & line, size_t & pos);
+		void				_read_path(std::string const & line, size_t & pos);
+		void				_read_version(std::string const & line, size_t & pos);
 		std::string			_get_next_line(std::string const & input, size_t & pos);
-		std::string			_get_key(std::string const & line);
-		std::string			_get_value(std::string const & line);
-		int					_read_first_line(std::string const & input);
-		int					_read_method(std::string const & line, size_t & pos);
-		int					_read_path(std::string const & line, size_t & pos);
-		int					_read_version(std::string const & line, size_t & pos);
+		std::string			_get_key(std::string line);
+		std::string			_get_value(std::string line);
+		std::string			_read_body(std::string input, size_t pos);
+		void				_process_header_fields(void);
+		void				_process_path(void);
+		void				_process_host(void);
+
+		bool				_is_token(char c) const;
+		bool				_is_whitespace(char c) const;
 
 		static std::set<std::string>		_methods;
 		static std::set<std::string>		_init_methods(void);
 
+		class				Exception;
+
 
 		// canonical class form
 
+		Request(void);
 		Request(Request const & other);
 		Request &	operator=(Request const & rhs);
+
+};
+
+class		Request::Exception : public std::exception
+{
+	public:
+
+		char const *	what(void) const throw();
 
 };
 
