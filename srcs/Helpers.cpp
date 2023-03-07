@@ -16,11 +16,11 @@ std::vector<std::string>	Helpers::get_config_data(const std::string & fileconf)
 {
 	std::vector<std::string>	data;
 	std::ifstream				conf(fileconf);
-	std::string					line;
+	std::string					line = "";
 
 	if (conf.is_open())
 	{
-		while(getline(conf, line))
+		while(std::getline(conf, line))
 		{
 			data.push_back(line);
 		}
@@ -61,44 +61,46 @@ void			Helpers::parse_file(ServerConf* servconf, const std::string & fileconf)
 				fill_client_max_body_size(data[servconf->servers[i].start_data], servconf, i, &j);
 			else if (data[servconf->servers[i].start_data].substr(j, 5) == KEY_ROUTE)
 				fill_routes(data,servconf, i, &j);
+			else
+				servconf->setValidation(false);
 			if (!servconf->getValidation())
 				return ;
 			servconf->servers[i].start_data += 1;
 		}
-		//std::cout << "HOST : " << "  " << servconf->servers[i].host << "\n";
-		//std::cout << "PORT : " << "  " << servconf->servers[i].port[0] << "\n";
-		//std::cout << "PORT : " << "  " << servconf->servers[i].port[1] << "\n";
-		//std::cout << "SERVER NAME : " << "  " << servconf->servers[i].s_names[0] << "\n";
-		//std::cout << "SERVER NAME : " << "  " << servconf->servers[i].s_names[1] << "\n";
-		//std::map<std::vector<std::string>, std::string>::iterator err = servconf->servers[i].err_pages.begin();
-		//while (err != servconf->servers[i].err_pages.end())
-		//{
-		//	for (size_t key = 0; key < err->first.size(); ++key)
-		//	{
-		//		std::cout << err->first[key] << " ";
-		//	}
-		//	std::cout << " == > " << err->second << "\n";
-		//	++err;
-		//}
-		//std::cout << "MAX BODY : " << "  " << servconf->servers[i].client_max_body_size << "\n";
-		//std::map<std::string, route_t>::iterator routes = servconf->servers[i].routes.begin();
-		//while (routes != servconf->servers[i].routes.end())
-		//{
-		//	std::cout << "--ROUTE =>  " << routes->first << "  Methods:  ";
-		//	for (size_t value = 0; value < routes->second.method.size(); ++value)
-		//	{
-		//		std::cout << routes->second.method[value] << " ";
-		//	}
-		//	std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
-		//	std::cout << " ROOT : " << routes->second.root;
-		//	std::cout << " INDEX : " << routes->second.index;
-		//	std::cout << " UPLOAD : " << routes->second.upload;
-		//	std::cout << " REDIRECT : " << routes->second.redirect;
-		//	std::cout << " CGI_EXT : " << routes->second.cgi_ext;
-		//	std::cout << " CGI_PASS : " << routes->second.cgi_pass;
-		//	std::cout << "--\n";
-		//	++routes;
-		//}
+		std::cout << "HOST : " << "  " << servconf->servers[i].host << "\n";
+		std::cout << "PORT : " << "  " << servconf->servers[i].port[0] << "\n";
+		std::cout << "PORT : " << "  " << servconf->servers[i].port[1] << "\n";
+		std::cout << "SERVER NAME : " << "  " << servconf->servers[i].s_names[0] << "\n";
+		std::cout << "SERVER NAME : " << "  " << servconf->servers[i].s_names[1] << "\n";
+		std::map<std::vector<std::string>, std::string>::iterator err = servconf->servers[i].err_pages.begin();
+		while (err != servconf->servers[i].err_pages.end())
+		{
+			for (size_t key = 0; key < err->first.size(); ++key)
+			{
+				std::cout << err->first[key] << " ";
+			}
+			std::cout << " == > " << err->second << "\n";
+			++err;
+		}
+		std::cout << "MAX BODY : " << "  " << servconf->servers[i].client_max_body_size << "\n";
+		std::map<std::string, route_t>::iterator routes = servconf->servers[i].routes.begin();
+		while (routes != servconf->servers[i].routes.end())
+		{
+			std::cout << "--ROUTE =>  " << routes->first << "  Methods:  ";
+			for (size_t value = 0; value < routes->second.method.size(); ++value)
+			{
+				std::cout << routes->second.method[value] << " ";
+			}
+			std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
+			std::cout << " ROOT : " << routes->second.root;
+			std::cout << " INDEX : " << routes->second.index;
+			std::cout << " UPLOAD : " << routes->second.upload;
+			std::cout << " REDIRECT : " << routes->second.redirect;
+			std::cout << " CGI_EXT : " << routes->second.cgi_ext;
+			std::cout << " CGI_PASS : " << routes->second.cgi_pass;
+			std::cout << "--\n";
+			++routes;
+		}
 	}
 
 }
@@ -167,6 +169,7 @@ int 			Helpers::find_close_symbol(const std::vector<std::string> & config_data,\
 			if (config_data[*cursor].substr(j, 5) == KEY_ROUTE)
 			{
 				std::cout << config_data[*cursor].substr(j) << "\n";
+				std::cout << "LEVEL 1.1";
 				return (-1);
 			}
 		}
@@ -178,10 +181,12 @@ int 			Helpers::find_close_symbol(const std::vector<std::string> & config_data,\
 			skipe_spaces(config_data[*cursor], &j);
 			if (config_data[*cursor][j] == '\0')
 				return (j);
+			std::cout << "LEVEL 2.2";
 			return (-1);
 		}
 		*cursor += 1;
 	}
+	std::cout << "LEVEL 3.3";
 	return (-1);
 }
 
@@ -215,7 +220,14 @@ void			Helpers::fill_host_value( std::string line, ServerConf* servconf,\
 														 size_t i, size_t* cursor)
 {
 	*cursor += 4;
-	servconf->servers[i].host = get_inline_value(servconf, line, cursor);
+	
+	std::string host = get_inline_value(servconf, line, cursor);
+	if (is_valid_host(host))
+		servconf->servers[i].host = host;
+	else
+	{
+		servconf->setValidation(false);
+	}
 }
 
 void			Helpers::fill_port_value( std::string line, ServerConf* servconf,\
@@ -223,7 +235,13 @@ void			Helpers::fill_port_value( std::string line, ServerConf* servconf,\
 {
 	*cursor += 6;
 	std::string str_port = get_inline_value(servconf, line, cursor);
-	for (size_t it = 0; it < str_port.size() - 1; ++it)
+	std::cout <<"**" << str_port << "**\n";
+	if (is_empty(str_port))
+	{
+		servconf->setValidation(false);
+		return ;
+	}
+	for (size_t it = 0; it < str_port.size(); ++it)
 	{
 		if (!isdigit(str_port[it]) && (str_port[it] != TAB && str_port[it] != SPACE))
 		{
@@ -357,9 +375,9 @@ std::string				Helpers::get_route_name(
 	return routes_name;
 }
 
-bool	Helpers::is_not_empty(const std::string & str)
-{
-	size_t i = 1;
+bool	Helpers::is_empty(const std::string & str)
+{ 
+	size_t i =  (str.size() > 0) ? 1: 0;
 	skipe_spaces(str, &i);
 	if (str[i] != '\0')
 		return false;
@@ -383,14 +401,14 @@ bool	Helpers::is_route_well_formated(
 		size_t tmp_cursor = 0;
 		skipe_spaces(data[servconf->servers[i].start_data], &tmp_cursor);
 		if (data[servconf->servers[i].start_data][tmp_cursor] != OPEN_SYMBOL \
-			|| !is_not_empty(data[servconf->servers[i].start_data].substr(tmp_cursor))
+			|| !is_empty(data[servconf->servers[i].start_data].substr(tmp_cursor))
 			)
 		{
 			servconf->setValidation(false);
 			return false;
 		}
 	}
-	else if (!is_not_empty(data[servconf->servers[i].start_data].substr(*cursor)))
+	else if (!is_empty(data[servconf->servers[i].start_data].substr(*cursor)))
 	{
 		servconf->setValidation(false);
 		return false;
@@ -522,4 +540,51 @@ void	Helpers::fill_route_params(std::vector<std::string> & data, ServerConf* ser
 		servconf->setValidation(false);
 		return ;
 	}
+}
+
+
+bool	Helpers::is_valid_host(std::string host)
+{
+	if (is_empty(host))
+		return false;
+	std::string octet = "";
+	std::vector<std::string> all_octes;
+	size_t cursor = 0, i = 0;
+	while (i < host.size())
+	{
+		if (!isdigit(host[i]))
+		{
+			if ((host[i] == DOT) && cursor > 0)
+			{
+				all_octes.push_back(octet);
+				octet = "";
+				cursor = 0;
+			}
+			else
+				return (false);
+		}
+		else
+		{
+			cursor += 1;
+			octet += host[i];
+		}
+		++i;
+	}
+	all_octes.push_back(octet);
+	if (!is_valid_ip(all_octes))
+		return false;
+	return (true);
+}
+
+bool		Helpers::is_valid_ip(std::vector<std::string> & all_octes)
+{
+	int octet;
+
+	for(size_t i = 0; i < all_octes.size(); ++i)
+	{
+		octet = std::atoi(all_octes[i].c_str());
+		if (octet > 255)
+			return false;
+	}
+	return true;
 }

@@ -38,6 +38,7 @@
 # define KEY_CGI_EXT "cgi_ext"
 # define KEY_CGI_PASS "cgi_pass"
 # define KEY_HOST "host"
+# define DOT '.'
 # define TAB 9
 typedef struct	s_route {
 	std::vector<std::string> 	method;
@@ -99,7 +100,7 @@ public:
 	static std::string				get_route_name(ServerConf* servconf,\
 									std::vector<std::string> & data, size_t i, size_t* cursor);
 																				
-	static bool						is_not_empty(const std::string & str);
+	static bool						is_empty(const std::string & str);
 	static bool						is_route_well_formated(std::vector<std::string> & data,\
 												ServerConf* servconf, size_t i, size_t* cursor);
 	static std::vector<std::string> get_methods(ServerConf* servconf,
@@ -121,6 +122,8 @@ public:
 	static bool						is_valid_server_nb(ServerConf* servconf, int nb_servers);
 	static void						fill_route_params(std::vector<std::string> & data,\
 					ServerConf* servconf, size_t i, size_t* cursor, std::string & route_name);
+	static bool						is_valid_host(std::string host);
+	static bool						is_valid_ip(std::vector<std::string> & all_octes);
 
 };
 
