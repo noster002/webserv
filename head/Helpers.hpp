@@ -124,7 +124,7 @@ public:
 					ServerConf* servconf, size_t i, size_t* cursor, std::string & route_name);
 	static bool						is_valid_host(std::string host);
 	static bool						is_valid_ip(std::vector<std::string> & all_octes);
-
+	static bool						is_valid_errors_code(std::vector<std::string> errors_code);
 };
 
 #endif

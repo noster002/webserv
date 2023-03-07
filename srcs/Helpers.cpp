@@ -235,7 +235,6 @@ void			Helpers::fill_port_value( std::string line, ServerConf* servconf,\
 {
 	*cursor += 6;
 	std::string str_port = get_inline_value(servconf, line, cursor);
-	std::cout <<"**" << str_port << "**\n";
 	if (is_empty(str_port))
 	{
 		servconf->setValidation(false);
@@ -311,6 +310,11 @@ void			Helpers::fill_errors_pages( std::string line,ServerConf* servconf,\
 	std::vector<std::string> data = split_by_space_or_tab( std::string(tmp.begin(),\
 																		tmp.end()) );
 	std::vector<std::string> errors_code(data.begin(), data.end() - 1);
+	if (!is_valid_errors_code(errors_code))
+	{
+		servconf->setValidation(false);
+		return ;
+	}
 	std::string errors_page = *(data.end() - 1);
 	servconf->servers[i].err_pages.insert( servconf->servers[i].err_pages.end(),\
 		std::pair<std::vector<std::string>, std::string>(errors_code, errors_page) );
@@ -419,9 +423,23 @@ bool	Helpers::is_route_well_formated(
 std::vector<std::string>  Helpers::get_methods(ServerConf* servconf,
 									std::string & str, size_t *cursor)
 {
+	std::vector<std::string> methods;
 	*cursor += 6;
 	std::string data = get_inline_value(servconf, str, cursor);
-	return split_by_space_or_tab(std::string(data.begin(), data.end()));
+	methods = split_by_space_or_tab(std::string(data.begin(), data.end()));
+	size_t count_post = 0, count_get = 0, count_del = 0;
+	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it)
+	{
+		if (*it == "POST" && count_post == 0)
+			count_post += 1;
+		else if (*it == "GET" && count_get == 0)
+			count_get += 1;
+		else if (*it == "DELETE" && count_del == 0)
+			count_del += 1;
+		else
+			servconf->setValidation(false);
+	}
+	return methods;
 }
 
 void	Helpers::set_dir_listing_options(std::string & str, ServerConf* servconf, 
@@ -587,4 +605,19 @@ bool		Helpers::is_valid_ip(std::vector<std::string> & all_octes)
 			return false;
 	}
 	return true;
+}
+
+bool	Helpers::is_valid_errors_code(std::vector<std::string> errors_code)
+{
+	for (std::vector<std::string>::iterator it = errors_code.begin(); it != errors_code.end(); ++it)
+	{
+		if (it->size() != 3)
+			return false ;
+		for (size_t i = 0; i < it->size(); ++i)
+		{
+			if (!isdigit((*it)[i]))
+				return false ;
+		}
+	}
+	return true ;
 }
