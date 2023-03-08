@@ -1,4 +1,2 @@
-test
-test/*.cpp
-test/run.sh
-test/a.out
+test/*
+.vscode/*
