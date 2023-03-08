@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/02 09:18:24 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 18:47:15 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,38 +20,42 @@
 
 // C++98
 
+# include <map>
 # include <string>
 # include <iostream>
 # include <cstring>
 # include <cerrno>
 
-class	Request;
-
-class	Response
+namespace web
 {
-	public:
+	class	Request;
 
-		Response(void);
-		~Response(void);
+	class	Response
+	{
+		public:
 
-		void		build(Request const & request, std::string & output);
+			Response(void);
+			~Response(void);
 
-	private:
+			void		build(Request const & request, std::string & output);
 
-		std::string			_protocol;
-		int					_status;
-		std::map<std::string, std::string>\
-							_header;
-		std::string			_body;
+		private:
 
-		static std::map<int, std::string>	_status;
-		static std::map<int, std::string>	_init_status(void);
+			std::string			_protocol;
+			int					_status;
+			std::map<std::string, std::string>\
+								_header;
+			std::string			_body;
 
-		// canonical class form
+			static std::map<int, std::string>	_statuses;
+			static std::map<int, std::string>	_init_statuses(void);
 
-		Response(Response const & other);
-		Response &	operator=(Response const & rhs);
+			// canonical class form
 
-};
+			Response(Response const & other);
+			Response &	operator=(Response const & rhs);
+
+	};
+}
 
 #endif

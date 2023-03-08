@@ -6,25 +6,25 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/07 13:39:42 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 18:22:39 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client(int fd, struct sockaddr addr, socklen_t addrlen)\
- : _socket(fd, addr, addrlen), _request(client_max_body_size)
+web::Client::Client(int fd, struct sockaddr addr, socklen_t addrlen)\
+ : _socket(fd, addr, addrlen), _request(1024)
 {
 	return ;
 }
 
-Client::~Client(void)
+web::Client::~Client(void)
 {
 	return ;
 }
 
 
-void		Client::disconnect(void)
+void		web::Client::disconnect(void)
 {
 	try
 	{
@@ -38,23 +38,29 @@ void		Client::disconnect(void)
 	return ;
 }
 
-void		Client::set_non_blocking(void)
+void		web::Client::set_non_blocking(void)
 {
 	_socket.set_non_blocking();
 	return ;
 }
 
-void		Client::set_kevent(int kq, int filter, int flags)
+void		web::Client::set_opt(int filter, int option)
+{
+	_socket.set_opt(filter, option);
+	return ;
+}
+
+void		web::Client::set_kevent(int kq, int filter, int flags)
 {
 	_socket.set_kevent(kq, filter, flags);
 	return ;
 }
 
-void		Client::read(int fd, size_t max_size)
+void		web::Client::read(int fd)
 {
 	std::string		input;
 
-	ssize_t	bytes_read = ::recv(fd, static_cast<void *>(&input), max_size, NULL);
+	ssize_t	bytes_read = ::recv(fd, static_cast<void *>(&input), 1024, 0);
 
 	if (bytes_read < 0)
 	{
@@ -74,13 +80,13 @@ void		Client::read(int fd, size_t max_size)
 	return ;
 }
 
-void		Client::write(int fd)
+void		web::Client::write(int fd)
 {
 	std::string		output;
 
 	_response.build(_request, output);
 
-	ssize_t	bytes_sent = ::send(fd, static_cast<void const *>(&output), output.size(), NULL);
+	ssize_t	bytes_sent = ::send(fd, static_cast<void const *>(&output), output.size(), 0);
 
 	if (bytes_sent < 0)
 	{
@@ -93,15 +99,15 @@ void		Client::write(int fd)
 
 // canonical class form
 
-Client::Client(Client const & other)\
- : _socket(), _request(), _response()
+web::Client::Client(Client const & other)\
+ : _socket(), _request(0), _response()
 {
 	(void)other;
 
 	return ;
 }
 
-Client &	Client::operator=(Client const & rhs)
+web::Client &	web::Client::operator=(Client const & rhs)
 {
 	(void)rhs;
 

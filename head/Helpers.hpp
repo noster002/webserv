@@ -40,6 +40,7 @@
 # define KEY_HOST "host"
 # define DOT '.'
 # define TAB 9
+
 typedef struct	s_route {
 	std::vector<std::string> 	method;
 	bool						directory_listing;
@@ -53,10 +54,10 @@ typedef struct	s_route {
 
 typedef struct s_params {
 	std::string							host;
-	std::vector<int>					port;
+	std::vector<std::string>			port;
 	std::vector<std::string>			s_names;
 	std::map<std::vector<std::string>,\
-			 std::string>				err_pages;
+			std::string>				err_pages;
 	int									client_max_body_size;
 	std::map<std::string, route_t>		routes;
 	std::vector<std::string>			files_extensions;
@@ -65,66 +66,69 @@ typedef struct s_params {
 
 }				params_t;
 
-# include "ServerConf.hpp"
-
-class ServerConf;
+namespace	web
+{
+	class	ServerConf;
+}
 
 class	Helpers {
 
 public:
-	static void						parse_file(ServerConf* servconf, 
+	static void						parse_file(web::ServerConf* servconf, 
 													const std::string & fileconf);
 	static std::vector<std::string>	get_config_data(const std::string & fileconf);
 	static int						count_servers(const std::vector<std::string> & config_data,\
-																			ServerConf* servconf);
+																			web::ServerConf* servconf);
 	static void						skipe_spaces(const std::string & str, size_t* cursor);
 	static int						find_close_symbol(const std::vector<std::string> & config_data,\
 																		size_t* cursor, int level);
 	static	void					skipe_empty_line(const std::vector<std::string> & config_data,\
-																				  size_t* cursor);
-	static	void					fill_host_value(std::string line, ServerConf* servconf,\
+																				size_t* cursor);
+	static	void					fill_host_value(std::string line, web::ServerConf* servconf,\
 																		size_t i, size_t* cursor);
-	static	std::string				get_inline_value(ServerConf* servconf,\
+	static	std::string				get_inline_value(web::ServerConf* servconf,\
 														const std::string & line, size_t* cursor);
-	static	void					fill_port_value(std::string line, ServerConf* servconf,\
+	static	void					fill_port_value(std::string line, web::ServerConf* servconf,\
 																		size_t i, size_t* cursor);
-	static	void					fill_server_name(std::string line, ServerConf* servconf,\
+	static	void					fill_server_name(std::string line, web::ServerConf* servconf,\
 																		size_t i,size_t* cursor);
-	static	void					fill_errors_pages(std::string line, ServerConf* servconf,\
+	static	void					fill_errors_pages(std::string line, web::ServerConf* servconf,\
 																		size_t i,size_t* cursor);
 	static	void					fill_client_max_body_size(std::string line,\
-												ServerConf* servconf, size_t i, size_t* cursor);
+												web::ServerConf* servconf, size_t i, size_t* cursor);
 	static	void					fill_routes(std::vector<std::string> & data,\
-												ServerConf* servconf, size_t i, size_t* cursor);
+												web::ServerConf* servconf, size_t i, size_t* cursor);
 	static std::vector<std::string> split_by_space_or_tab(std::string str);
-	static std::string				get_route_name(ServerConf* servconf,\
+	static std::string				get_route_name(web::ServerConf* servconf,\
 									std::vector<std::string> & data, size_t i, size_t* cursor);
 																				
 	static bool						is_empty(const std::string & str);
 	static bool						is_route_well_formated(std::vector<std::string> & data,\
-												ServerConf* servconf, size_t i, size_t* cursor);
-	static std::vector<std::string> get_methods(ServerConf* servconf,
+												web::ServerConf* servconf, size_t i, size_t* cursor);
+	static std::vector<std::string> get_methods(web::ServerConf* servconf,
 											std::string & str, size_t *cursor);
 	static void						set_dir_listing_options(std::string & str,\
-									ServerConf* servconf, route_t* route, size_t* cursor);
-	static void						set_root(std::string & str, ServerConf* servconf,\
+									web::ServerConf* servconf, route_t* route, size_t* cursor);
+	static void						set_root(std::string & str, web::ServerConf* servconf,\
 															route_t* route, size_t* cursor);
-	static void						set_index(std::string & str, ServerConf* servconf,\
+	static void						set_index(std::string & str, web::ServerConf* servconf,\
 															route_t* route, size_t* cursor);	
-	static void						set_upload(std::string & str, ServerConf* servconf,\
+	static void						set_upload(std::string & str, web::ServerConf* servconf,\
 															route_t* route, size_t* cursor);
-	static void						set_redirect(std::string & str, ServerConf* servconf,\
+	static void						set_redirect(std::string & str, web::ServerConf* servconf,\
 																route_t* route, size_t* cursor);
-	static void						set_cgi_ext(std::string & str, ServerConf* servconf,\
+	static void						set_cgi_ext(std::string & str, web::ServerConf* servconf,\
 																route_t* route, size_t* cursor);
-	static void						set_cgi_pass(std::string & str, ServerConf* servconf,\
+	static void						set_cgi_pass(std::string & str, web::ServerConf* servconf,\
 																route_t* route, size_t* cursor);
-	static bool						is_valid_server_nb(ServerConf* servconf, int nb_servers);
+	static bool						is_valid_server_nb(web::ServerConf* servconf, int nb_servers);
 	static void						fill_route_params(std::vector<std::string> & data,\
-					ServerConf* servconf, size_t i, size_t* cursor, std::string & route_name);
+					web::ServerConf* servconf, size_t i, size_t* cursor, std::string & route_name);
 	static bool						is_valid_host(std::string host);
 	static bool						is_valid_ip(std::vector<std::string> & all_octes);
 	static bool						is_valid_errors_code(std::vector<std::string> errors_code);
 };
+
+# include "ServerConf.hpp"
 
 #endif

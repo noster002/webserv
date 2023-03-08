@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:21 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/01 10:07:02 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 18:39:52 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 
 # include <sys/socket.h>
 # include <arpa/inet.h>
+# include <sys/event.h>
+# include <netdb.h>
 # include <fcntl.h>
 # include <unistd.h>
 
@@ -28,76 +30,83 @@
 # include <cstring>
 # include <cerrno>
 
-class	Socket
+namespace web
 {
-	public:
+	class	Socket
+	{
+		public:
 
-		Socket(void);
-		Socket(int fd, struct sockaddr addr, socklen_t addrlen);
-		~Socket(void);
+			Socket(void);
+			Socket(int fd, struct sockaddr addr, socklen_t addrlen);
+			~Socket(void);
 
-		int			get_fd(void);
+			int			get_fd(void);
 
-		void		clean(void);
-		void		close(void);
-		void		get_addr_info(char const * hostname, \
-								char const * port, \
-								struct addrinfo * hints);
-		void		create(void);
-		void		set_non_blocking(void);
-		void		set_opt(int level, int option);
-		void		bind(void);
-		void		listen(int max_pending_clients);
-		void		set_kevent(int kq, int filter, int flags);
+			void		clean(void);
+			void		close(void);
+			void		get_addr_info(char const * hostname, \
+									char const * port, \
+									struct addrinfo * hints);
+			void		create(void);
+			void		set_non_blocking(void);
+			void		set_opt(int level, int option);
+			void		bind(void);
+			void		listen(int max_pending_clients);
+			void		set_kevent(int kq, int filter, int flags);
 
-	private:
+		private:
 
-		int							_err;
-		int							_fd;
-		struct addrinfo *			_addr;
-		struct kevent				_event_set;
+			int							_err;
+			int							_fd;
+			struct addrinfo *			_addr;
+			struct sockaddr				_sockaddr;
+			socklen_t					_sockaddrlen;
+			struct kevent				_event_set;
 
 
-		// exceptions
+			// exceptions
 
-		int			_level;
+			class		Exception;
 
-		class		Exception;
+			// canonical class form
 
-		// canonical class form
+			Socket(Socket const & other);
+			Socket &	operator=(Socket const & rhs);
 
-		Socket(Socket const & other);
-		Socket &	operator=(Socket const & rhs);
+	};
 
-};
+	enum		e_level
+	{
+		e_close, \
+		e_get_addr_info, \
+		e_create, \
+		e_set_non_blocking, \
+		e_set_opt, \
+		e_bind, \
+		e_listen, \
+		e_set_kevent
+	};
 
-enum		e_level
-{
-	close, \
-	get_addr_info, \
-	create, \
-	set_non_blocking, \
-	set_opt, \
-	bind, \
-	listen, \
-	set_kevent
-};
+	class		Socket::Exception : public std::exception
+	{
+		public:
 
-class		Socket::Exception : public std::exception
-{
-	public:
+			Exception(int lvl);
 
-		char const *			what(void) const throw();
+			int						level;
 
-		static char const *		close(void);
-		static char const *		get_addr_info(void);
-		static char const *		create(void);
-		static char const *		set_non_blocking(void);
-		static char const *		set_opt(void);
-		static char const *		bind(void);
-		static char const *		listen(void);
-		static char const *		set_kevent(void);
+			char const *			what(void) const throw();
 
-};
+			static char const *		close(void);
+			static char const *		get_addr_info(void);
+			static char const *		create(void);
+			static char const *		set_non_blocking(void);
+			static char const *		set_opt(void);
+			static char const *		bind(void);
+			static char const *		listen(void);
+			static char const *		set_kevent(void);
+
+	};
+}
 
 #endif

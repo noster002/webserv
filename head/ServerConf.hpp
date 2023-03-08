@@ -3,37 +3,44 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConf.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fakouyat <fakouyat@student.42wolfsburg.    +#+  +:+       +#+        */
+/*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:47 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 22:51:11 by fakouyat         ###   ########.fr       */
+/*   Updated: 2023/03/08 17:59:01 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVERCONF_HPP
 # define SERVERCONF_HPP
 # include <string>
-# include "../head/Helpers.hpp"
+# include "Helpers.hpp"
+# include "Server.hpp"
 
-class	ServerConf
+namespace web
 {
-	public:
-		ServerConf(char const * filename);
-		~ServerConf(void);
+	class	ServerConf
+	{
+		public:
+			ServerConf(char const * filename);
+			~ServerConf(void);
 
-		int						parse(void);
-		bool					getValidation() const;
-		void					setValidation(bool status);
-		std::vector<params_t>	servers;	
+			int						parse(void);
+			bool					getValidation() const;
+			void					setValidation(bool status);
+			std::vector<params_t>	servers;	
 
-	private:
-		bool 					validation;
-		std::string				_file;
+			void					run(void);
 
-		// canonical class form
-		ServerConf(void);
-		ServerConf(ServerConf const & other);
-		ServerConf &			operator=(ServerConf const & rhs);
-};
+		private:
+			bool 					validation;
+			std::string				_file;
+
+			// canonical class form
+			ServerConf(void);
+			ServerConf(ServerConf const & other);
+			ServerConf &			operator=(ServerConf const & rhs);
+	};
+}
+
 
 #endif

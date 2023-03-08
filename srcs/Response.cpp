@@ -6,117 +6,118 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/07 13:39:14 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 18:49:48 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(void)
+web::Response::Response(void)
 {
-	_initstatus();
-
+	(void)_status;
 	return ;
 }
 
-Response::~Response(void)
-{
-	return ;
-}
-
-void		Response::build(Request const & request, std::string & output)
+web::Response::~Response(void)
 {
 	return ;
 }
 
-std::map<int, std::string>		Response::_init_status(void)
+void		web::Response::build(Request const & request, std::string & output)
 {
-	std::map<int, std::string>	status;
-
-	status[100] = "Continue";
-	status[101] = "Switching Protocols";
-	status[102] = "Processing";
-	status[103] = "Early Hints";
-
-	status[200] = "OK";
-	status[201] = "Created";
-	status[202] = "Accepted";
-	status[203] = "Non-Authoritative Information";
-	status[204] = "No Content";
-	status[205] = "Reset Content";
-	status[206] = "Partial Content";
-	status[207] = "Multi-Status";
-	status[208] = "Already Reported";
-	status[226] = "IM Used";
-
-	status[300] = "Multiple Choices";
-	status[301] = "Moved Permanently";
-	status[302] = "Found";
-	status[303] = "See Other";
-	status[304] = "Not Modified";
-	status[305] = "Use Proxy";
-	status[306] = "Switch Proxy";
-	status[307] = "Temporary Redirect";
-	status[308] = "Permanent Redirect";
-
-	status[400] = "Bad Request";
-	status[401] = "Unauthorized";
-	status[402] = "Payment Required";
-	status[403] = "Forbidden";
-	status[404] = "Not Found";
-	status[405] = "Method Not Allowed";
-	status[406] = "Not Acceptable";
-	status[407] = "Proxy Authentication Required";
-	status[408] = "Request Timeout";
-	status[409] = "Conflict";
-	status[410] = "Gone";
-	status[411] = "Length Required";
-	status[412] = "Precondition Failed";
-	status[413] = "Content Too Large";
-	status[414] = "URI Too Long";
-	status[415] = "Unsupported Media Type";
-	status[416] = "Range Not Satisfiable";
-	status[417] = "Expectation Failed";
-	status[418] = "I'm a teapot";
-	status[421] = "Misdirected Request";
-	status[422] = "Unprocessable Content";
-	status[423] = "Locked";
-	status[424] = "Failed Dependency";
-	status[425] = "Too Early";
-	status[426] = "Upgrade Required";
-	status[428] = "Precondition Required";
-	status[429] = "Too Many Requests";
-	status[431] = "Request Header Fields Too Large";
-	status[451] = "Unavailable For Legal Reasons";
-
-	status[500] = "Internal Server Error";
-	status[501] = "Not Implemented";
-	status[502] = "Bad Gateway";
-	status[503] = "Service Unavailable";
-	status[504] = "Gateway Timeout";
-	status[505] = "HTTP Version Not Supported";
-	status[506] = "Variant Also Negotiates";
-	status[507] = "Insufficient Storage";
-	status[508] = "Loop Detected";
-	status[510] = "Not Extended";
-	status[511] = "Network Authentication Required";
-
-	return (status);
+	(void)request;
+	(void)output;
+	return ;
 }
 
-std::map<int, std::string>		Response::_status = Response::_init_status();
+std::map<int, std::string>		web::Response::_init_statuses(void)
+{
+	std::map<int, std::string>	statuses;
+
+	statuses[100] = "Continue";
+	statuses[101] = "Switching Protocols";
+	statuses[102] = "Processing";
+	statuses[103] = "Early Hints";
+
+	statuses[200] = "OK";
+	statuses[201] = "Created";
+	statuses[202] = "Accepted";
+	statuses[203] = "Non-Authoritative Information";
+	statuses[204] = "No Content";
+	statuses[205] = "Reset Content";
+	statuses[206] = "Partial Content";
+	statuses[207] = "Multi-Status";
+	statuses[208] = "Already Reported";
+	statuses[226] = "IM Used";
+
+	statuses[300] = "Multiple Choices";
+	statuses[301] = "Moved Permanently";
+	statuses[302] = "Found";
+	statuses[303] = "See Other";
+	statuses[304] = "Not Modified";
+	statuses[305] = "Use Proxy";
+	statuses[306] = "Switch Proxy";
+	statuses[307] = "Temporary Redirect";
+	statuses[308] = "Permanent Redirect";
+
+	statuses[400] = "Bad Request";
+	statuses[401] = "Unauthorized";
+	statuses[402] = "Payment Required";
+	statuses[403] = "Forbidden";
+	statuses[404] = "Not Found";
+	statuses[405] = "Method Not Allowed";
+	statuses[406] = "Not Acceptable";
+	statuses[407] = "Proxy Authentication Required";
+	statuses[408] = "Request Timeout";
+	statuses[409] = "Conflict";
+	statuses[410] = "Gone";
+	statuses[411] = "Length Required";
+	statuses[412] = "Precondition Failed";
+	statuses[413] = "Content Too Large";
+	statuses[414] = "URI Too Long";
+	statuses[415] = "Unsupported Media Type";
+	statuses[416] = "Range Not Satisfiable";
+	statuses[417] = "Expectation Failed";
+	statuses[418] = "I'm a teapot";
+	statuses[421] = "Misdirected Request";
+	statuses[422] = "Unprocessable Content";
+	statuses[423] = "Locked";
+	statuses[424] = "Failed Dependency";
+	statuses[425] = "Too Early";
+	statuses[426] = "Upgrade Required";
+	statuses[428] = "Precondition Required";
+	statuses[429] = "Too Many Requests";
+	statuses[431] = "Request Header Fields Too Large";
+	statuses[451] = "Unavailable For Legal Reasons";
+
+	statuses[500] = "Internal Server Error";
+	statuses[501] = "Not Implemented";
+	statuses[502] = "Bad Gateway";
+	statuses[503] = "Service Unavailable";
+	statuses[504] = "Gateway Timeout";
+	statuses[505] = "HTTP Version Not Supported";
+	statuses[506] = "Variant Also Negotiates";
+	statuses[507] = "Insufficient Storage";
+	statuses[508] = "Loop Detected";
+	statuses[510] = "Not Extended";
+	statuses[511] = "Network Authentication Required";
+
+	return (statuses);
+}
+
+std::map<int, std::string>		web::Response::_statuses = Response::_init_statuses();
 
 
 // canonical class form
 
-Response::Response(Response const & other)
+web::Response::Response(Response const & other)
 {
 	(void)other;
 
 	return ;
 }
 
-Response &	Response::operator=(Response const & rhs)
+web::Response &	web::Response::operator=(Response const & rhs)
 {
 	(void)rhs;
 

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/07 13:39:04 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 18:22:54 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,19 +14,19 @@
 
 // constructor & destructor
 
-Server::Server(std::string const & filename)\
- : _socket(), _kq(-1), _event(), _max_pending_clients(0)
+web::Server::Server(params_t const & conf)\
+ : _socket(), _kq(-1), _event(), _max_pending_clients(0), _conf(conf)
 {
 	return ;
 }
 
-Server::~Server(void)
+web::Server::~Server(void)
 {
 	return ;
 }
 
 
-void		Server::set_addr_info(void)
+void		web::Server::set_addr_info(void)
 {
 	struct addrinfo		hints;
 	struct protoent *	protocol;
@@ -35,19 +35,19 @@ void		Server::set_addr_info(void)
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = protocol.p_proto;
+	hints.ai_protocol = protocol->p_proto;
 	hints.ai_flags = 0;
 	hints.ai_addrlen = 0;
 	hints.ai_addr = NULL;
 	hints.ai_canonname = NULL;
 	hints.ai_next = NULL;
 
-	_socket.get_addr_info(/* hostname */, /* port */, &hints);
+	_socket.get_addr_info(_conf.host.c_str(), _conf.port[0].c_str(), &hints);
 
 	return ;
 }
 
-int			Server::setup_socket(void)
+int			web::Server::setup_socket(void)
 {
 	try
 	{
@@ -67,7 +67,7 @@ int			Server::setup_socket(void)
 	return (0);
 }
 
-int			Server::setup_kqueue(void)
+int			web::Server::setup_kqueue(void)
 {
 	_kq = ::kqueue();
 
@@ -94,7 +94,7 @@ int			Server::setup_kqueue(void)
 	return (0);
 }
 
-void		Server::run(void)
+void		web::Server::run(void)
 {
 	if (setup_socket() < 0 || setup_kqueue() < 0)
 	{
@@ -117,7 +117,7 @@ void		Server::run(void)
 
 		for (int i = 0; i < event_count; ++i)
 		{
-			if (_event.ident == _sock)
+			if (static_cast<int>(_event.ident) == _socket.get_fd())
 				event_client_connect(_event);
 			else if (_event.flags & EV_EOF)
 				event_eof(_event);
@@ -127,7 +127,7 @@ void		Server::run(void)
 	}
 }
 
-void		Server::event_client_connect(struct kevent const & event)
+void		web::Server::event_client_connect(struct kevent const & event)
 {
 	struct sockaddr		addr;
 	socklen_t			addrlen = sizeof(addr);
@@ -137,7 +137,7 @@ void		Server::event_client_connect(struct kevent const & event)
 	if (fd < 0)
 	{
 		std::cerr << "accept: " << std::strerror(errno) << std::endl;
-		return (-1);
+		return ;
 	}
 
 	_client[fd] = new Client(fd, addr, addrlen);
@@ -151,19 +151,19 @@ void		Server::event_client_connect(struct kevent const & event)
 	{
 		std::cerr << e.what() << std::endl;
 		_client[fd]->disconnect();
-		return (-1);
+		return ;
 	}
 
-	return (0);
+	return ;
 }
 
-void		Server::event_client_disconnect(struct kevent const & event)
+void		web::Server::event_client_disconnect(struct kevent const & event)
 {
 	int		fd = event.ident;
 
 	try
 	{
-		_client[fd]->set_kevent(EVFILT_READ, EV_DELETE);
+		_client[fd]->set_kevent(_kq, EVFILT_READ, EV_DELETE);
 	}
 	catch (std::exception const & e)
 	{
@@ -175,17 +175,17 @@ void		Server::event_client_disconnect(struct kevent const & event)
 	return ;
 }
 
-void		Server::event_eof(struct kevent const & event)
+void		web::Server::event_eof(struct kevent const & event)
 {
 	event_client_disconnect(event);
 	return ;
 }
 
-void		Server::event_read(struct kevent const & event)
+void		web::Server::event_read(struct kevent const & event)
 {
 	int		fd = event.ident;
 
-	_client[fd]->read(fd, /* max_size */);
+	_client[fd]->read(fd);
 
 	_client[fd]->write(fd);
 
@@ -196,21 +196,21 @@ void		Server::event_read(struct kevent const & event)
 
 // canonical class form
 
-Server::Server(void)\
+web::Server::Server(void)\
  : _socket(), _kq(), _event(), _max_pending_clients(), _client()
 {
 	return ;
 }
 
-Server::Server(Server const & other)\
+web::Server::Server(Server const & other)\
  : _socket(), _kq(other._kq), _event(other._event), \
    _max_pending_clients(other._max_pending_clients), \
-   _client(other._client);
+   _client()
 {
 	return ;
 }
 
-Server &				Server::operator=(Server const & rhs)
+web::Server &				web::Server::operator=(Server const & rhs)
 {
 	_kq = rhs._kq;
 	_event = rhs._event;

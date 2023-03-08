@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 10:31:09 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/23 12:20:20 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 17:23:10 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ int		main(int argc, char** argv)
 	if (argc != 2)
 		return (Error::arg());
 
-	ServerConf	servers(argv[1]);
+	web::ServerConf	servers(argv[1]);
 
 	servers.run();
 

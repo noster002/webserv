@@ -6,27 +6,27 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:08 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/01 10:16:41 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 18:41:46 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Socket.hpp"
 
-Socket::Socket(void) : _err(0), _fd(), _addr()
+web::Socket::Socket(void) : _err(0), _fd(), _addr()
 {
 	return ;
 }
 
-Socket::Socket(int fd, struct sockaddr addr, socklen_t addrlen)\
- : _err(0), _fd(fd), _addr()
+web::Socket::Socket(int fd, struct sockaddr addr, socklen_t addrlen)\
+ : _err(0), _fd(fd)
 {
-	_addr.ai_addr = &addr;
-	_addr.ai_addrlen = addrlen;
+	_sockaddr = addr;
+	_sockaddrlen = addrlen;
 
 	return ;
 }
 
-Socket::~Socket(void)
+web::Socket::~Socket(void)
 {
 	clean();
 
@@ -34,12 +34,12 @@ Socket::~Socket(void)
 }
 
 
-int			Socket::getFd(void)
+int			web::Socket::get_fd(void)
 {
 	return (_fd);
 }
 
-void		Socket::clean(void)
+void		web::Socket::clean(void)
 {
 	::freeaddrinfo(_addr);
 	try
@@ -52,59 +52,55 @@ void		Socket::clean(void)
 	}
 }
 
-void		Socket::close(void)
+void		web::Socket::close(void)
 {
 	_err = ::close(_fd);
 
 	if (_err < 0)
 	{
 		std::cerr << "close fd: " << _fd << ": " << std::strerror(errno) << std::endl;
-		_level = close;
-		throw Exception;
+		throw Exception(e_close);
 	}
 }
 
-void		Socket::get_addr_info(char const * hostname, \
+void		web::Socket::get_addr_info(char const * hostname, \
 								char const * port, \
 								struct addrinfo * hints)
 {
-	_err = ::get_addr_info(hostname, port, hints, &_addr);
+	_err = ::getaddrinfo(hostname, port, hints, &_addr);
 
 	if (_err)
 	{
 		std::cerr << "get_addr_info: " << ::gai_strerror(_err) << std::endl;
-		_level = get_addr_info;
-		throw Exception;
+		throw Exception(e_get_addr_info);
 	}
 }
 
-void		Socket::create(void)
+void		web::Socket::create(void)
 {
 	_err = ::socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
 
 	if (_err < 0)
 	{
 		std::cerr << "socket: " << std::strerror(errno) << std::endl;
-		_level = create;
-		throw Exception;
+		throw Exception(e_create);
 	}
 
 	_fd = _err;
 }
 
-void		Socket::set_non_blocking(void)
+void		web::Socket::set_non_blocking(void)
 {
 	_err = ::fcntl(_fd, F_SETFL, O_NONBLOCK);
 
 	if (_err < 0)
 	{
 		std::cerr << "fcntl: " << std::strerror(errno) << std::endl;
-		_level = set_non_blocking;
-		throw Exception;
+		throw Exception(e_set_non_blocking);
 	}
 }
 
-void		Socket::set_opt(int level, int option)
+void		web::Socket::set_opt(int level, int option)
 {
 	int		one = 1;
 
@@ -115,36 +111,33 @@ void		Socket::set_opt(int level, int option)
 	{
 		std::cerr << "setsockopt: level: " << level << " option: " << option;
 		std::cerr << ": " << std::strerror(errno) << std::endl;
-		_level = set_opt;
-		throw Exception;
+		throw Exception(e_set_opt);
 	}
 }
 
-void		Socket::bind(void)
+void		web::Socket::bind(void)
 {
-	_err = ::bind(_fd, _addr.ai_addr, _addr.ai_addrlen);
+	_err = ::bind(_fd, _addr->ai_addr, _addr->ai_addrlen);
 
 	if (_err < 0)
 	{
 		std::cerr << "bind: " << std::strerror(errno) << std::endl;
-		_level = bind;
-		throw Exception;
+		throw Exception(e_bind);
 	}
 }
 
-void		Socket::listen(int max_pending_clients)
+void		web::Socket::listen(int max_pending_clients)
 {
 	_err = ::listen(_fd, max_pending_clients);
 
 	if (_err < 0)
 	{
 		std::cerr << "listen: " << std::strerror(errno) << std::endl;
-		_level = listen;
-		throw Exception;
+		throw Exception(e_listen);
 	}
 }
 
-void		Socket::set_kevent(int kq, int filter, int flags)
+void		web::Socket::set_kevent(int kq, int filter, int flags)
 {
 	EV_SET(&_event_set, _fd, filter, flags, 0, 0, NULL);
 
@@ -153,22 +146,21 @@ void		Socket::set_kevent(int kq, int filter, int flags)
 	if (_err < 0)
 	{
 		std::cerr << "kevent: " << std::strerror(errno) << std::endl;
-		_level = set_kevent;
-		throw Exception;
+		throw Exception(e_set_kevent);
 	}
 }
 
 
 // canonical class form
 
-Socket::Socket(Socket const & other)\
+web::Socket::Socket(Socket const & other)\
  : _err(other._err), _fd(other._fd), _addr(other._addr),\
    _event_set(other._event_set)
 {
 	return ;
 }
 
-Socket &			Socket::operator=(Socket const & rhs)
+web::Socket &			web::Socket::operator=(Socket const & rhs)
 {
 	_err = rhs._err;
 	_fd = rhs._fd;
@@ -181,65 +173,68 @@ Socket &			Socket::operator=(Socket const & rhs)
 
 // exceptions
 
-char const *		Socket::Exception::what(void) const throw()
+web::Socket::Exception::Exception(int lvl) : level(lvl) {}
+
+char const *		web::Socket::Exception::what(void) const throw()
 {
-	switch (_level)
+	switch (level)
 	{
-		case close:
+		case e_close:
 			return (Exception::close());
-		case get_addr_info:
+		case e_get_addr_info:
 			return (Exception::get_addr_info());
-		case create:
+		case e_create:
 			return (Exception::create());
-		case set_non_blocking:
+		case e_set_non_blocking:
 			return (Exception::set_non_blocking());
-		case set_opt:
+		case e_set_opt:
 			return (Exception::set_opt());
-		case bind:
+		case e_bind:
 			return (Exception::bind());
-		case listen:
+		case e_listen:
 			return (Exception::listen());
-		case set_kevent:
+		case e_set_kevent:
 			return (Exception::set_kevent());
 	}
+	return ("Undefined Error");
 }
 
-char const *		Socket::Exception::close(void)
+char const *		web::Socket::Exception::close(void)
 {
 	return ("Socket: error while closing");
 }
 
-char const *		Socket::Exception::get_addr_info(void)
+char const *		web::Socket::Exception::get_addr_info(void)
 {
 	return ("Socket: cannot get addrinfo struct");
 }
 
-char const *		Socket::Exception::create(void)
+char const *		web::Socket::Exception::create(void)
 {
 	return ("Socket: cannot create socket");
 }
 
-char const *		Socket::Exception::set_non_blocking(void)
+char const *		web::Socket::Exception::set_non_blocking(void)
 {
 	return ("Socket: cannot set socket nonblocking");
 }
 
-char const *		Socket::Exception::set_opt(void)
+char const *		web::Socket::Exception::set_opt(void)
 {
 	return ("Socket: cannot set socket to user defined options");
 }
 
-char const *		Socket::Exception::bind(void)
+char const *		web::Socket::Exception::bind(void)
 {
 	return ("Socket: cannot bind socket");
 }
 
-char const *		Socket::Exception::listen(void)
+char const *		web::Socket::Exception::listen(void)
 {
 	return ("Socket: cannot listen");
 }
 
-char const *		Socket::Exception::set_kevent(void)
+char const *		web::Socket::Exception::set_kevent(void)
 {
 	return ("Socket: cannot set kevent");
 }

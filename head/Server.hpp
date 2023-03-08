@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/01 10:00:00 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 17:23:42 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,42 +36,48 @@
 
 # include "Socket.hpp"
 # include "Client.hpp"
+# include "ServerConf.hpp"
 
-class	Server
+namespace web
 {
-	public:
+	class	Server
+	{
+		public:
 
-		Server(std::string const & filename);
-		~Server(void);
+			Server(params_t const & conf);
+			~Server(void);
 
-		void	run(void);
+			void	run(void);
 
-		int		setup_socket(void);
-		int		setup_kqueue(void);
+			int		setup_socket(void);
+			int		setup_kqueue(void);
 
-		void	event_client_connect(struct kevent const & event);
-		void	event_client_disconnect(struct kevent const & event);
-		void	event_eof(struct kevent const & event);
-		void	event_read(struct kevent const & event);
+			void	event_client_connect(struct kevent const & event);
+			void	event_client_disconnect(struct kevent const & event);
+			void	event_eof(struct kevent const & event);
+			void	event_read(struct kevent const & event);
 
-	private:
+		private:
 
-		Socket						_socket;
-		int							_kq;
-		struct kevent				_event;
-		int							_max_pending_clients;
+			Socket						_socket;
+			int							_kq;
+			struct kevent				_event;
+			int							_max_pending_clients;
 
-		std::map<int, Client *>		_client;
+			params_t					_conf;
 
-		void	set_addr_info(void);
+			std::map<int, Client *>		_client;
+
+			void	set_addr_info(void);
 
 
-		// canonical class form
+			// canonical class form
 
-		Server(void);
-		Server(Server const & other);
-		Server &	operator=(Server const & rhs);
+			Server(void);
+			Server(Server const & other);
+			Server &	operator=(Server const & rhs);
 
-};
+	};
+}
 
 #endif

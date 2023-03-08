@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../head/Helpers.hpp"
+#include "Helpers.hpp"
 
 std::vector<std::string>	Helpers::get_config_data(const std::string & fileconf)
 {
@@ -30,7 +30,7 @@ std::vector<std::string>	Helpers::get_config_data(const std::string & fileconf)
 }
 
 
-void			Helpers::parse_file(ServerConf* servconf, const std::string & fileconf)
+void			Helpers::parse_file(web::ServerConf* servconf, const std::string & fileconf)
 {
 	int							nb_server;
 	std::fstream				conf_file(fileconf);
@@ -106,7 +106,7 @@ void			Helpers::parse_file(ServerConf* servconf, const std::string & fileconf)
 }
 
 int  			Helpers::count_servers( const std::vector<std::string> & config_data,\
-																ServerConf* servconf )
+																web::ServerConf* servconf )
 {
 	int				nb = 0;
 	size_t			data_len = config_data.size(), j;
@@ -216,7 +216,7 @@ void			Helpers::skipe_empty_line ( const std::vector<std::string> & config_data,
 	}
 }
 
-void			Helpers::fill_host_value( std::string line, ServerConf* servconf,\
+void			Helpers::fill_host_value( std::string line, web::ServerConf* servconf,\
 														 size_t i, size_t* cursor)
 {
 	*cursor += 4;
@@ -230,29 +230,28 @@ void			Helpers::fill_host_value( std::string line, ServerConf* servconf,\
 	}
 }
 
-void			Helpers::fill_port_value( std::string line, ServerConf* servconf,\
+void			Helpers::fill_port_value( std::string line, web::ServerConf* servconf,\
 														size_t i, size_t* cursor)
 {
 	*cursor += 6;
-	std::string str_port = get_inline_value(servconf, line, cursor);
-	if (is_empty(str_port))
+	std::string port = get_inline_value(servconf, line, cursor);
+	if (is_empty(port))
 	{
 		servconf->setValidation(false);
 		return ;
 	}
-	for (size_t it = 0; it < str_port.size(); ++it)
+	for (size_t it = 0; it < port.size(); ++it)
 	{
-		if (!isdigit(str_port[it]) && (str_port[it] != TAB && str_port[it] != SPACE))
+		if (!isdigit(port[it]) && (port[it] != TAB && port[it] != SPACE))
 		{
 			servconf->setValidation(false);
 			return;
 		}
 	}
-	int port = std::atoi(str_port.c_str());
 	servconf->servers[i].port.push_back(port);
 }
 
-void			Helpers::fill_server_name( std::string line, ServerConf* servconf,\
+void			Helpers::fill_server_name( std::string line, web::ServerConf* servconf,\
 															size_t i, size_t* cursor)
 {
 	*cursor += 11;
@@ -262,7 +261,7 @@ void			Helpers::fill_server_name( std::string line, ServerConf* servconf,\
 				);
 }
 
-std::string		Helpers::get_inline_value(ServerConf* servconf, const std::string & line,\
+std::string		Helpers::get_inline_value(web::ServerConf* servconf, const std::string & line,\
 																			size_t* cursor)
 {
 	std::string value = "";
@@ -302,7 +301,7 @@ std::vector<std::string> Helpers::split_by_space_or_tab(std::string str)
 	return (splited);
 }
 
-void			Helpers::fill_errors_pages( std::string line,ServerConf* servconf,\
+void			Helpers::fill_errors_pages( std::string line,web::ServerConf* servconf,\
 															size_t i, size_t* cursor)
 {
 	*cursor += 10;
@@ -321,7 +320,7 @@ void			Helpers::fill_errors_pages( std::string line,ServerConf* servconf,\
 }
 
 void					Helpers::fill_client_max_body_size( std::string line,\
-									ServerConf* servconf, size_t i, size_t* cursor)
+									web::ServerConf* servconf, size_t i, size_t* cursor)
 {
 	*cursor += 20;
 	std::string tmp = get_inline_value(servconf, line, cursor);
@@ -329,7 +328,7 @@ void					Helpers::fill_client_max_body_size( std::string line,\
 }
 
 void					Helpers::fill_routes( std::vector<std::string> & data,\
-							ServerConf* servconf, size_t i, size_t* cursor )
+							web::ServerConf* servconf, size_t i, size_t* cursor )
 {
 	*cursor += 5;
 	route_t routes;
@@ -355,7 +354,7 @@ void					Helpers::fill_routes( std::vector<std::string> & data,\
 }
 
 std::string				Helpers::get_route_name(
-						ServerConf* servconf,\
+						web::ServerConf* servconf,\
 						std::vector<std::string> & data,\
 						size_t i,\
 						size_t* cursor
@@ -390,7 +389,7 @@ bool	Helpers::is_empty(const std::string & str)
 
 bool	Helpers::is_route_well_formated(
 		std::vector<std::string> & data, \
-		ServerConf* servconf, \
+		web::ServerConf* servconf, \
 		size_t i,\
 		size_t* cursor )
 {
@@ -420,7 +419,7 @@ bool	Helpers::is_route_well_formated(
 	return true;
 }
 
-std::vector<std::string>  Helpers::get_methods(ServerConf* servconf,
+std::vector<std::string>  Helpers::get_methods(web::ServerConf* servconf,
 									std::string & str, size_t *cursor)
 {
 	std::vector<std::string> methods;
@@ -442,7 +441,7 @@ std::vector<std::string>  Helpers::get_methods(ServerConf* servconf,
 	return methods;
 }
 
-void	Helpers::set_dir_listing_options(std::string & str, ServerConf* servconf, 
+void	Helpers::set_dir_listing_options(std::string & str, web::ServerConf* servconf, 
 												route_t* route, size_t* cursor)
 {
 	*cursor += 17;
@@ -455,49 +454,49 @@ void	Helpers::set_dir_listing_options(std::string & str, ServerConf* servconf,
 	route->directory_listing = (value == "on")? true : false;
 }
 
-void	Helpers::set_root(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+void	Helpers::set_root(std::string & str, web::ServerConf* servconf, route_t* route, size_t* cursor)
 {
 	*cursor += 4;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->root = value;
 }
 
-void	Helpers::set_index(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+void	Helpers::set_index(std::string & str, web::ServerConf* servconf, route_t* route, size_t* cursor)
 {
 	*cursor += 5;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->index = value;
 }
 
-void	Helpers::set_upload(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+void	Helpers::set_upload(std::string & str, web::ServerConf* servconf, route_t* route, size_t* cursor)
 {
 	*cursor += 6;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->upload = value;
 }
 
-void	Helpers::set_redirect(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+void	Helpers::set_redirect(std::string & str, web::ServerConf* servconf, route_t* route, size_t* cursor)
 {
 	*cursor += 8;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->upload = value;
 }
 
-void	Helpers::set_cgi_ext(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+void	Helpers::set_cgi_ext(std::string & str, web::ServerConf* servconf, route_t* route, size_t* cursor)
 {
 	*cursor += 7;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->cgi_ext = value;
 }
 
-void	Helpers::set_cgi_pass(std::string & str, ServerConf* servconf, route_t* route, size_t* cursor)
+void	Helpers::set_cgi_pass(std::string & str, web::ServerConf* servconf, route_t* route, size_t* cursor)
 {
 	*cursor += 8;
 	std::string value = get_inline_value(servconf, str, cursor);
 	route->cgi_pass = value;
 }
 
-bool						Helpers::is_valid_server_nb(ServerConf* servconf, int nb_servers)
+bool						Helpers::is_valid_server_nb(web::ServerConf* servconf, int nb_servers)
 {
 	if (nb_servers < 0)
 	{
@@ -507,7 +506,7 @@ bool						Helpers::is_valid_server_nb(ServerConf* servconf, int nb_servers)
 	return true;
 }
 
-void	Helpers::fill_route_params(std::vector<std::string> & data, ServerConf* servconf,\
+void	Helpers::fill_route_params(std::vector<std::string> & data, web::ServerConf* servconf,\
 										size_t i, size_t* cursor, std::string & route_name)
 {
 	skipe_empty_line(data, &servconf->servers[i].start_data);

@@ -6,30 +6,31 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/07 14:09:58 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/08 18:46:50 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
-Request::Request(size_t client_max_body_size)\
+web::Request::Request(size_t client_max_body_size)\
  : _error(0), _method(), _version(-1), _path(), _query(), _host(), _port(-1),\
    _header(), _body(), _client_max_body_size(client_max_body_size)
 {
 	return ;
 }
 
-Request::~Request(void)
+web::Request::~Request(void)
 {
 	return ;
 }
 
-void			Request::parse(std::string const & input, ssize_t len)
+void			web::Request::parse(std::string const & input, ssize_t len)
 {
 	std::string		line;
 	std::string		key;
 	size_t			pos = 0;
 
+	(void)len;
 	_read_first_line(input);
 	line = _get_next_line(input, pos);
 	while (!line.empty())
@@ -53,7 +54,7 @@ void			Request::parse(std::string const & input, ssize_t len)
 	return ;
 }
 
-void			Request::_read_first_line(std::string const & input)
+void			web::Request::_read_first_line(std::string const & input)
 {
 	size_t			pos;
 	std::string		line;
@@ -74,15 +75,15 @@ void			Request::_read_first_line(std::string const & input)
 	return ;
 }
 
-void			Request::_read_method(std::string const & line, size_t & pos)
+void			web::Request::_read_method(std::string const & line, size_t & pos)
 {
 	_method.assign(line, 0, pos);
 
-	if (Request::_methods.count(_method) == 0)
+	if (web::Request::_methods.count(_method) == 0)
 	{
 		std::cerr << "HTTP request header: invalid method" << std::endl;
-		_error = 400;
-		throw BadRequestException();
+		_error = 501;
+		throw NotImplementedException();
 	}
 
 	_read_path(line, pos);
@@ -90,7 +91,7 @@ void			Request::_read_method(std::string const & line, size_t & pos)
 	return ;
 }
 
-void			Request::_read_path(std::string const & line, size_t & pos)
+void			web::Request::_read_path(std::string const & line, size_t & pos)
 {
 	pos = line.find_first_not_of(' ', pos);
 
@@ -117,7 +118,7 @@ void			Request::_read_path(std::string const & line, size_t & pos)
 	return ;
 }
 
-void			Request::_read_version(std::string const & line, size_t & pos)
+void			web::Request::_read_version(std::string const & line, size_t & pos)
 {
 	pos = line.find_first_not_of(' ', pos);
 
@@ -143,7 +144,7 @@ void			Request::_read_version(std::string const & line, size_t & pos)
 	return ;
 }
 
-std::string		Request::_get_next_line(std::string const & input, size_t & pos)
+std::string		web::Request::_get_next_line(std::string const & input, size_t & pos)
 {
 	std::string		line;
 	size_t			pos2;
@@ -162,7 +163,7 @@ std::string		Request::_get_next_line(std::string const & input, size_t & pos)
 	return (line);
 }
 
-std::string		Request::_get_key(std::string line)
+std::string		web::Request::_get_key(std::string line)
 {
 	size_t		pos = line.find_first_of(':');
 
@@ -189,7 +190,7 @@ std::string		Request::_get_key(std::string line)
 	return (line);
 }
 
-std::string		Request::_get_value(std::string line)
+std::string		web::Request::_get_value(std::string line)
 {
 	size_t		pos = line.find_first_of(':');
 
@@ -224,7 +225,7 @@ std::string		Request::_get_value(std::string line)
 	return (line);
 }
 
-std::string		Request::_read_body(std::string input, size_t pos)
+std::string		web::Request::_read_body(std::string input, size_t pos)
 {
 	input.erase(0, pos);
 
@@ -249,14 +250,14 @@ std::string		Request::_read_body(std::string input, size_t pos)
 	return (input);
 }
 
-void			Request::_process_header_fields(void)
+void			web::Request::_process_header_fields(void)
 {
 	_process_path();
 	_process_host();
 	return ;
 }
 
-void			Request::_process_path(void)
+void			web::Request::_process_path(void)
 {
 	size_t		pos = _path.find_first_of('?');
 
@@ -269,7 +270,7 @@ void			Request::_process_path(void)
 	return ;
 }
 
-void			Request::_process_host(void)
+void			web::Request::_process_host(void)
 {
 	if (_version == 1 && _header.count("Host") == 0)
 	{
@@ -285,7 +286,7 @@ void			Request::_process_host(void)
 		{
 			std::string		port = _header["Host"].substr(pos + 1);
 
-			for (int	i = 0; i < port.length(); ++i)
+			for (size_t	i = 0; i < port.length(); ++i)
 			{
 				if (!isdigit(port[i]))
 				{
@@ -304,19 +305,19 @@ void			Request::_process_host(void)
 	return ;
 }
 
-bool			Request::_is_token(char c) const
+bool			web::Request::_is_token(char c) const
 {
 	return (c == '!' || c == '#' || c == '$' || c == '%' || c == '&' || \
 			c == '\'' || c == '*'|| c == '+' || c == '-' || c == '.' || \
 			c == '^' || c == '_'|| c == '|' || c == '~' || isalnum(c));
 }
 
-bool			Request::_is_whitespace(char c) const
+bool			web::Request::_is_whitespace(char c) const
 {
 	return (c == ' ' || c == '\t');
 }
 
-std::set<std::string>		Request::_init_methods(void)
+std::set<std::string>		web::Request::_init_methods(void)
 {
 	std::set<std::string>	methods;
 
@@ -327,24 +328,24 @@ std::set<std::string>		Request::_init_methods(void)
 	return (methods);
 }
 
-std::set<std::string>		Request::_methods = Request::_init_methods();
+std::set<std::string>		web::Request::_methods = Request::_init_methods();
 
 
 // canonical class form
 
-Request::Request(void)
+web::Request::Request(void)
 {
 	return ;
 }
 
-Request::Request(Request const & other)
+web::Request::Request(Request const & other)
 {
 	(void)other;
 
 	return ;
 }
 
-Request &		Request::operator=(Request const & rhs)
+web::Request &		web::Request::operator=(Request const & rhs)
 {
 	(void)rhs;
 
@@ -354,17 +355,22 @@ Request &		Request::operator=(Request const & rhs)
 
 // exceptions
 
-char const *	Request::BadRequestException::what(void) const throw()
+char const *	web::Request::BadRequestException::what(void) const throw()
 {
 	return ("Bad Request");
 }
 
-char const *	Request::ContentTooLargeException::what(void) const throw()
+char const *	web::Request::NotImplementedException::what(void) const throw()
+{
+	return ("Not Implemented");
+}
+
+char const *	web::Request::ContentTooLargeException::what(void) const throw()
 {
 	return ("Content Too Large");
 }
 
-char const *	Request::HTTPVersionNotSupportedException::what(void) const throw()
+char const *	web::Request::HTTPVersionNotSupportedException::what(void) const throw()
 {
 	return ("HTTP Version Not Supported");
 }
