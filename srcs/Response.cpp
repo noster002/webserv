@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/02 09:20:55 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/07 13:39:14 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,14 +72,14 @@ std::map<int, std::string>		Response::_init_status(void)
 	status[410] = "Gone";
 	status[411] = "Length Required";
 	status[412] = "Precondition Failed";
-	status[413] = "Payload Too Large";
+	status[413] = "Content Too Large";
 	status[414] = "URI Too Long";
 	status[415] = "Unsupported Media Type";
 	status[416] = "Range Not Satisfiable";
 	status[417] = "Expectation Failed";
 	status[418] = "I'm a teapot";
 	status[421] = "Misdirected Request";
-	status[422] = "Unprocessable Entity";
+	status[422] = "Unprocessable Content";
 	status[423] = "Locked";
 	status[424] = "Failed Dependency";
 	status[425] = "Too Early";

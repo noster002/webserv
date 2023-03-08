@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/06 17:47:35 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/07 14:08:56 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,9 @@ class	Request
 		static std::set<std::string>		_methods;
 		static std::set<std::string>		_init_methods(void);
 
-		class				Exception;
+		class				BadRequestException;
+		class				ContentTooLargeException;
+		class				HTTPVersionNotSupportedException;
 
 
 		// canonical class form
@@ -90,7 +92,23 @@ class	Request
 
 };
 
-class		Request::Exception : public std::exception
+class		Request::BadRequestException : public std::exception
+{
+	public:
+
+		char const *	what(void) const throw();
+
+};
+
+class		Request::ContentTooLargeException : public std::exception
+{
+	public:
+
+		char const *	what(void) const throw();
+
+};
+
+class		Request::HTTPVersionNotSupportedException : public std::exception
 {
 	public:
 
