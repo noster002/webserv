@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/06 14:38:28 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/16 14:42:37 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
+# include <sys/event.h>
 # include <fcntl.h>
 # include <string>
 # include <unistd.h>
@@ -24,30 +25,22 @@ class	Server
 {
 	public:
 
-		Server(ServerConf const & conf, int fd);
+		Server(std::string const & filename);
 		~Server(void);
 
-		int							get_fd(void) const;
-		struct sockaddr *			get_addr(void);
-		socklen_t					get_addr_len(void) const;
-		socklen_t *					get_mutable_addr_len(void);
-		int							get_max_pending_clients(void) const;
-		int							get_socket(void) const;
-		void						set_socket(int fd);
-		void						set_request_size(ssize_t size);
-		char *						get_buffer(void) const;
-		long unsigned				get_max_buffer_size(void) const;
+		void	run(void);
 
 	private:
 
-		int const					_fd;
-		struct sockaddr_in			_addr;
-		socklen_t					_addr_len;
+		int							_err;
+		int							_sock;
+		struct addrinfo *			_addr;
+		int							_kq;
+		struct kevent				_event_set;
+		struct kevent				_event;
 		int const					_max_pending_clients;
-		int							_socket;
-		ssize_t						_request_size;
-		long unsigned const			_max_buffer_size;
-		char *						_buffer;
+
+		// std::map<int, Client *>		_client;
 
 		// canonical class form
 		Server(void);

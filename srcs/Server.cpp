@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/06 15:19:00 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/02/16 14:51:10 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,77 +14,241 @@
 
 // constructor & destructor
 
-Server::Server(ServerConf const & conf, int fd)\
- : _fd(fd), _addr(), _addr_len(static_cast<socklen_t>(sizeof(_addr))), \
-   _max_pending_clients(10), _max_buffer_size(2048)
+Server::Server(std::string const & filename)\
+ : _err(0), _sock()
 {
-	(void)conf;
-	_addr.sin_family = AF_INET;
-	_addr.sin_addr.s_addr = INADDR_ANY;
-	_addr.sin_port = htons(8000);
-	this->_buffer = new char[this->_max_buffer_size];
-	return ;
+	
 }
 
 Server::~Server(void)
 {
-	delete [] this->_buffer;
+	freeaddrinfo(_addr);
+
 	return ;
 }
 
-// getter & setter
 
-int						Server::get_fd(void) const
+int			Server::getaddrinfo(void)
 {
-	return (this->_fd);
+	struct addrinfo		hints;
+
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IP;
+	hints.ai_flags = 0;
+	hints.ai_addrlen = 0;
+	hints.ai_addr = NULL;
+	hints.ai_canonname = NULL;
+	hints.ai_next = NULL;
+
+	_err = ::getaddrinfo(/* hostname */, /* port */, &hints, &_addr);
+
+	if (_err < 0)
+	{
+		std::cerr << "getaddrinfo: " << gai_strerror(err) << std::endl;
+	}
+
+	return (_err);
 }
 
-struct sockaddr *		Server::get_addr(void)
+int			Server::setNonBlocking(int fd)
 {
-	return (reinterpret_cast<struct sockaddr *>(&(this->_addr)));
+	_err = ::fcntl(fd, F_SETFL, O_NONBLOCK);
+
+	if (_err < 0)
+	{
+		std::cerr << "fcntl: " << strerror(errno) << std::endl;
+	}
+
+	return (_err);
 }
 
-socklen_t				Server::get_addr_len(void) const
+int			Server::setsockopt(void)
 {
-	return (this->_addr_len);
+	int		option = 1;
+
+	_err = ::setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR,\
+						reinterpret_cast<void const *>(&option), sizeof(int) );
+
+	if (_err < 0)
+	{
+		std::cerr << "setsockopt: " << strerror(errno) << std::endl;
+	}
+
+	return (_err);
 }
 
-socklen_t *				Server::get_mutable_addr_len(void)
+int			Server::socket(void)
 {
-	return (&this->_addr_len);
+	if (_err = getaddrinfo())
+		return (_err);
+
+	_err = ::socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
+
+	if (_err < 0)
+	{
+		std::cerr << "socket: " << strerror(errno) << std::endl;
+		return (_err);
+	}
+
+	_sock = _err;
+
+	if (_err = setNonBlocking(_sock) < 0)
+		return (_err);
+
+	_err = setoptsock();
+
+	return (_err);
 }
 
-int						Server::get_max_pending_clients(void) const
+int			Server::bind(void)
 {
-	return (this->_max_pending_clients);
+	_err = ::bind(_sock, _addr.ai_addr, _addr.ai_addrlen);
+
+	if (_err < 0)
+	{
+		std::cerr << "bind: " << strerror(errno) << std::endl;
+	}
+
+	return (_err);
 }
 
-int						Server::get_socket(void) const
+int			Server::listen(void)
 {
-	return (this->_socket);
+	_err = ::listen(_sock, _max_pending_clients);
+
+	if (_err < 0)
+	{
+		std::cerr << "listen: " << strerror(errno) << std::endl;
+	}
+
+	return (_err);
 }
 
-void					Server::set_socket(int fd)
+int			Server::kqueue(void)
 {
-	this->_socket = fd;
+	_err = ::kqueue();
+
+	if (_err < 0)
+	{
+		std::cerr << "kqueue: " << strerror(errno) << std::endl;
+		return (_err);
+	}
+
+	_kq = _err;
+
+	_err = 0;
+
+	return (_err);
+}
+
+int			Server::setupRun(void)
+{
+	if (_err = socket() < 0)
+		return (err);
+	if (_err = bind() < 0)
+		return (err);
+	if (_err = listen() < 0)
+		return (err);
+	if (_err = kqueue() < 0)
+		return (err);
+
+	EV_SET = (&_event_set, _sock, EVFILT_READ, EV_ADD, 0, 0, NULL);
+
+	_err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
+
+	if (_err < 0)
+	{
+		std::cerr << "kevent server: " << strerror(errno) << std::endl;
+	}
+
+	return (_err);
+}
+
+void		Server::run(void)
+{
+	if (setupRun() < 0)
+		return ;
+
+	int		event_count = 0;
+
+	while (1)
+	{
+		event_count = kevent(_kq, NULL, 0, &_event, 1, NULL);
+
+		if (event_count < 0)
+		{
+			std::cerr << "kevent: " << stderror(errno) << std::endl;
+		}
+
+		for (int i = 0; i < event_count; ++i)
+		{
+			if (_event.ident == _sock)
+				eventClientConnect(_event);
+			else if (_event.flags & EV_EOF)
+				eventEof(_event);
+			else if (_event.filter == EVFILT_READ)
+				eventRead(_event);
+		}
+	}
+}
+
+int			Server::eventClientConnect(struct kevent const & event)
+{
+	_err = ::accept(event.ident, NULL, NULL);
+
+	if (_err < 0)
+	{
+		std::cerr << "accept: " << strerror(errno) << std::endl;
+		return (_err);
+	}
+
+	int		client = _err;
+
+	if (_err = setNonBlocking(client) < 0)
+		return (_err);
+
+	EV_SET(&_event_set, client, EVFILT_READ, EV_ADD, 0, 0, NULL);
+
+	_err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
+
+	if (_err < 0)
+	{
+		std::cerr << "kevent client connect: " << strerror(errno) << std::endl;
+	}
+
+	return (_err);
+}
+
+int			Server::eventClientDisconnect(struct kevent const & event)
+{
+	EV_SET(&_event_set, event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+
+	_err = kevent(_kq, &_event_set, 1, NULL, 0, NULL);
+
+	if (_err < 0)
+	{
+		std::cerr << "kevent client disconnect: " << strerror(errno) << std::endl;
+		return (_err);
+	}
+
+	// close fd
+
+	return (_err);
+}
+
+void		Server::eventEof(struct kevent const & event)
+{
+	eventClientDisconnect(event);
 	return ;
 }
 
-void					Server::set_request_size(ssize_t size)
+void		Server::eventRead(struct kevent const & event)
 {
-	this->_request_size = size;
 	return ;
 }
 
-long unsigned			Server::get_max_buffer_size(void) const
-{
-	return (this->_max_buffer_size);
-}
 
-char *					Server::get_buffer(void) const
-{
-	return (this->_buffer);
-}
 
 // canonical class form
 
