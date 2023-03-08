@@ -6,7 +6,7 @@
 /*   By: fakouyat <fakouyat@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:47 by nosterme          #+#    #+#             */
-/*   Updated: 2023/02/22 02:55:26 by fakouyat         ###   ########.fr       */
+/*   Updated: 2023/02/23 22:51:11 by fakouyat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,10 +24,10 @@ class	ServerConf
 		int						parse(void);
 		bool					getValidation() const;
 		void					setValidation(bool status);
+		std::vector<params_t>	servers;	
 
 	private:
 		bool 					validation;
-		std::vector<params_t>	servers;	
 		std::string				_file;
 
 		// canonical class form
