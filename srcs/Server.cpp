@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 18:22:54 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/09 15:26:08 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ int			web::Server::setup_socket(void)
 		set_addr_info();
 		_socket.create();
 		_socket.set_non_blocking();
-		_socket.set_opt(EVFILT_READ, EV_ADD);
+		_socket.set_opt(SOL_SOCKET, SO_REUSEADDR);
 		_socket.bind();
 		_socket.listen(_max_pending_clients);
 	}
@@ -108,7 +108,7 @@ void		web::Server::run(void)
 
 	while (1)
 	{
-		event_count = ::kevent(_kq, NULL, 0, &_event, 1, NULL);
+		event_count = ::kevent(_kq, NULL, 0, &_event, 5, NULL);
 
 		if (event_count < 0)
 		{
@@ -140,19 +140,24 @@ void		web::Server::event_client_connect(struct kevent const & event)
 		return ;
 	}
 
+	std::cout << "fd: " << fd << std::endl;
+
 	_client[fd] = new Client(fd, addr, addrlen);
 
 	try
 	{
 		_client[fd]->set_non_blocking();
-		_client[fd]->set_opt(EVFILT_READ, EV_ADD);
+		_client[fd]->set_kevent(_kq, EVFILT_READ, EV_ADD);
 	}
 	catch (std::exception const & e)
 	{
 		std::cerr << e.what() << std::endl;
 		_client[fd]->disconnect();
+		delete _client[fd];
+		_client.erase(fd);
 		return ;
 	}
+	std::cout << "connected" << std::endl;
 
 	return ;
 }
@@ -171,6 +176,8 @@ void		web::Server::event_client_disconnect(struct kevent const & event)
 	}
 
 	_client[fd]->disconnect();
+	delete _client[fd];
+	_client.erase(fd);
 
 	return ;
 }
@@ -178,6 +185,7 @@ void		web::Server::event_client_disconnect(struct kevent const & event)
 void		web::Server::event_eof(struct kevent const & event)
 {
 	event_client_disconnect(event);
+	std::cout << "disconnected" << std::endl;
 	return ;
 }
 
@@ -185,9 +193,9 @@ void		web::Server::event_read(struct kevent const & event)
 {
 	int		fd = event.ident;
 
-	_client[fd]->read(fd);
+	int		nbr = _client[fd]->read(fd);
 
-	_client[fd]->write(fd);
+	_client[fd]->write(fd, nbr);
 
 	return ;
 }

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 18:47:15 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/09 13:39:40 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ namespace web
 			Response(void);
 			~Response(void);
 
-			void		build(Request const & request, std::string & output);
+			void		build(Request const * request, std::string & output);
 
 		private:
 

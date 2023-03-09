@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 17:21:30 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/09 10:56:50 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,9 @@
 # include <cerrno>
 
 // private
+
+
+# define REQUEST_LINE_MAX_LEN 8000
 
 namespace web
 {
@@ -82,6 +85,7 @@ namespace web
 			static std::set<std::string>		_init_methods(void);
 
 			class				BadRequestException;
+			class				URITooLongException;
 			class				NotImplementedException;
 			class				ContentTooLargeException;
 			class				HTTPVersionNotSupportedException;
@@ -96,6 +100,14 @@ namespace web
 	};
 
 	class		Request::BadRequestException : public std::exception
+	{
+		public:
+
+			char const *	what(void) const throw();
+
+	};
+
+	class		Request::URITooLongException : public std::exception
 	{
 		public:
 

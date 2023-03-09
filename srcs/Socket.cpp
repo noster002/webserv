@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:08 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 18:41:46 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/09 15:02:33 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,7 +109,7 @@ void		web::Socket::set_opt(int level, int option)
 
 	if (_err < 0)
 	{
-		std::cerr << "setsockopt: level: " << level << " option: " << option;
+		std::cerr << "setsockopt: fd: " << _fd << " level: " << level << " option: " << option;
 		std::cerr << ": " << std::strerror(errno) << std::endl;
 		throw Exception(e_set_opt);
 	}

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 18:46:50 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/09 14:24:30 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,27 +50,49 @@ void			web::Request::parse(std::string const & input, ssize_t len)
 	}
 	_body = _read_body(input, pos);
 	_process_header_fields();
+	std::cout << "_host: " << _host << std::endl;
+	std::cout << "_port: " << _port << std::endl;
+	std::cout << "_method: " << _method << std::endl;
+	std::cout << "_version: " << _version << std::endl;
+	std::cout << "_path: " << _path << std::endl;
+	std::cout << "_query: " << _query << std::endl;
+	std::cout << "_body: " << _body << std::endl;
+	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); ++it)
+		std::cout << "it->first: " << it->first << " it->second: " << it->second << std::endl;
 
 	return ;
 }
 
 void			web::Request::_read_first_line(std::string const & input)
 {
-	size_t			pos;
+	size_t			start = 0;
+	size_t			end;
 	std::string		line;
 
-	pos = input.find("\r\n");
-	line = input.substr(0, pos);
-	pos = line.find_first_of(' ');
+	end = input.find("\r\n", start);
+	line = input.substr(start, end);
+	while (line.empty() && end != std::string::npos && start <= 16)
+	{
+		start  += 2;
+		end = input.find("\r\n", start);
+		line = input.substr(start, end);
+	}
+	end = line.find_first_of(' ');
 
-	if (pos == std::string::npos)
+	if (end == std::string::npos)
 	{
 		std::cerr << "HTTP request header: invalid" << std::endl;
 		_error = 400;
 		throw BadRequestException();
 	}
+	else if (line.length() > REQUEST_LINE_MAX_LEN)
+	{
+		std::cerr << "HTTP request header: invalid" << std::endl;
+		_error = 414;
+		throw URITooLongException();
+	}
 
-	_read_method(line, pos);
+	_read_method(line, end);
 
 	return ;
 }
@@ -93,16 +115,14 @@ void			web::Request::_read_method(std::string const & line, size_t & pos)
 
 void			web::Request::_read_path(std::string const & line, size_t & pos)
 {
-	pos = line.find_first_not_of(' ', pos);
-
-	if (pos == std::string::npos)
+	if (pos == line.length() - 1)
 	{
 		std::cerr << "HTTP request header: no path / HTTP version" << std::endl;
 		_error = 400;
 		throw BadRequestException();
 	}
 
-	size_t		pos2 = line.find_first_of(' ', pos);
+	size_t		pos2 = line.find_first_of(' ', ++pos);
 
 	if (pos2 == std::string::npos)
 	{
@@ -111,7 +131,7 @@ void			web::Request::_read_path(std::string const & line, size_t & pos)
 		throw BadRequestException();
 	}
 
-	_path.assign(line, pos, pos2);
+	_path.assign(line, pos, pos2 - pos);
 
 	_read_version(line, pos2);
 
@@ -120,28 +140,19 @@ void			web::Request::_read_path(std::string const & line, size_t & pos)
 
 void			web::Request::_read_version(std::string const & line, size_t & pos)
 {
-	pos = line.find_first_not_of(' ', pos);
+	size_t	len = std::strlen(" HTTP/1.");
 
-	if (pos == std::string::npos)
+	if (line.length() == (pos + len + 1) && \
+		(line.compare(pos, len, " HTTP/1.") == 0 && \
+		(line[pos + len] == '0' || line[pos + len] == '1')))
 	{
-		std::cerr << "HTTP request header: no HTTP version" << std::endl;
-		_error = 400;
-		throw BadRequestException();
+		_version = line[pos + len] - '0';
+		return ;
 	}
 
-	if ((line.length() != (pos + 8)) || \
-		!(line[pos] == 'H' && line[++pos] == 'T' && line[++pos] == 'T' && line[++pos] == 'P'&&\
-		  line[++pos] == '/' && line[++pos] == '1' && line[++pos] == '.') || \
-		!(line[++pos] == '0' || line[pos] == '1'))
-	{
-		std::cerr << "HTTP request header: invalid HTTP version" << std::endl;
-		_error = 505;
-		throw HTTPVersionNotSupportedException();
-	}
-
-	_version = line[pos] - '0';
-
-	return ;
+	std::cerr << "HTTP request header: invalid HTTP version" << std::endl;
+	_error = 505;
+	throw HTTPVersionNotSupportedException();
 }
 
 std::string		web::Request::_get_next_line(std::string const & input, size_t & pos)
@@ -207,7 +218,7 @@ std::string		web::Request::_get_value(std::string line)
 		line.erase(pos);
 		for (pos = 0; pos < line.length(); ++pos)
 		{
-			if (iscntrl(line[pos]) && !_is_whitespace(line[pos]))
+			if (std::iscntrl(line[pos]) && !_is_whitespace(line[pos]))
 			{
 				pos = 0;
 				break ;
@@ -259,7 +270,34 @@ void			web::Request::_process_header_fields(void)
 
 void			web::Request::_process_path(void)
 {
-	size_t		pos = _path.find_first_of('?');
+	size_t		pos;
+	std::string	lower(_path.length(), '\0');
+
+
+	for (pos = 0; pos < _path.length(); ++pos)
+	{
+		if (std::iscntrl(_path[pos]) || _path[pos] == ' ')
+		{
+			_path.clear();
+			break ;
+		}
+		lower[pos] = std::tolower(_path[pos]);
+	}
+	if (lower.compare(0, std::strlen("/"), "/") && \
+		lower.compare(0, std::strlen("http://"), "http://") && \
+		lower.compare(0, std::strlen("https://"), "https://"))
+	{
+		_path.clear();
+	}
+
+	if (_path.empty())
+	{
+		std::cerr << "HTTP request header: invalid path" << std::endl;
+		_error = 400;
+		throw BadRequestException();
+	}
+
+	pos = _path.find_first_of('?');
 
 	if (pos != std::string::npos)
 	{
@@ -288,14 +326,14 @@ void			web::Request::_process_host(void)
 
 			for (size_t	i = 0; i < port.length(); ++i)
 			{
-				if (!isdigit(port[i]))
+				if (!std::isdigit(port[i]))
 				{
 					std::cerr << "HTTP request header: invalid port" << std::endl;
 					_error = 400;
 					throw BadRequestException();
 				}
 			}
-			_port = atoi(port.c_str());
+			_port = std::atoi(port.c_str());
 			_header["Host"].erase(pos);
 		}
 		_host = _header["Host"];
@@ -358,6 +396,11 @@ web::Request &		web::Request::operator=(Request const & rhs)
 char const *	web::Request::BadRequestException::what(void) const throw()
 {
 	return ("Bad Request");
+}
+
+char const *	web::Request::URITooLongException::what(void) const throw()
+{
+	return ("URI Too Long");
 }
 
 char const *	web::Request::NotImplementedException::what(void) const throw()

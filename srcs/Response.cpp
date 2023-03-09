@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 18:49:48 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/09 13:39:33 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,10 +23,11 @@ web::Response::~Response(void)
 	return ;
 }
 
-void		web::Response::build(Request const & request, std::string & output)
+void		web::Response::build(Request const * request, std::string & output)
 {
 	(void)request;
-	(void)output;
+
+	output = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello World!\n";
 	return ;
 }
 

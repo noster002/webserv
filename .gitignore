@@ -1,2 +1,9 @@
-test/*
-.vscode/*
+*
+
+!Makefile
+!.gitignore
+!head/*
+!srcs/*
+!objs/*
+!conf/*
+

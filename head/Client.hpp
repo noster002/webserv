@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 14:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 18:22:44 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/09 13:35:55 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,14 +44,14 @@ namespace web
 			void		set_non_blocking(void);
 			void		set_opt(int filter, int option);
 			void		set_kevent(int kq, int filter, int flags);
-			void		read(int fd);
-			void		write(int fd);
+			int			read(int fd);
+			void		write(int fd, int nbr);
 
 		private:
 
-			Socket		_socket;
-			Request		_request;
-			Response	_response;
+			Socket						_socket;
+			std::map<int, Request *>	_request;
+			std::map<int, Response *>	_response;
 
 
 			// canonical class form
