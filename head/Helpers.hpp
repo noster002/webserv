@@ -78,8 +78,6 @@ public:
 
 	static	void					skipe_empty_line(const std::vector<std::string> & confdata,\
 																				size_t* cursor);
-	static	void					fill_host_value(std::string line, web::Config* servconf,\
-																		size_t i, size_t* cursor);
 	static	std::string				get_inline_value(web::Config* servconf,\
 														const std::string & line, size_t* cursor);
 	static	void					fill_port_value(std::string line, web::Config* servconf,\

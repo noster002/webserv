@@ -43,20 +43,6 @@ void			Helpers::skipe_empty_line ( const std::vector<std::string> & confdata,\
 	}
 }
 
-void			Helpers::fill_host_value( std::string line, web::Config* servconf,\
-														 size_t i, size_t* cursor)
-{
-	*cursor += 4;
-	
-	std::string host = get_inline_value(servconf, line, cursor);
-	if (is_valid_host(host))
-		servconf->servers[i].host = host;
-	else
-	{
-		servconf->setValidation(false);
-	}
-}
-
 void			Helpers::fill_port_value( std::string line, web::Config* servconf,\
 														size_t i, size_t* cursor)
 {
