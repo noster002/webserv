@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 14:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/09 13:35:55 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/13 18:04:21 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,35 +27,37 @@
 
 // private
 
+# include "Server.hpp"
 # include "Socket.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
 
-namespace web
+namespace http
 {
 	class	Client
 	{
 		public:
 
-			Client(int fd, struct sockaddr addr, socklen_t addrlen);
+			Client(int fd, Server const & server);
 			~Client(void);
 
-			void		disconnect(void);
-			void		set_non_blocking(void);
-			void		set_opt(int filter, int option);
-			void		set_kevent(int kq, int filter, int flags);
-			int			read(int fd);
-			void		write(int fd, int nbr);
+			void					connect(int kq);
+			void					disconnect(int kq);
+
+			void					read(std::string const & input, int kq);
+			std::string const &		write(int kq);
 
 		private:
 
-			Socket						_socket;
-			std::map<int, Request *>	_request;
-			std::map<int, Response *>	_response;
+			Server const &			_server;
+			Socket					_socket;
+			Request					_request;
+			Response				_response;
 
 
 			// canonical class form
 
+			Client(void);
 			Client(Client const & other);
 			Client &	operator=(Client const & rhs);
 

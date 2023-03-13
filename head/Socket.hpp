@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:21 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 18:39:52 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/13 17:39:58 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,23 +30,23 @@
 # include <cstring>
 # include <cerrno>
 
-namespace web
+namespace http
 {
 	class	Socket
 	{
 		public:
 
 			Socket(void);
-			Socket(int fd, struct sockaddr addr, socklen_t addrlen);
+			Socket(int fd);
 			~Socket(void);
 
 			int			get_fd(void);
 
 			void		clean(void);
 			void		close(void);
-			void		get_addr_info(char const * hostname, \
-									char const * port, \
-									struct addrinfo * hints);
+			void		get_addr_info(char const * hostname,\
+									  char const * port,\
+									  struct addrinfo * hints);
 			void		create(void);
 			void		set_non_blocking(void);
 			void		set_opt(int level, int option);
@@ -56,12 +56,8 @@ namespace web
 
 		private:
 
-			int							_err;
 			int							_fd;
 			struct addrinfo *			_addr;
-			struct sockaddr				_sockaddr;
-			socklen_t					_sockaddrlen;
-			struct kevent				_event_set;
 
 
 			// exceptions
@@ -91,9 +87,7 @@ namespace web
 	{
 		public:
 
-			Exception(int lvl);
-
-			int						level;
+			Exception(int level);
 
 			char const *			what(void) const throw();
 
@@ -105,6 +99,10 @@ namespace web
 			static char const *		bind(void);
 			static char const *		listen(void);
 			static char const *		set_kevent(void);
+
+		private:
+
+			int						_level;
 
 	};
 }

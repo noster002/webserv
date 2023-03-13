@@ -6,27 +6,24 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:08 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/09 15:02:33 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/13 17:40:14 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Socket.hpp"
 
-web::Socket::Socket(void) : _err(0), _fd(), _addr()
+http::Socket::Socket(void) : _fd(), _addr()
 {
 	return ;
 }
 
-web::Socket::Socket(int fd, struct sockaddr addr, socklen_t addrlen)\
- : _err(0), _fd(fd)
+http::Socket::Socket(int fd)\
+ : _fd(fd), _addr(NULL)
 {
-	_sockaddr = addr;
-	_sockaddrlen = addrlen;
-
 	return ;
 }
 
-web::Socket::~Socket(void)
+http::Socket::~Socket(void)
 {
 	clean();
 
@@ -34,12 +31,12 @@ web::Socket::~Socket(void)
 }
 
 
-int			web::Socket::get_fd(void)
+int			http::Socket::get_fd(void)
 {
 	return (_fd);
 }
 
-void		web::Socket::clean(void)
+void		http::Socket::clean(void)
 {
 	::freeaddrinfo(_addr);
 	try
@@ -52,62 +49,51 @@ void		web::Socket::clean(void)
 	}
 }
 
-void		web::Socket::close(void)
+void		http::Socket::close(void)
 {
-	_err = ::close(_fd);
-
-	if (_err < 0)
+	if (::close(_fd) < 0)
 	{
 		std::cerr << "close fd: " << _fd << ": " << std::strerror(errno) << std::endl;
 		throw Exception(e_close);
 	}
 }
 
-void		web::Socket::get_addr_info(char const * hostname, \
+void		http::Socket::get_addr_info(char const * hostname, \
 								char const * port, \
 								struct addrinfo * hints)
 {
-	_err = ::getaddrinfo(hostname, port, hints, &_addr);
-
-	if (_err)
+	if (::getaddrinfo(hostname, port, hints, &_addr))
 	{
 		std::cerr << "get_addr_info: " << ::gai_strerror(_err) << std::endl;
 		throw Exception(e_get_addr_info);
 	}
 }
 
-void		web::Socket::create(void)
+void		http::Socket::create(void)
 {
-	_err = ::socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
+	_fd = ::socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol)
 
-	if (_err < 0)
+	if (_fd < 0)
 	{
 		std::cerr << "socket: " << std::strerror(errno) << std::endl;
 		throw Exception(e_create);
 	}
-
-	_fd = _err;
 }
 
-void		web::Socket::set_non_blocking(void)
+void		http::Socket::set_non_blocking(void)
 {
-	_err = ::fcntl(_fd, F_SETFL, O_NONBLOCK);
-
-	if (_err < 0)
+	if (::fcntl(_fd, F_SETFL, O_NONBLOCK) < 0)
 	{
 		std::cerr << "fcntl: " << std::strerror(errno) << std::endl;
 		throw Exception(e_set_non_blocking);
 	}
 }
 
-void		web::Socket::set_opt(int level, int option)
+void		http::Socket::set_opt(int level, int option)
 {
 	int		one = 1;
 
-	_err = ::setsockopt(_fd, level, option,\
-						reinterpret_cast<void const *>(&one), sizeof(int) );
-
-	if (_err < 0)
+	if (::setsockopt(_fd, level, option, reinterpret_cast<void const *>(&one), sizeof(int)) < 0)
 	{
 		std::cerr << "setsockopt: fd: " << _fd << " level: " << level << " option: " << option;
 		std::cerr << ": " << std::strerror(errno) << std::endl;
@@ -115,35 +101,31 @@ void		web::Socket::set_opt(int level, int option)
 	}
 }
 
-void		web::Socket::bind(void)
+void		http::Socket::bind(void)
 {
-	_err = ::bind(_fd, _addr->ai_addr, _addr->ai_addrlen);
-
-	if (_err < 0)
+	if (::bind(_fd, _addr->ai_addr, _addr->ai_addrlen) < 0)
 	{
 		std::cerr << "bind: " << std::strerror(errno) << std::endl;
 		throw Exception(e_bind);
 	}
 }
 
-void		web::Socket::listen(int max_pending_clients)
+void		http::Socket::listen(int max_pending_clients)
 {
-	_err = ::listen(_fd, max_pending_clients);
-
-	if (_err < 0)
+	if (::listen(_fd, max_pending_clients) < 0)
 	{
 		std::cerr << "listen: " << std::strerror(errno) << std::endl;
 		throw Exception(e_listen);
 	}
 }
 
-void		web::Socket::set_kevent(int kq, int filter, int flags)
+void		http::Socket::set_kevent(int kq, int filter, int flags)
 {
-	EV_SET(&_event_set, _fd, filter, flags, 0, 0, NULL);
+	struct kevent	event;
 
-	_err = ::kevent(kq, &_event_set, 1, NULL, 0, NULL);
+	EV_SET(&event, _fd, filter, flags, 0, 0, NULL);
 
-	if (_err < 0)
+	if (::kevent(kq, &event, 1, NULL, 0, NULL) < 0)
 	{
 		std::cerr << "kevent: " << std::strerror(errno) << std::endl;
 		throw Exception(e_set_kevent);
@@ -153,19 +135,16 @@ void		web::Socket::set_kevent(int kq, int filter, int flags)
 
 // canonical class form
 
-web::Socket::Socket(Socket const & other)\
- : _err(other._err), _fd(other._fd), _addr(other._addr),\
-   _event_set(other._event_set)
+http::Socket::Socket(Socket const & other)\
+ : _fd(other._fd), _addr(other._addr)
 {
 	return ;
 }
 
-web::Socket &			web::Socket::operator=(Socket const & rhs)
+http::Socket &			http::Socket::operator=(Socket const & rhs)
 {
-	_err = rhs._err;
 	_fd = rhs._fd;
 	_addr = rhs._addr;
-	_event_set = rhs._event_set;
 
 	return (*this);
 }
@@ -173,11 +152,11 @@ web::Socket &			web::Socket::operator=(Socket const & rhs)
 
 // exceptions
 
-web::Socket::Exception::Exception(int lvl) : level(lvl) {}
+http::Socket::Exception::Exception(int level) : _level(level) {}
 
-char const *		web::Socket::Exception::what(void) const throw()
+char const *		http::Socket::Exception::what(void) const throw()
 {
-	switch (level)
+	switch (_level)
 	{
 		case e_close:
 			return (Exception::close());
@@ -199,42 +178,42 @@ char const *		web::Socket::Exception::what(void) const throw()
 	return ("Undefined Error");
 }
 
-char const *		web::Socket::Exception::close(void)
+char const *		http::Socket::Exception::close(void)
 {
 	return ("Socket: error while closing");
 }
 
-char const *		web::Socket::Exception::get_addr_info(void)
+char const *		http::Socket::Exception::get_addr_info(void)
 {
 	return ("Socket: cannot get addrinfo struct");
 }
 
-char const *		web::Socket::Exception::create(void)
+char const *		http::Socket::Exception::create(void)
 {
 	return ("Socket: cannot create socket");
 }
 
-char const *		web::Socket::Exception::set_non_blocking(void)
+char const *		http::Socket::Exception::set_non_blocking(void)
 {
 	return ("Socket: cannot set socket nonblocking");
 }
 
-char const *		web::Socket::Exception::set_opt(void)
+char const *		http::Socket::Exception::set_opt(void)
 {
 	return ("Socket: cannot set socket to user defined options");
 }
 
-char const *		web::Socket::Exception::bind(void)
+char const *		http::Socket::Exception::bind(void)
 {
 	return ("Socket: cannot bind socket");
 }
 
-char const *		web::Socket::Exception::listen(void)
+char const *		http::Socket::Exception::listen(void)
 {
 	return ("Socket: cannot listen");
 }
 
-char const *		web::Socket::Exception::set_kevent(void)
+char const *		http::Socket::Exception::set_kevent(void)
 {
 	return ("Socket: cannot set kevent");
 }

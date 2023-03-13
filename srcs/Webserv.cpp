@@ -1,0 +1,205 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Webserv.cpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
+/*   Updated: 2023/03/13 17:44:01 by nosterme         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "Webserv.hpp"
+
+http::Webserv::Webserv(void)\
+ : _config(), _servers(), _clients(), _is_setup(false), _up(0)
+{
+	return ;
+}
+
+http::Webserv::Webserv(std::string const & filename)\
+ : _config(), _servers(), _clients(), _is_setup(false), _up(0)
+{
+	setup(filename);
+	return ;
+}
+
+http::Webserv::~Webserv(void)
+{
+	clean();
+	return ;
+}
+
+
+void				http::Webserv::setup(std::string const & filename)
+{
+	_config.parse(filename);
+
+	_kq = ::kqueue();
+
+	if (_kq < 0)
+	{
+		std::cerr << "kqueue: " << std::strerror(errno) << std::endl;
+		throw SetupException();
+	}
+
+	for (int i = 0; i < _config.get_nbr_servers(); ++i)
+	{
+		Server		server(_config.get_server(i));
+
+		_up += server.setup(_kq);
+
+		_servers[server.get_socket_fd()] = server;
+	}
+
+	_is_setup = true;
+}
+
+void				http::Webserv::run(void)
+{
+	if (!_is_setup)
+	{
+		std::cout << "Provide a configuration file and set servers up first" << std::endl;
+		throw SetupException();
+	}
+	std::cout << _up << " sockets are setup" << std::endl;
+
+	struct kevent	event;
+	int				event_count;
+
+	while (_up)
+	{
+		event_count = ::kevent(_kq, NULL, 0, &event, 5, NULL);
+
+		if (event_count < 0)
+		{
+			std::cerr << "kevent: " << std::strerror(errno) << std::endl;
+		}
+
+		for (int i = 0; i < event_count; ++i)
+		{
+			if (_servers.count(static_cast<int>(event.ident)))
+				event_client_connect(event);
+			else if (event.flags & EV_EOF)
+				event_eof(event);
+			else if (event.filter == EVFILT_READ)
+				event_read(event);
+			else if (event.filter == EVFILT_WRITE)
+				event_write(event);
+		}
+	}
+	std::cout << _up << " sockets are setup" << std::endl;
+}
+
+void				http::Webserv::clean(void)
+{
+	for (std::map<int, Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+	{
+		it->second->clean();
+	}
+	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		it->second->clean();
+		delete it->second;
+	}
+	return ;
+}
+
+void				http::Webserv::event_client_connect(struct kevent const & event)
+{
+	int		fd = ::accept(event.ident, NULL, NULL);
+
+	if (fd < 0)
+	{
+		std::cerr << "accept: " << std::strerror(errno) << std::endl;
+		return ;
+	}
+
+	std::cout << "fd: " << fd << std::endl;
+
+	_clients[fd] = new Client(fd, _servers[event.ident]);
+
+	try
+	{
+		_clients[fd]->connect(_kq);
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
+		_clients[fd]->disconnect();
+		delete _clients[fd];
+		_clients.erase(fd);
+		return ;
+	}
+	std::cout << fd << " connected" << std::endl;
+
+	return ;
+}
+
+void				http::Webserv::event_eof(struct kevent const & event)
+{
+	int		fd = event.ident;
+
+	_clients[fd]->disconnect();
+	delete _clients[fd];
+	_clients.erase(fd);
+	std::cout << fd << " disconnected" << std::endl;
+
+	return ;
+}
+
+void				http::Webserv::event_read(struct kevent const & event)
+{
+	int				fd = event.ident;
+	char			input[1024];
+
+	ssize_t			bytes_read = ::recv(fd, static_cast<void *>(input), 1024, 0);
+
+	if (bytes_read < 0)
+	{
+		std::cerr << "recv: " << std::strerror(errno) << std::endl;
+		return (-1);
+	}
+	std::cout << "(" << RED << input << RESET << ")" << std::endl;
+	input[bytes_read] = '\0';
+
+	_clients[fd]->read(input, kq);
+
+	return ;
+}
+
+void				http::Webserv::event_write(struct kevent const & event)
+{
+	std::string		output = _clients[fd]->write(kq);
+
+	ssize_t	bytes_sent = ::send(fd, static_cast<void const *>(output.c_str()), output.size(), 0);
+
+	if (bytes_sent < 0)
+	{
+		std::cerr << "send: " << std::strerror(errno) << std::endl;
+	}
+
+	return ;
+}
+
+
+// canonical class form
+
+http::Webserv::Webserv(Webserv const & other)\
+ : _config(other._config), _servers(), _clients(), _is_setup(false), _up(0)
+{
+	return ;
+}
+
+http::Webserv &		http::Webserv::operator=(Webserv const & rhs)
+{
+	_config = rhs._config;
+	return (*this);
+}
+
+
+char const *		http::Webserv::SetupException::what(void) const throw()
+{
+	return ("Setup failed");
+}

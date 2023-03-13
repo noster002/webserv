@@ -6,24 +6,30 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/09 13:39:33 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/13 17:52:59 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-web::Response::Response(void)
+http::Response::Response(void)
 {
 	(void)_status;
 	return ;
 }
 
-web::Response::~Response(void)
+http::Response::~Response(void)
 {
 	return ;
 }
 
-void		web::Response::build(Request const * request, std::string & output)
+
+std::string const &				http::Response::get_buffer(void) const
+{
+	return (_buffer);
+}
+
+void							http::Response::build(Request const & request)
 {
 	(void)request;
 
@@ -31,7 +37,7 @@ void		web::Response::build(Request const * request, std::string & output)
 	return ;
 }
 
-std::map<int, std::string>		web::Response::_init_statuses(void)
+std::map<int, std::string>		http::Response::_init_statuses(void)
 {
 	std::map<int, std::string>	statuses;
 
@@ -106,19 +112,19 @@ std::map<int, std::string>		web::Response::_init_statuses(void)
 	return (statuses);
 }
 
-std::map<int, std::string>		web::Response::_statuses = Response::_init_statuses();
+std::map<int, std::string>		http::Response::_statuses = Response::_init_statuses();
 
 
 // canonical class form
 
-web::Response::Response(Response const & other)
+http::Response::Response(Response const & other)
 {
 	(void)other;
 
 	return ;
 }
 
-web::Response &	web::Response::operator=(Response const & rhs)
+http::Response &	http::Response::operator=(Response const & rhs)
 {
 	(void)rhs;
 

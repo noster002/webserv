@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/09 10:56:50 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/13 18:03:43 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@
 
 # define REQUEST_LINE_MAX_LEN 8000
 
-namespace web
+namespace http
 {
 	//# include "Response.hpp"
 
@@ -46,12 +46,15 @@ namespace web
 			Request(size_t client_max_body_size);
 			~Request(void);
 
-			void		parse(std::string const & input, ssize_t len);
+			void				add_buffer(std::string const & input);
+			void				parse(void);
+			void				clear(void);
 
 			//friend void	Response::build(Request const & request, std::string & output);
 
 		private:
 
+			std::string			_buffer;
 			int					_error;
 
 			std::string			_method;
@@ -64,7 +67,11 @@ namespace web
 								_header;
 			std::string			_body;
 
+			bool				_is_body;
+
 			size_t				_client_max_body_size;
+
+			bool				_header_complete(std::string const & input) const;
 
 			void				_read_first_line(std::string const & input);
 			void				_read_method(std::string const & line, size_t & pos);

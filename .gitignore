@@ -1,9 +1,3 @@
-*
-
-!Makefile
-!.gitignore
-!head/*
-!srcs/*
-!objs/*
-!conf/*
-
+.vscode/*
+test/*
+webserv

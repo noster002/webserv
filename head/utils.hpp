@@ -1,34 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
+/*   utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/02/04 10:31:09 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 18:06:57 by nosterme         ###   ########.fr       */
+/*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
+/*   Updated: 2023/03/13 12:18:57 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Webserv.hpp"
-#include "Error.hpp"
+#ifndef UTILS_HPP
+# define UTILS_HPP
 
-int		main(int argc, char** argv)
-{
-	if (argc != 2)
-		return (Error::arg());
+# define RESET "\033[0m"
+# define RED "\033[31m"
 
-	try
-	{
-		http::Webserv	webserv;
-
-		webserv.setup(argv[1]);
-		webserv.run();
-	}
-	catch (std::exception const & e)
-	{
-		std::cerr << e.what() << std::endl;
-	}
-
-	return (0);
-}
+#endif

@@ -6,28 +6,37 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/09 13:39:20 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/13 17:57:34 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-web::Client::Client(int fd, struct sockaddr addr, socklen_t addrlen)\
- : _socket(fd, addr, addrlen)
+http::Client::Client(int fd, Server const & server)\
+ : _server(server), _socket(fd), _request(), _response()
 {
 	return ;
 }
 
-web::Client::~Client(void)
+http::Client::~Client(void)
 {
 	return ;
 }
 
 
-void		web::Client::disconnect(void)
+void					http::Client::connect(int kq)
+{
+	_socket.set_non_blocking();
+	_socket.set_kevent(kq, EVFILT_READ, EV_ADD);
+
+	return ;
+}
+
+void					http::Client::disconnect(int kq)
 {
 	try
 	{
+		_socket.set_kevent(kq, EVFILT_READ, EV_DELETE);
 		_socket.close();
 	}
 	catch (std::exception const & e)
@@ -38,91 +47,58 @@ void		web::Client::disconnect(void)
 	return ;
 }
 
-void		web::Client::set_non_blocking(void)
+void					http::Client::read(std::string const & input, int kq)
 {
-	_socket.set_non_blocking();
-	return ;
-}
-
-void		web::Client::set_opt(int filter, int option)
-{
-	_socket.set_opt(filter, option);
-	return ;
-}
-
-void		web::Client::set_kevent(int kq, int filter, int flags)
-{
-	_socket.set_kevent(kq, filter, flags);
-	return ;
-}
-
-int			web::Client::read(int fd)
-{
-	char		input[1024];
-
-	ssize_t	bytes_read = ::recv(fd, static_cast<void *>(input), 1024, 0);
-	std::cout << "(\033[31m" << input << "\033[0m)" << std::endl;
-
-	if (bytes_read < 0)
-	{
-		std::cerr << "recv: " << std::strerror(errno) << std::endl;
-		return (-1);
-	}
-
-	int			nbr;
-
-	for (nbr = 0; nbr < 20; ++nbr)
-	{
-		if (_request.count(nbr) == 0)
-			break ;
-	}
-	_request[nbr] = new Request(1024);
+	_request.add_buffer(input);
 
 	try
 	{
-		_request[nbr]->parse(input, bytes_read);
+		_request.parse();
+		_response.build(_request);
+		_socket.set_kevent(kq, EVFILT_WRITE, EV_ADD | EV_ENABLE);
 	}
 	catch (std::exception const & e)
 	{
 		std::cerr << e.what() << std::endl;
 	}
 
-	return (nbr);
+	return ;
 }
 
-void		web::Client::write(int fd, int nbr)
+std::string const &		http::Client::write(int kq)
 {
-	std::string		output;
+	std::string		output = _response.get_buffer();
 
-	_response[nbr] = new Response();
-
-	_response[nbr]->build(_request[nbr], output);
-
-	ssize_t	bytes_sent = ::send(fd, static_cast<void const *>(output.c_str()), output.size(), 0);
-
-	if (bytes_sent < 0)
+	try
 	{
-		std::cerr << "send: " << std::strerror(errno) << std::endl;
+		_request.clear();
+		_response.clear();
+		_socket.set_kevent(kq, EVFILT_WRITE, EV_DISABLE);
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
 	}
 
-	delete _request[nbr];
-	delete _response[nbr];
-
-	return ;
+	return (output);
 }
 
 
 // canonical class form
 
-web::Client::Client(Client const & other)\
- : _socket()
+http::Client::Client(void)\
+ : _server(), _socket(), _request(), _response()
 {
-	(void)other;
-
 	return ;
 }
 
-web::Client &	web::Client::operator=(Client const & rhs)
+http::Client::Client(Client const & other)\
+ : _server(other._server), _socket(), _request(), _response()
+{
+	return ;
+}
+
+http::Client &	http::Client::operator=(Client const & rhs)
 {
 	(void)rhs;
 

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/09 13:39:40 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/13 18:03:39 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@
 # include <cstring>
 # include <cerrno>
 
-namespace web
+namespace http
 {
 	class	Request;
 
@@ -37,15 +37,17 @@ namespace web
 			Response(void);
 			~Response(void);
 
-			void		build(Request const * request, std::string & output);
+			std::string const &					get_buffer(void) const;
+			void								build(Request const & request);
 
 		private:
 
-			std::string			_protocol;
-			int					_status;
-			std::map<std::string, std::string>\
-								_header;
-			std::string			_body;
+			std::string							_buffer;
+
+			std::string							_protocol;
+			int									_status;
+			std::map<std::string, std::string>	_header;
+			std::string							_body;
 
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
