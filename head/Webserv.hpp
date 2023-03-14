@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:53:54 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 18:07:18 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/14 10:54:33 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@
 // private
 
 # include "utils.hpp"
-# include "ServerConf.hpp"
+# include "Config.hpp"
 # include "Server.hpp"
 # include "Client.hpp"
 

@@ -21,29 +21,24 @@
 # include "utils.hpp"
 # include "Server.hpp"
 
-namespace web
+namespace http
 {
 	class	Config
 	{
 		public:
-			Config(char const * filename);
+			Config(void);
+			Config(std::string const & filename);
 			~Config(void);
 
-			int						parse(void);
+			void					parse(std::string const & filename);
 			bool					getValidation() const;
 			void					setValidation(bool status);
 			std::vector<params_t>	servers;	
-
-			void					run(void);
 
 		private:
 			bool 					validation;
 			std::string				_file;
 
-			// canonical class form
-			Config(void);
-			Config(Config const & other);
-			Config &					operator=(Config const & rhs);
 			void						parse_config_file(void);
 			std::vector<std::string>	get_confdata();
 			int							count_servers(const std::vector<std::string> & confdata);
@@ -85,8 +80,12 @@ namespace web
 			bool						is_valid_host(std::string host);
 			bool						is_valid_ip(std::vector<std::string> & all_octes);
 			bool						is_valid_errors_code(std::vector<std::string> errors_code);
-			
 
+
+			// canonical class form
+
+			Config(Config const & other);
+			Config &					operator=(Config const & rhs);
 
 	};
 }

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 17:44:01 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/14 11:09:57 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,8 @@ http::Webserv::Webserv(void)\
 }
 
 http::Webserv::Webserv(std::string const & filename)\
- : _config(), _servers(), _clients(), _is_setup(false), _up(0)
+ : _config(filename), _servers(), _clients(), _is_setup(false), _up(0)
 {
-	setup(filename);
 	return ;
 }
 
@@ -96,7 +95,7 @@ void				http::Webserv::clean(void)
 {
 	for (std::map<int, Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
 	{
-		it->second->clean();
+		it->second.clean();
 	}
 	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
@@ -127,7 +126,7 @@ void				http::Webserv::event_client_connect(struct kevent const & event)
 	catch (std::exception const & e)
 	{
 		std::cerr << e.what() << std::endl;
-		_clients[fd]->disconnect();
+		_clients[fd]->disconnect(_kq);
 		delete _clients[fd];
 		_clients.erase(fd);
 		return ;
@@ -141,7 +140,7 @@ void				http::Webserv::event_eof(struct kevent const & event)
 {
 	int		fd = event.ident;
 
-	_clients[fd]->disconnect();
+	_clients[fd]->disconnect(_kq);
 	delete _clients[fd];
 	_clients.erase(fd);
 	std::cout << fd << " disconnected" << std::endl;
@@ -159,19 +158,20 @@ void				http::Webserv::event_read(struct kevent const & event)
 	if (bytes_read < 0)
 	{
 		std::cerr << "recv: " << std::strerror(errno) << std::endl;
-		return (-1);
+		return ;
 	}
 	std::cout << "(" << RED << input << RESET << ")" << std::endl;
 	input[bytes_read] = '\0';
 
-	_clients[fd]->read(input, kq);
+	_clients[fd]->read(input, _kq);
 
 	return ;
 }
 
 void				http::Webserv::event_write(struct kevent const & event)
 {
-	std::string		output = _clients[fd]->write(kq);
+	int				fd = event.ident;
+	std::string		output = _clients[fd]->write(_kq);
 
 	ssize_t	bytes_sent = ::send(fd, static_cast<void const *>(output.c_str()), output.size(), 0);
 
@@ -187,14 +187,15 @@ void				http::Webserv::event_write(struct kevent const & event)
 // canonical class form
 
 http::Webserv::Webserv(Webserv const & other)\
- : _config(other._config), _servers(), _clients(), _is_setup(false), _up(0)
+ : _config(), _servers(), _clients(), _is_setup(false), _up(0)
 {
+	(void)other;
 	return ;
 }
 
 http::Webserv &		http::Webserv::operator=(Webserv const & rhs)
 {
-	_config = rhs._config;
+	(void)rhs;
 	return (*this);
 }
 

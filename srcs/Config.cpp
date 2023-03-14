@@ -14,54 +14,34 @@
 
 // constructor & destructor
 
-web::Config::Config(char const * filename): servers()
+http::Config::Config(void) {}
+
+http::Config::Config(std::string const & filename)\
+ : servers(), _file(filename), validation(true)
+{
+	this->parse_config_file();
+}
+
+http::Config::~Config(void) {}
+
+// member functions
+
+void			http::Config::parse(std::string const & filename)
 {
 	this->_file = filename;
 	this->validation = true;
 	this->parse_config_file();
-}
-
-web::Config::~Config(void) {}
-
-// member functions
-
-int				web::Config::parse(void)
-{
-	return (0);
-}
-
-void			web::Config::run(void)
-{
-	for (size_t	i = 0; i < servers.size(); ++i)
-	{
-		Server	server(servers[i]);
-
-		server.run();
-	}
-
 	return ;
 }
 
-// canonical class form
+bool			http::Config::getValidation() const { return this->validation; }
 
-web::Config::Config(void) {}
-
-web::Config::Config(Config const & other) : _file(other._file) {}
-
-web::Config &	web::Config::operator=(Config const & rhs)
-{
-	this->_file = rhs._file;
-	return (*this);
-}
-
-bool			web::Config::getValidation() const { return this->validation; }
-
-void			web::Config::setValidation(bool status)
+void			http::Config::setValidation(bool status)
 {
 	this->validation = status;
 }
 
-void			web::Config::parse_config_file(void)
+void			http::Config::parse_config_file(void)
 {
 	int							nb_server;
 	std::vector<std::string>	data;
@@ -77,8 +57,8 @@ void			web::Config::parse_config_file(void)
 		while (this->servers[i].start_data <= this->servers[i].end_data)
 		{
 			j = 0;
-			web::Config::skipe_empty_line(data, &this->servers[i].start_data);
-			web::Config::skipe_spaces(data[this->servers[i].start_data], &j);
+			http::Config::skipe_empty_line(data, &this->servers[i].start_data);
+			http::Config::skipe_spaces(data[this->servers[i].start_data], &j);
 			if (data[this->servers[i].start_data].substr(j, 4) == KEY_HOST)
 				this->fill_host_value(data[this->servers[i].start_data], i, &j);
 			else if (data[this->servers[i].start_data].substr(j, 6) == KEY_LISTEN)
@@ -135,7 +115,7 @@ void			web::Config::parse_config_file(void)
 
 }
 
-std::vector<std::string>	web::Config::get_confdata()
+std::vector<std::string>	http::Config::get_confdata()
 {
 	std::vector<std::string>	data;
 	std::ifstream				conf(_file);
@@ -152,7 +132,7 @@ std::vector<std::string>	web::Config::get_confdata()
 	return data;
 }
 
-int  			web::Config::count_servers(const std::vector<std::string> & confdata)
+int  			http::Config::count_servers(const std::vector<std::string> & confdata)
 {
 	int				nb = 0;
 	size_t			data_len = confdata.size(), j;
@@ -160,12 +140,12 @@ int  			web::Config::count_servers(const std::vector<std::string> & confdata)
 	for (size_t i = 0; i < data_len; ++i)
 	{
 		j = KEY_SERVER_LEN;
-		web::Config::skipe_empty_line(confdata, &i);
+		http::Config::skipe_empty_line(confdata, &i);
 		if (confdata[i] == "" && nb >= 1)
 			return (nb);
 		if (confdata[i].substr(0, j) == KEY_SERVER)
 		{
-			web::Config::skipe_spaces(confdata[i], &j);
+			http::Config::skipe_spaces(confdata[i], &j);
 			if (confdata[i][j] == '\0')
 			{
 				i += 1;
@@ -193,7 +173,7 @@ int  			web::Config::count_servers(const std::vector<std::string> & confdata)
 	return (nb);
 }
 
-int 			web::Config::find_close_symbol( const std::vector<std::string> & confdata,\
+int 			http::Config::find_close_symbol( const std::vector<std::string> & confdata,\
 												size_t* cursor, int level )
 {
 	size_t				data_len = confdata.size(), j;
@@ -205,7 +185,7 @@ int 			web::Config::find_close_symbol( const std::vector<std::string> & confdata
 			return (-1);
 		if (level > 0)
 		{
-			web::Config::skipe_spaces(confdata[*cursor], &j);
+			http::Config::skipe_spaces(confdata[*cursor], &j);
 			if (confdata[*cursor].substr(j, 5) == KEY_ROUTE)
 			{
 				std::cout << confdata[*cursor].substr(j) << "\n";
@@ -218,7 +198,7 @@ int 			web::Config::find_close_symbol( const std::vector<std::string> & confdata
 			if (j + 1 == confdata[*cursor].size())
 				return (j);
 			j += 1;
-			web::Config::skipe_spaces(confdata[*cursor], &j);
+			http::Config::skipe_spaces(confdata[*cursor], &j);
 			if (confdata[*cursor][j] == '\0')
 				return (j);
 			std::cout << "LEVEL 2.2";
@@ -231,7 +211,7 @@ int 			web::Config::find_close_symbol( const std::vector<std::string> & confdata
 }
 
 
-void					web::Config::fill_routes( std::vector<std::string> & data, size_t i,\
+void					http::Config::fill_routes( std::vector<std::string> & data, size_t i,\
                                                   size_t* cursor )
 {
 	*cursor += 5;
@@ -257,7 +237,7 @@ void					web::Config::fill_routes( std::vector<std::string> & data, size_t i,\
 	}
 }
 
-void			web::Config::fill_host_value( std::string line, size_t i, size_t* cursor)
+void			http::Config::fill_host_value( std::string line, size_t i, size_t* cursor)
 {
 	*cursor += 4;
 	
@@ -270,13 +250,13 @@ void			web::Config::fill_host_value( std::string line, size_t i, size_t* cursor)
 	}
 }
 
-void			web::Config::skipe_spaces(const std::string & str, size_t* cursor)
+void			http::Config::skipe_spaces(const std::string & str, size_t* cursor)
 {
 	while (*cursor < str.size() && (str[*cursor] == SPACE || str[*cursor] == TAB))
 		*cursor += 1;
 }
 
-void			web::Config::skipe_empty_line ( const std::vector<std::string> & confdata,\
+void			http::Config::skipe_empty_line ( const std::vector<std::string> & confdata,\
 																		size_t* cursor )
 {
 	size_t len = confdata.size(), j;
@@ -301,7 +281,7 @@ void			web::Config::skipe_empty_line ( const std::vector<std::string> & confdata
 	}
 }
 
-std::string		web::Config::get_inline_value(const std::string & line, size_t* cursor)
+std::string		http::Config::get_inline_value(const std::string & line, size_t* cursor)
 {
 	std::string value = "";
 	if (line[line.size() - 1] != SEMI_COLUMN)
@@ -318,7 +298,7 @@ std::string		web::Config::get_inline_value(const std::string & line, size_t* cur
 	return value;
 }
 
-void			web::Config::fill_port_value( std::string line, size_t i, size_t* cursor)
+void			http::Config::fill_port_value( std::string line, size_t i, size_t* cursor)
 {
 	*cursor += 6;
 	std::string port = this->get_inline_value(line, cursor);
@@ -338,7 +318,7 @@ void			web::Config::fill_port_value( std::string line, size_t i, size_t* cursor)
 	this->servers[i].port.push_back(port);
 }
 
-std::string		web::Config::get_route_name( std::vector<std::string> & data, size_t i, \
+std::string		http::Config::get_route_name( std::vector<std::string> & data, size_t i, \
 												 size_t* cursor )
 {
 	std::string curr_line = data[this->servers[i].start_data].substr(*cursor);
@@ -359,7 +339,7 @@ std::string		web::Config::get_route_name( std::vector<std::string> & data, size_
 	return routes_name;
 }
 
-void			web::Config::fill_server_name(std::string line, size_t i, size_t* cursor)
+void			http::Config::fill_server_name(std::string line, size_t i, size_t* cursor)
 {
 	*cursor += 11;
 	std::string names = this->get_inline_value(line, cursor);
@@ -367,7 +347,7 @@ void			web::Config::fill_server_name(std::string line, size_t i, size_t* cursor)
 }
 
 
-std::vector<std::string>	web::Config::split_by_space_or_tab(std::string str)
+std::vector<std::string>	http::Config::split_by_space_or_tab(std::string str)
 {
 	std::vector<std::string> splited;
 	std::string::iterator it = str.begin();
@@ -389,7 +369,7 @@ std::vector<std::string>	web::Config::split_by_space_or_tab(std::string str)
 	return (splited);
 }
 
-void			web::Config::fill_errors_pages(std::string line, size_t i, size_t* cursor)
+void			http::Config::fill_errors_pages(std::string line, size_t i, size_t* cursor)
 {
 	*cursor += 10;
 	std::string tmp = this->get_inline_value(line, cursor);
@@ -405,7 +385,7 @@ void			web::Config::fill_errors_pages(std::string line, size_t i, size_t* cursor
 		std::pair<std::vector<std::string>, std::string>(errors_code, errors_page));
 }
 
-void			web::Config::fill_client_max_body_size( std::string line, size_t i,\
+void			http::Config::fill_client_max_body_size( std::string line, size_t i,\
 												size_t* cursor )
 {
 	*cursor += 20;
@@ -413,7 +393,7 @@ void			web::Config::fill_client_max_body_size( std::string line, size_t i,\
 	this->servers[i].client_max_body_size = std::atoi(tmp.substr(0, tmp.size()).c_str());
 }
 
-bool			web::Config::is_empty(const std::string & str)
+bool			http::Config::is_empty(const std::string & str)
 { 
 	size_t i =  (str.size() > 0) ? 1: 0;
 	this->skipe_spaces(str, &i);
@@ -423,7 +403,7 @@ bool			web::Config::is_empty(const std::string & str)
 }
 
 
-bool	web::Config::is_route_well_formated( std::vector<std::string> & data, size_t i,\
+bool	http::Config::is_route_well_formated( std::vector<std::string> & data, size_t i,\
 										 size_t* cursor )
 {
 	if (data[this->servers[i].start_data][*cursor] != OPEN_SYMBOL)
@@ -452,7 +432,7 @@ bool	web::Config::is_route_well_formated( std::vector<std::string> & data, size_
 	return true;
 }
 
-std::vector<std::string>  web::Config::get_methods(std::string & str, size_t *cursor)
+std::vector<std::string>  http::Config::get_methods(std::string & str, size_t *cursor)
 {
 	std::vector<std::string> methods;
 	*cursor += 6;
@@ -473,7 +453,7 @@ std::vector<std::string>  web::Config::get_methods(std::string & str, size_t *cu
 	return methods;
 }
 
-void			web::Config::set_dir_listing_options( std::string & str, route_t* route,\
+void			http::Config::set_dir_listing_options( std::string & str, route_t* route,\
 													  size_t* cursor )
 {
 	*cursor += 17;
@@ -486,49 +466,49 @@ void			web::Config::set_dir_listing_options( std::string & str, route_t* route,\
 	route->directory_listing = (value == "on")? true : false;
 }
 
-void			web::Config::set_root(std::string & str, route_t* route, size_t* cursor)
+void			http::Config::set_root(std::string & str, route_t* route, size_t* cursor)
 {
 	*cursor += 4;
 	std::string value = this->get_inline_value(str, cursor);
 	route->root = value;
 }
 
-void			web::Config::set_index(std::string & str, route_t* route, size_t* cursor)
+void			http::Config::set_index(std::string & str, route_t* route, size_t* cursor)
 {
 	*cursor += 5;
 	std::string value = this->get_inline_value(str, cursor);
 	route->index = value;
 }
 
-void			web::Config::set_upload(std::string & str, route_t* route, size_t* cursor)
+void			http::Config::set_upload(std::string & str, route_t* route, size_t* cursor)
 {
 	*cursor += 6;
 	std::string value = this->get_inline_value(str, cursor);
 	route->upload = value;
 }
 
-void			web::Config::set_redirect(std::string & str, route_t* route, size_t* cursor)
+void			http::Config::set_redirect(std::string & str, route_t* route, size_t* cursor)
 {
 	*cursor += 8;
 	std::string value = this->get_inline_value(str, cursor);
 	route->upload = value;
 }
 
-void			web::Config::set_cgi_ext(std::string & str, route_t* route, size_t* cursor)
+void			http::Config::set_cgi_ext(std::string & str, route_t* route, size_t* cursor)
 {
 	*cursor += 7;
 	std::string value = this->get_inline_value(str, cursor);
 	route->cgi_ext = value;
 }
 
-void			web::Config::set_cgi_pass(std::string & str, route_t* route, size_t* cursor)
+void			http::Config::set_cgi_pass(std::string & str, route_t* route, size_t* cursor)
 {
 	*cursor += 8;
 	std::string value = this->get_inline_value(str, cursor);
 	route->cgi_pass = value;
 }
 
-bool			web::Config::is_valid_server_nb(int nb_servers)
+bool			http::Config::is_valid_server_nb(int nb_servers)
 {
 	if (nb_servers < 0)
 	{
@@ -538,7 +518,7 @@ bool			web::Config::is_valid_server_nb(int nb_servers)
 	return true;
 }
 
-void			web::Config::fill_route_params( std::vector<std::string> & data, size_t i,\
+void			http::Config::fill_route_params( std::vector<std::string> & data, size_t i,\
 											    size_t* cursor, std::string & route_name )
 {
 	this->skipe_empty_line(data, &this->servers[i].start_data);
@@ -591,7 +571,7 @@ void			web::Config::fill_route_params( std::vector<std::string> & data, size_t i
 	}
 }
 
-bool			web::Config::is_valid_host(std::string host)
+bool			http::Config::is_valid_host(std::string host)
 {
 	if (this->is_empty(host))
 		return false;
@@ -624,7 +604,7 @@ bool			web::Config::is_valid_host(std::string host)
 	return (true);
 }
 
-bool			web::Config::is_valid_ip(std::vector<std::string> & all_octes)
+bool			http::Config::is_valid_ip(std::vector<std::string> & all_octes)
 {
 	int octet;
 
@@ -637,7 +617,7 @@ bool			web::Config::is_valid_ip(std::vector<std::string> & all_octes)
 	return true;
 }
 
-bool			web::Config::is_valid_errors_code(std::vector<std::string> errors_code)
+bool			http::Config::is_valid_errors_code(std::vector<std::string> errors_code)
 {
 	for (std::vector<std::string>::iterator it = errors_code.begin(); it != errors_code.end(); ++it)
 	{
@@ -650,4 +630,15 @@ bool			web::Config::is_valid_errors_code(std::vector<std::string> errors_code)
 		}
 	}
 	return true ;
+}
+
+
+// canonical class form
+
+http::Config::Config(Config const & other) : _file(other._file) {}
+
+http::Config &	http::Config::operator=(Config const & rhs)
+{
+	this->_file = rhs._file;
+	return (*this);
 }
