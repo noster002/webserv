@@ -231,7 +231,7 @@ int 			web::Config::find_close_symbol( const std::vector<std::string> & confdata
 }
 
 
-void					web::Config::fill_routes( std::vector<std::string> & data, size_t i,\ 
+void					web::Config::fill_routes( std::vector<std::string> & data, size_t i,\
                                                   size_t* cursor )
 {
 	*cursor += 5;
@@ -393,7 +393,7 @@ void			web::Config::fill_errors_pages(std::string line, size_t i, size_t* cursor
 {
 	*cursor += 10;
 	std::string tmp = this->get_inline_value(line, cursor);
-	std::vector<std::string> data = this->split_by_space_or_tab( std::string(tmp.begin(), mp.end()));
+	std::vector<std::string> data = this->split_by_space_or_tab( std::string(tmp.begin(), tmp.end()));
 	std::vector<std::string> errors_code(data.begin(), data.end() - 1);
 	if (!this->is_valid_errors_code(errors_code))
 	{
@@ -406,7 +406,7 @@ void			web::Config::fill_errors_pages(std::string line, size_t i, size_t* cursor
 }
 
 void			web::Config::fill_client_max_body_size( std::string line, size_t i,\
-												size_t* cursor );
+												size_t* cursor )
 {
 	*cursor += 20;
 	std::string tmp = this->get_inline_value(line, cursor);
@@ -556,7 +556,7 @@ void			web::Config::fill_route_params( std::vector<std::string> & data, size_t i
 	}
 	else if (data[this->servers[i].start_data].substr(*cursor, 4) == KEY_ROOT)
 	{
-		this->set_root( data[this->servers[i].start_data], &this->servers[i].routes[route_name],\ 
+		this->set_root( data[this->servers[i].start_data], &this->servers[i].routes[route_name],\
 					    cursor );
 	}
 	else if (data[this->servers[i].start_data].substr(*cursor, 5) == KEY_INDEX)
