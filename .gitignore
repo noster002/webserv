@@ -1,5 +1,5 @@
 
-*
+.vscode/*
+objs/
+test/
 .gitignore
-!head/*
-!srcs/*
