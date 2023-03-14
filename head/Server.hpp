@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
+/*   By: fakouyat <fakouyat@student.42wolfsburg.    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 17:23:42 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/13 12:05:49 by fakouyat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@
 
 # include "Socket.hpp"
 # include "Client.hpp"
-# include "ServerConf.hpp"
+# include "Config.hpp"
 
 namespace web
 {

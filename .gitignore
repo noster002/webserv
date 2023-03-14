@@ -1,9 +1,5 @@
-*
 
-!Makefile
-!.gitignore
-!head/*
-!srcs/*
-!objs/*
-!conf/*
-
+.vscode/*
+objs/
+test/
+.gitignore
