@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 18:06:16 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/14 10:51:38 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@
 // private
 
 # include "Socket.hpp"
-# include "ServerConf.hpp"
+# include "Config.hpp"
 
 namespace http
 {
