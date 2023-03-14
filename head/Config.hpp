@@ -33,11 +33,14 @@ namespace http
 			void					parse(std::string const & filename);
 			bool					getValidation() const;
 			void					setValidation(bool status);
-			std::vector<params_t>	servers;	
+			int						get_nbr_servers() const;
+			params_t &				get_server_conf(int i);
 
 		private:
+			std::vector<params_t>	servers;	
 			bool 					validation;
 			std::string				_file;
+			int						nb_servers;
 
 			void						parse_config_file(void);
 			std::vector<std::string>	get_confdata();

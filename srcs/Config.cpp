@@ -43,15 +43,14 @@ void			http::Config::setValidation(bool status)
 
 void			http::Config::parse_config_file(void)
 {
-	int							nb_server;
 	std::vector<std::string>	data;
 	size_t j;
 
 	data = this->get_confdata();
-	nb_server = this->count_servers(data);
-	if (!this->is_valid_server_nb(nb_server))
+	this->nb_servers  = this->count_servers(data);
+	if (!this->is_valid_server_nb(this->nb_servers))
 		return ;
-	for (int i = 0; i < nb_server; ++i)
+	for (int i = 0; i < this->nb_servers; ++i)
 	{
 		//std::cout << "**********SERVER[ " << i << " ]*******************\n";
 		while (this->servers[i].start_data <= this->servers[i].end_data)
@@ -641,4 +640,13 @@ http::Config &	http::Config::operator=(Config const & rhs)
 {
 	this->_file = rhs._file;
 	return (*this);
+}
+
+int				http::Config::get_nbr_servers(void) const { return this->nb_servers; }
+
+params_t &				http::Config::get_server_conf(int i) 
+{
+	if (i < 0 || i >= this->nb_servers)
+		throw std::out_of_range("server doesn't exist");
+	return this->servers[i];
 }
