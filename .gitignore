@@ -1,9 +1,5 @@
-*
 
-!Makefile
-!.gitignore
+*
+.gitignore
 !head/*
 !srcs/*
-!objs/*
-!conf/*
-
