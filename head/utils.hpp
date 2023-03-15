@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 12:00:20 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 15:40:28 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ typedef struct s_params {
 	std::vector<std::string>			s_names;
 	std::map<std::vector<std::string>,\
 			std::string>				err_pages;
-	int									client_max_body_size;
+	size_t								client_max_body_size;
 	std::map<std::string, route_t>		routes;
 	std::vector<std::string>			files_extensions;
 	size_t								start_data;

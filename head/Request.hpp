@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 12:28:02 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 15:44:37 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,32 +30,35 @@
 # include <cstring>
 # include <cerrno>
 
-// private
+// http
 
+# include "utils.hpp"
+# include "Response.hpp"
 
 # define REQUEST_LINE_MAX_LEN 8000
 
 namespace http
 {
-	//# include "Response.hpp"
 
 	class	Request
 	{
 		public:
 
-			Request(size_t client_max_body_size);
+			Request(params_t const & conf);
 			~Request(void);
 
 			void				add_buffer(std::string const & input);
 			void				parse(void);
 			void				clear(void);
 
-			//friend void	Response::build(Request const & request, std::string & output);
+			friend void			Response::build(Request const & request);
 
 		private:
 
+			params_t			_conf;
+
 			std::string			_buffer;
-			std::string			_error;
+			int					_error;
 
 			std::string			_method;
 			int					_version;
@@ -68,8 +71,6 @@ namespace http
 			std::string			_body;
 
 			bool				_is_body;
-
-			size_t				_client_max_body_size;
 
 			bool				_header_complete(void) const;
 

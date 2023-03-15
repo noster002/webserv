@@ -6,14 +6,16 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 13:53:33 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 15:03:44 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 http::Client::Client(int fd, Server const & server)\
- : _server(server), _socket(fd), _request(1024/* client_max_body */), _response()
+ : _server(server), _socket(fd), \
+   _request(server.get_conf()), \
+   _response(server.get_conf())
 {
 	return ;
 }
@@ -89,7 +91,9 @@ std::string		http::Client::write(int kq)
 // canonical class form
 
 http::Client::Client(Client const & other)\
- : _server(other._server), _socket(), _request(0), _response()
+ : _server(other._server), _socket(), \
+   _request(other._server.get_conf()), \
+   _response(other._server.get_conf())
 {
 	return ;
 }

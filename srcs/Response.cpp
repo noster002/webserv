@@ -6,15 +6,15 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 12:36:38 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 15:56:41 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-http::Response::Response(void)
+http::Response::Response(params_t const & conf)\
+ : _conf(conf), _buffer(), _protocol("HTTP/1.1"), _status(0), _header(), _body()
 {
-	(void)_status;
 	return ;
 }
 
@@ -31,16 +31,26 @@ std::string const &				http::Response::get_buffer(void) const
 
 void							http::Response::build(Request const & request)
 {
-	_buffer = "HTTP/1.1 ";
-	(void)request;
+	_buffer = _protocol;
+	_buffer += ' ';
+	_status = request._error;
+	if (_status)
+	{
+		_buffer += _status % 1000 + '0';
+		_buffer += _status % 100 + '0';
+		_buffer += _status % 10 + '0';
+		_buffer += " " + _statuses[_status] + "\r\n";
+	}
+	else
+		_buffer += "200 OK\r\n";
 
-	_buffer += "200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello World!\n";
+	_buffer += "Content-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello World!\n";
 	return ;
 }
 
 void							http::Response::clear(void)
 {
-	new (this) Response();
+	new (this) Response(_conf);
 	return ;
 }
 
@@ -123,6 +133,8 @@ std::map<int, std::string>		http::Response::_statuses = Response::_init_statuses
 
 
 // canonical class form
+
+http::Response::Response(void) {}
 
 http::Response::Response(Response const & other)
 {

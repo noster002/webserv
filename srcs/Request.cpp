@@ -6,15 +6,16 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 13:53:23 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 15:39:02 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
-http::Request::Request(size_t client_max_body_size)\
- : _error(), _method(), _version(-1), _path(), _query(), _host(), _port(-1),\
-   _header(), _body(), _is_body(false), _client_max_body_size(client_max_body_size)
+http::Request::Request(params_t const & conf)\
+ : _conf(conf), _buffer(), _error(0), \
+   _method(), _version(-1), _path(), _query(), _host(), _port(-1), \
+   _header(), _body(), _is_body(false)
 {
 	return ;
 }
@@ -75,7 +76,7 @@ void			http::Request::parse(void)
 
 void			http::Request::clear(void)
 {
-	new (this) Request(1024/* client_max_body_size */);
+	new (this) Request(_conf);
 	return ;
 }
 
@@ -103,13 +104,13 @@ void			http::Request::_read_first_line(size_t & pos)
 	if (end == std::string::npos)
 	{
 		std::cerr << "HTTP request header: invalid" << std::endl;
-		_error = "400";
+		_error = 400;
 		throw BadRequestException();
 	}
 	else if (line.length() > REQUEST_LINE_MAX_LEN)
 	{
 		std::cerr << "HTTP request header: invalid" << std::endl;
-		_error = "414";
+		_error = 414;
 		throw URITooLongException();
 	}
 	pos = end;
@@ -126,7 +127,7 @@ void			http::Request::_read_method(std::string const & line, size_t & pos)
 	if (http::Request::_methods.count(_method) == 0)
 	{
 		std::cerr << "HTTP request header: invalid method" << std::endl;
-		_error = "501";
+		_error = 501;
 		throw NotImplementedException();
 	}
 
@@ -140,7 +141,7 @@ void			http::Request::_read_path(std::string const & line, size_t & pos)
 	if (pos == line.length() - 1)
 	{
 		std::cerr << "HTTP request header: no path / HTTP version" << std::endl;
-		_error = "400";
+		_error = 400;
 		throw BadRequestException();
 	}
 
@@ -149,7 +150,7 @@ void			http::Request::_read_path(std::string const & line, size_t & pos)
 	if (pos2 == std::string::npos)
 	{
 		std::cerr << "HTTP request header: no HTTP version" << std::endl;
-		_error = "400";
+		_error = 400;
 		throw BadRequestException();
 	}
 
@@ -176,7 +177,7 @@ void			http::Request::_read_version(std::string const & line, size_t & pos)
 	}
 
 	std::cerr << "HTTP request header: invalid HTTP version" << std::endl;
-	_error = "505";
+	_error = 505;
 	throw HTTPVersionNotSupportedException();
 }
 
@@ -187,7 +188,7 @@ std::string		http::Request::_get_next_line(size_t & pos)
 
 	if (pos == std::string::npos)
 	{
-		_error = "400";
+		_error = 400;
 		throw BadRequestException();
 	}
 	pos2 = _buffer.find("\r\n", pos);
@@ -219,7 +220,7 @@ std::string		http::Request::_get_key(std::string line)
 	if (pos == std::string::npos)
 	{
 		std::cout << "HTTP request header: invalid field name" << std::endl;
-		_error = "400";
+		_error = 400;
 		throw BadRequestException();
 	}
 
@@ -254,7 +255,7 @@ std::string		http::Request::_get_value(std::string line)
 	if (pos == 0)
 	{
 		std::cerr << "HTTP request header: invalid field value" << std::endl;
-		_error = "400";
+		_error = 400;
 		throw BadRequestException();
 	}
 
@@ -293,7 +294,7 @@ void			http::Request::_process_path(void)
 	if (_path.empty())
 	{
 		std::cerr << "HTTP request header: invalid path" << std::endl;
-		_error = "400";
+		_error = 400;
 		throw BadRequestException();
 	}
 
@@ -313,7 +314,7 @@ void			http::Request::_process_host(void)
 	if (_version == 1 && _header.count("Host") == 0)
 	{
 		std::cerr << "HTTP request header: no host detected" << std::endl;
-		_error = "400";
+		_error = 400;
 		throw BadRequestException();
 	}
 	else if (_header.count("Host") == 1)
@@ -329,7 +330,7 @@ void			http::Request::_process_host(void)
 				if (!std::isdigit(port[i]))
 				{
 					std::cerr << "HTTP request header: invalid port" << std::endl;
-					_error = "400";
+					_error = 400;
 					throw BadRequestException();
 				}
 			}
@@ -350,9 +351,9 @@ std::string		http::Request::_read_body(size_t pos)
 	if (_header.count("Transfer-Encoding") == 0 && \
 		_header.count("Content-Length") == 0)
 		return ("");
-	else if (_buffer.size() > _client_max_body_size)
+	else if (_buffer.size() > _conf.client_max_body_size)
 	{
-		_error = "413";
+		_error = 413;
 		throw ContentTooLargeException();
 	}
 

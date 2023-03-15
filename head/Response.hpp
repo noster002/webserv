@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 11:55:37 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 15:45:44 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,10 @@
 # include <cstring>
 # include <cerrno>
 
+// http
+
+# include "utils.hpp"
+
 namespace http
 {
 	class	Request;
@@ -34,7 +38,7 @@ namespace http
 	{
 		public:
 
-			Response(void);
+			Response(params_t const & conf);
 			~Response(void);
 
 			std::string const &					get_buffer(void) const;
@@ -42,6 +46,8 @@ namespace http
 			void								clear(void);
 
 		private:
+
+			params_t							_conf;
 
 			std::string							_buffer;
 
@@ -55,10 +61,13 @@ namespace http
 
 			// canonical class form
 
+			Response(void);
 			Response(Response const & other);
 			Response &	operator=(Response const & rhs);
 
 	};
 }
+
+# include "Request.hpp"
 
 #endif

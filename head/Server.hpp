@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 11:24:38 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 15:15:05 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,8 @@ namespace http
 			Server(Server const & other);
 			Server &	operator=(Server const & rhs);
 			~Server(void);
+
+			params_t const &	get_conf(void) const;
 
 			int		get_socket_fd(int index) const;
 			int		get_nbr_sockets(void) const;
