@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:21 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 17:39:58 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 11:05:48 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,11 @@ namespace http
 
 			Socket(void);
 			Socket(int fd);
+			Socket(Socket const & other);
+			Socket &	operator=(Socket const & rhs);
 			~Socket(void);
 
-			int			get_fd(void);
+			int			get_fd(void) const;
 
 			void		clean(void);
 			void		close(void);
@@ -54,20 +56,13 @@ namespace http
 			void		listen(int max_pending_clients);
 			void		set_kevent(int kq, int filter, int flags);
 
+
+			class		Exception;
+
 		private:
 
 			int							_fd;
 			struct addrinfo *			_addr;
-
-
-			// exceptions
-
-			class		Exception;
-
-			// canonical class form
-
-			Socket(Socket const & other);
-			Socket &	operator=(Socket const & rhs);
 
 	};
 
@@ -88,6 +83,8 @@ namespace http
 		public:
 
 			Exception(int level);
+
+			int						get_level(void) const;
 
 			char const *			what(void) const throw();
 

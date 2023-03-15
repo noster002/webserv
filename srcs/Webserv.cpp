@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/14 11:09:57 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 13:53:54 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,8 @@ void				http::Webserv::setup(std::string const & filename)
 {
 	_config.parse(filename);
 
+	std::cout << "PARSING FINISHED" << std::endl;
+
 	_kq = ::kqueue();
 
 	if (_kq < 0)
@@ -45,14 +47,16 @@ void				http::Webserv::setup(std::string const & filename)
 
 	for (int i = 0; i < _config.get_nbr_servers(); ++i)
 	{
-		Server		server(_config.get_server(i));
+		Server		server(_config.get_server_conf(i));
 
-		_up += server.setup(_kq);
+		server.setup(_kq);
 
-		_servers[server.get_socket_fd()] = server;
+		for (int j = 0; j < server.get_nbr_sockets(); ++j)
+			_servers[server.get_socket_fd(j)] = server;
 	}
 
 	_is_setup = true;
+	_up = _servers.size();
 }
 
 void				http::Webserv::run(void)
@@ -93,20 +97,21 @@ void				http::Webserv::run(void)
 
 void				http::Webserv::clean(void)
 {
+	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		it->second->disconnect(_kq);
+		delete it->second;
+	}
 	for (std::map<int, Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
 	{
 		it->second.clean();
-	}
-	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
-	{
-		it->second->clean();
-		delete it->second;
 	}
 	return ;
 }
 
 void				http::Webserv::event_client_connect(struct kevent const & event)
 {
+	std::cout << RED << "CONNECTING" << RESET << std::endl;
 	int		fd = ::accept(event.ident, NULL, NULL);
 
 	if (fd < 0)
@@ -114,8 +119,6 @@ void				http::Webserv::event_client_connect(struct kevent const & event)
 		std::cerr << "accept: " << std::strerror(errno) << std::endl;
 		return ;
 	}
-
-	std::cout << "fd: " << fd << std::endl;
 
 	_clients[fd] = new Client(fd, _servers[event.ident]);
 
@@ -138,6 +141,7 @@ void				http::Webserv::event_client_connect(struct kevent const & event)
 
 void				http::Webserv::event_eof(struct kevent const & event)
 {
+	std::cout << RED << "DISCONNECTING" << RESET << std::endl;
 	int		fd = event.ident;
 
 	_clients[fd]->disconnect(_kq);
@@ -150,17 +154,20 @@ void				http::Webserv::event_eof(struct kevent const & event)
 
 void				http::Webserv::event_read(struct kevent const & event)
 {
+	std::cout << RED << "READING" << RESET << std::endl;
 	int				fd = event.ident;
-	char			input[1024];
+	char			input[1024/* REQUEST_SIZE */];
 
-	ssize_t			bytes_read = ::recv(fd, static_cast<void *>(input), 1024, 0);
+	ssize_t			bytes_read = ::recv(fd, static_cast<void *>(input), 1023/* REQUEST_SIZE - 1 */, 0);
 
 	if (bytes_read < 0)
 	{
 		std::cerr << "recv: " << std::strerror(errno) << std::endl;
 		return ;
 	}
-	std::cout << "(" << RED << input << RESET << ")" << std::endl;
+	std::cout << CYAN << "bytes_read: " << bytes_read << std::endl;
+	std::cout << "INPUT:" << std::endl;
+	std::cout << "(" << YELLOW << input << CYAN << ")"  << RESET << std::endl;
 	input[bytes_read] = '\0';
 
 	_clients[fd]->read(input, _kq);
@@ -170,6 +177,7 @@ void				http::Webserv::event_read(struct kevent const & event)
 
 void				http::Webserv::event_write(struct kevent const & event)
 {
+	std::cout << RED << "WRITING" << RESET << std::endl;
 	int				fd = event.ident;
 	std::string		output = _clients[fd]->write(_kq);
 
@@ -179,6 +187,9 @@ void				http::Webserv::event_write(struct kevent const & event)
 	{
 		std::cerr << "send: " << std::strerror(errno) << std::endl;
 	}
+	std::cout << CYAN << "bytes_sent: " << bytes_sent << std::endl;
+	std::cout << "OUTPUT:" << std::endl;
+	std::cout << "(" << YELLOW << output << CYAN << ")"  << RESET << std::endl;
 
 	return ;
 }

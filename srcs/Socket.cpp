@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:08 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 17:40:14 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 11:43:41 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,15 +23,27 @@ http::Socket::Socket(int fd)\
 	return ;
 }
 
+http::Socket::Socket(Socket const & other)\
+ : _fd(other._fd), _addr(other._addr)
+{
+	return ;
+}
+
+http::Socket &			http::Socket::operator=(Socket const & rhs)
+{
+	_fd = rhs._fd;
+	_addr = rhs._addr;
+
+	return (*this);
+}
+
 http::Socket::~Socket(void)
 {
-	clean();
-
 	return ;
 }
 
 
-int			http::Socket::get_fd(void)
+int			http::Socket::get_fd(void) const
 {
 	return (_fd);
 }
@@ -62,20 +74,23 @@ void		http::Socket::get_addr_info(char const * hostname, \
 								char const * port, \
 								struct addrinfo * hints)
 {
-	if (::getaddrinfo(hostname, port, hints, &_addr))
+	int		err = ::getaddrinfo(hostname, port, hints, &_addr);
+
+	if (err)
 	{
-		std::cerr << "get_addr_info: " << ::gai_strerror(_err) << std::endl;
+		std::cerr << "get_addr_info: " << ::gai_strerror(err) << std::endl;
 		throw Exception(e_get_addr_info);
 	}
 }
 
 void		http::Socket::create(void)
 {
-	_fd = ::socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol)
+	_fd = ::socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
 
 	if (_fd < 0)
 	{
 		std::cerr << "socket: " << std::strerror(errno) << std::endl;
+		::freeaddrinfo(_addr);
 		throw Exception(e_create);
 	}
 }
@@ -133,26 +148,14 @@ void		http::Socket::set_kevent(int kq, int filter, int flags)
 }
 
 
-// canonical class form
-
-http::Socket::Socket(Socket const & other)\
- : _fd(other._fd), _addr(other._addr)
-{
-	return ;
-}
-
-http::Socket &			http::Socket::operator=(Socket const & rhs)
-{
-	_fd = rhs._fd;
-	_addr = rhs._addr;
-
-	return (*this);
-}
-
-
 // exceptions
 
 http::Socket::Exception::Exception(int level) : _level(level) {}
+
+int					http::Socket::Exception::get_level(void) const
+{
+	return (_level);
+}
 
 char const *		http::Socket::Exception::what(void) const throw()
 {

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/14 10:51:38 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 11:24:38 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,22 +45,22 @@ namespace http
 
 			Server(void);
 			Server(params_t const & conf);
+			Server(Server const & other);
+			Server &	operator=(Server const & rhs);
 			~Server(void);
 
-			int		setup(int kq);
+			int		get_socket_fd(int index) const;
+			int		get_nbr_sockets(void) const;
+
+			void	setup(int kq);
+			void	clean(void);
 
 		private:
 
 			params_t					_conf;
-			std::vector<Socket>			_sockets;
+			std::vector<Socket *>		_sockets;
 
 			void	set_addr_info(Socket & socket, char const * port);
-
-
-			// canonical class form
-
-			Server(Server const & other);
-			Server &	operator=(Server const & rhs);
 
 	};
 }

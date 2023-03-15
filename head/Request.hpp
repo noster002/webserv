@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 18:03:43 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 12:28:02 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ namespace http
 		private:
 
 			std::string			_buffer;
-			int					_error;
+			std::string			_error;
 
 			std::string			_method;
 			int					_version;
@@ -71,16 +71,16 @@ namespace http
 
 			size_t				_client_max_body_size;
 
-			bool				_header_complete(std::string const & input) const;
+			bool				_header_complete(void) const;
 
-			void				_read_first_line(std::string const & input);
+			void				_read_first_line(size_t & pos);
 			void				_read_method(std::string const & line, size_t & pos);
 			void				_read_path(std::string const & line, size_t & pos);
 			void				_read_version(std::string const & line, size_t & pos);
-			std::string			_get_next_line(std::string const & input, size_t & pos);
+			std::string			_get_next_line(size_t & pos);
 			std::string			_get_key(std::string line);
 			std::string			_get_value(std::string line);
-			std::string			_read_body(std::string input, size_t pos);
+			std::string			_read_body(size_t pos);
 			void				_process_header_fields(void);
 			void				_process_path(void);
 			void				_process_host(void);

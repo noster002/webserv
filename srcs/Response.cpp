@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 17:52:59 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 12:36:38 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,9 +31,16 @@ std::string const &				http::Response::get_buffer(void) const
 
 void							http::Response::build(Request const & request)
 {
+	_buffer = "HTTP/1.1 ";
 	(void)request;
 
-	output = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello World!\n";
+	_buffer += "200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello World!\n";
+	return ;
+}
+
+void							http::Response::clear(void)
+{
+	new (this) Response();
 	return ;
 }
 

@@ -6,14 +6,14 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/13 17:57:34 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 13:53:33 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 http::Client::Client(int fd, Server const & server)\
- : _server(server), _socket(fd), _request(), _response()
+ : _server(server), _socket(fd), _request(1024/* client_max_body */), _response()
 {
 	return ;
 }
@@ -24,19 +24,21 @@ http::Client::~Client(void)
 }
 
 
-void					http::Client::connect(int kq)
+void			http::Client::connect(int kq)
 {
 	_socket.set_non_blocking();
 	_socket.set_kevent(kq, EVFILT_READ, EV_ADD);
+	_socket.set_kevent(kq, EVFILT_WRITE, EV_ADD | EV_DISABLE);
 
 	return ;
 }
 
-void					http::Client::disconnect(int kq)
+void			http::Client::disconnect(int kq)
 {
 	try
 	{
 		_socket.set_kevent(kq, EVFILT_READ, EV_DELETE);
+		_socket.set_kevent(kq, EVFILT_WRITE, EV_DELETE);
 		_socket.close();
 	}
 	catch (std::exception const & e)
@@ -47,7 +49,7 @@ void					http::Client::disconnect(int kq)
 	return ;
 }
 
-void					http::Client::read(std::string const & input, int kq)
+void			http::Client::read(std::string const & input, int kq)
 {
 	_request.add_buffer(input);
 
@@ -55,7 +57,7 @@ void					http::Client::read(std::string const & input, int kq)
 	{
 		_request.parse();
 		_response.build(_request);
-		_socket.set_kevent(kq, EVFILT_WRITE, EV_ADD | EV_ENABLE);
+		_socket.set_kevent(kq, EVFILT_WRITE, EV_ENABLE);
 	}
 	catch (std::exception const & e)
 	{
@@ -65,7 +67,7 @@ void					http::Client::read(std::string const & input, int kq)
 	return ;
 }
 
-std::string const &		http::Client::write(int kq)
+std::string		http::Client::write(int kq)
 {
 	std::string		output = _response.get_buffer();
 
@@ -86,14 +88,8 @@ std::string const &		http::Client::write(int kq)
 
 // canonical class form
 
-http::Client::Client(void)\
- : _server(), _socket(), _request(), _response()
-{
-	return ;
-}
-
 http::Client::Client(Client const & other)\
- : _server(other._server), _socket(), _request(), _response()
+ : _server(other._server), _socket(), _request(0), _response()
 {
 	return ;
 }

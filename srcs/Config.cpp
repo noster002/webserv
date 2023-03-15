@@ -17,7 +17,7 @@
 http::Config::Config(void) {}
 
 http::Config::Config(std::string const & filename)\
- : servers(), _file(filename), validation(true)
+ : servers(), validation(true), _file(filename), nb_servers(0)
 {
 	this->parse_config_file();
 }
@@ -41,6 +41,18 @@ void			http::Config::setValidation(bool status)
 	this->validation = status;
 }
 
+int				http::Config::get_nbr_servers(void) const { return this->nb_servers; }
+
+params_t &		http::Config::get_server_conf(int i) 
+{
+	if (i < 0 || i >= this->nb_servers)
+		throw std::out_of_range("server doesn't exist");
+	return this->servers[i];
+}
+
+
+// private
+
 void			http::Config::parse_config_file(void)
 {
 	std::vector<std::string>	data;
@@ -52,7 +64,7 @@ void			http::Config::parse_config_file(void)
 		return ;
 	for (int i = 0; i < this->nb_servers; ++i)
 	{
-		//std::cout << "**********SERVER[ " << i << " ]*******************\n";
+		std::cout << RED << "**********SERVER[ " << i + 1 << " ]*******************" << RESET << "\n";
 		while (this->servers[i].start_data <= this->servers[i].end_data)
 		{
 			j = 0;
@@ -76,11 +88,11 @@ void			http::Config::parse_config_file(void)
 				return ;
 			this->servers[i].start_data += 1;
 		}
-		std::cout << "HOST : " << "  " << this->servers[i].host << "\n";
-		std::cout << "PORT : " << "  " << this->servers[i].port[0] << "\n";
-		std::cout << "PORT : " << "  " << this->servers[i].port[1] << "\n";
-		std::cout << "SERVER NAME : " << "  " << this->servers[i].s_names[0] << "\n";
-		std::cout << "SERVER NAME : " << "  " << this->servers[i].s_names[1] << "\n";
+		std::cout << "HOST :\t" << this->servers[i].host << "\n";
+		for (size_t k = 0; k < this->servers[i].port.size(); ++k)
+			std::cout << "PORT " << k + 1 << ":\t" << this->servers[i].port[k] << "\n";
+		for (size_t l = 0; l < this->servers[i].s_names.size(); ++l)
+			std::cout << "SERVER NAME " << l + 1 << ":\t" << this->servers[i].s_names[l] << "\n";
 		std::map<std::vector<std::string>, std::string>::iterator err = this->servers[i].err_pages.begin();
 		while (err != this->servers[i].err_pages.end())
 		{
@@ -640,13 +652,4 @@ http::Config &	http::Config::operator=(Config const & rhs)
 {
 	this->_file = rhs._file;
 	return (*this);
-}
-
-int				http::Config::get_nbr_servers(void) const { return this->nb_servers; }
-
-params_t &				http::Config::get_server_conf(int i) 
-{
-	if (i < 0 || i >= this->nb_servers)
-		throw std::out_of_range("server doesn't exist");
-	return this->servers[i];
 }
