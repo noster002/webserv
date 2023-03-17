@@ -6,14 +6,14 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 15:56:41 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/17 15:37:35 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-http::Response::Response(params_t const & conf)\
- : _conf(conf), _buffer(), _protocol("HTTP/1.1"), _status(0), _header(), _body()
+http::Response::Response(params_t const & server)\
+ : _server(server), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body()
 {
 	return ;
 }
@@ -24,33 +24,96 @@ http::Response::~Response(void)
 }
 
 
-std::string const &				http::Response::get_buffer(void) const
+std::string const &	http::Response::get_buffer(void) const
 {
 	return (_buffer);
 }
 
-void							http::Response::build(Request const & request)
+void				http::Response::build(int error, t_request const & request)
 {
-	_buffer = _protocol;
-	_buffer += ' ';
-	_status = request._error;
-	if (_status)
-	{
-		_buffer += _status % 1000 + '0';
-		_buffer += _status % 100 + '0';
-		_buffer += _status % 10 + '0';
-		_buffer += " " + _statuses[_status] + "\r\n";
-	}
-	else
-		_buffer += "200 OK\r\n";
+	_status = error;
 
-	_buffer += "Content-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello World!\n";
+	if (_status)
+		_serve_request_error();
+	else if (request.method == "GET")
+		_serve_get_request(request);
+	else if (request.method == "POST")
+		_serve_post_request(request);
+	else if (request.method == "DELETE")
+		_serve_delete_request(request);
+	_set_status_line();
+	_set_head();
+	_set_body();
+
 	return ;
 }
 
-void							http::Response::clear(void)
+void				http::Response::clear(void)
 {
-	new (this) Response(_conf);
+	new (this) Response(_server);
+	return ;
+}
+
+void				http::Response::_serve_get_request(t_request const & request)
+{
+	std::fstream	file(request.path);
+
+	if (file.is_open() == false)
+	{
+		_status = 404;
+		_serve_file_error();
+	}
+
+}
+
+void				http::Response::_serve_post_request(t_request const & request)
+{
+	(void)request;
+}
+
+void				http::Response::_serve_delete_request(t_request const & request)
+{
+	(void)request;
+}
+
+void				http::Response::_serve_request_error(void)
+{
+
+}
+
+void				http::Response::_serve_file_error(void)
+{
+
+}
+
+void				http::Response::_set_status_line(void)
+{
+	std::stringstream	status_line;
+
+	status_line << _protocol << ' ' << _status << ' ' << _statuses[_status] << "\r\n";
+
+	_buffer = status_line.str();
+
+	return ;
+}
+
+void				http::Response::_set_head(void)
+{
+	std::stringstream	head;
+
+	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); ++it)
+		head << it->first << ": " << it->second << "\r\n";
+
+	head << "\r\n";
+
+	_buffer += head.str();
+
+	return ;
+}
+
+void				http::Response::_set_body(void)
+{
+	_buffer += _body;
 	return ;
 }
 

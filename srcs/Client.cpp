@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 15:03:44 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/17 11:41:30 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,7 @@ void			http::Client::read(std::string const & input, int kq)
 	try
 	{
 		_request.parse();
-		_response.build(_request);
+		_response.build(_request.get_error(), _request.get_conf());
 		_socket.set_kevent(kq, EVFILT_WRITE, EV_ENABLE);
 	}
 	catch (std::exception const & e)
