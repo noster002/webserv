@@ -6,15 +6,15 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 12:36:38 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/17 15:37:35 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-http::Response::Response(void)
+http::Response::Response(params_t const & server)\
+ : _server(server), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body()
 {
-	(void)_status;
 	return ;
 }
 
@@ -24,23 +24,96 @@ http::Response::~Response(void)
 }
 
 
-std::string const &				http::Response::get_buffer(void) const
+std::string const &	http::Response::get_buffer(void) const
 {
 	return (_buffer);
 }
 
-void							http::Response::build(Request const & request)
+void				http::Response::build(int error, t_request const & request)
 {
-	_buffer = "HTTP/1.1 ";
-	(void)request;
+	_status = error;
 
-	_buffer += "200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello World!\n";
+	if (_status)
+		_serve_request_error();
+	else if (request.method == "GET")
+		_serve_get_request(request);
+	else if (request.method == "POST")
+		_serve_post_request(request);
+	else if (request.method == "DELETE")
+		_serve_delete_request(request);
+	_set_status_line();
+	_set_head();
+	_set_body();
+
 	return ;
 }
 
-void							http::Response::clear(void)
+void				http::Response::clear(void)
 {
-	new (this) Response();
+	new (this) Response(_server);
+	return ;
+}
+
+void				http::Response::_serve_get_request(t_request const & request)
+{
+	std::fstream	file(request.path);
+
+	if (file.is_open() == false)
+	{
+		_status = 404;
+		_serve_file_error();
+	}
+
+}
+
+void				http::Response::_serve_post_request(t_request const & request)
+{
+	(void)request;
+}
+
+void				http::Response::_serve_delete_request(t_request const & request)
+{
+	(void)request;
+}
+
+void				http::Response::_serve_request_error(void)
+{
+
+}
+
+void				http::Response::_serve_file_error(void)
+{
+
+}
+
+void				http::Response::_set_status_line(void)
+{
+	std::stringstream	status_line;
+
+	status_line << _protocol << ' ' << _status << ' ' << _statuses[_status] << "\r\n";
+
+	_buffer = status_line.str();
+
+	return ;
+}
+
+void				http::Response::_set_head(void)
+{
+	std::stringstream	head;
+
+	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); ++it)
+		head << it->first << ": " << it->second << "\r\n";
+
+	head << "\r\n";
+
+	_buffer += head.str();
+
+	return ;
+}
+
+void				http::Response::_set_body(void)
+{
+	_buffer += _body;
 	return ;
 }
 
@@ -123,6 +196,8 @@ std::map<int, std::string>		http::Response::_statuses = Response::_init_statuses
 
 
 // canonical class form
+
+http::Response::Response(void) {}
 
 http::Response::Response(Response const & other)
 {

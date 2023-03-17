@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 11:44:43 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/15 15:15:54 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,12 @@ http::Server::~Server(void)
 	clean();
 
 	return ;
+}
+
+
+params_t const &	http::Server::get_conf(void) const
+{
+	return (_conf);
 }
 
 

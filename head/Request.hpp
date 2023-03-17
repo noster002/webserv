@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 12:28:02 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/17 11:46:58 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,46 +30,39 @@
 # include <cstring>
 # include <cerrno>
 
-// private
+// http
 
+# include "utils.hpp"
 
 # define REQUEST_LINE_MAX_LEN 8000
 
 namespace http
 {
-	//# include "Response.hpp"
 
 	class	Request
 	{
 		public:
 
-			Request(size_t client_max_body_size);
+			Request(params_t const & server);
 			~Request(void);
+
+			int					get_error(void) const;
+			t_request const &	get_conf(void) const;
 
 			void				add_buffer(std::string const & input);
 			void				parse(void);
 			void				clear(void);
 
-			//friend void	Response::build(Request const & request, std::string & output);
-
 		private:
 
-			std::string			_buffer;
-			std::string			_error;
+			params_t			_server;
 
-			std::string			_method;
-			int					_version;
-			std::string			_path;
-			std::string			_query;
-			std::string			_host;
-			int					_port;
-			std::map<std::string, std::string>\
-								_header;
-			std::string			_body;
+			std::string			_buffer;
+			int					_error;
+
+			t_request			_conf;
 
 			bool				_is_body;
-
-			size_t				_client_max_body_size;
 
 			bool				_header_complete(void) const;
 

@@ -93,7 +93,7 @@ void			http::Config::parse_config_file(void)
 			std::cout << "PORT " << k + 1 << ":\t" << this->servers[i].port[k] << "\n";
 		for (size_t l = 0; l < this->servers[i].s_names.size(); ++l)
 			std::cout << "SERVER NAME " << l + 1 << ":\t" << this->servers[i].s_names[l] << "\n";
-		std::map<std::vector<std::string>, std::string>::iterator err = this->servers[i].err_pages.begin();
+		std::map<std::vector<int>, std::string>::iterator err = this->servers[i].err_pages.begin();
 		while (err != this->servers[i].err_pages.end())
 		{
 			for (size_t key = 0; key < err->first.size(); ++key)
@@ -385,15 +385,18 @@ void			http::Config::fill_errors_pages(std::string line, size_t i, size_t* curso
 	*cursor += 10;
 	std::string tmp = this->get_inline_value(line, cursor);
 	std::vector<std::string> data = this->split_by_space_or_tab( std::string(tmp.begin(), tmp.end()));
-	std::vector<std::string> errors_code(data.begin(), data.end() - 1);
-	if (!this->is_valid_errors_code(errors_code))
+	std::vector<std::string> errors_code_str(data.begin(), data.end() - 1);
+	if (!this->is_valid_errors_code(errors_code_str))
 	{
 		this->setValidation(false);
 		return ;
 	}
 	std::string errors_page = *(data.end() - 1);
+	std::vector<int> errors_code;
+	for (size_t j = 0; j < errors_code_str.size(); ++j)
+		errors_code.push_back(std::atoi(errors_code_str[j].c_str()));
 	this->servers[i].err_pages.insert(this->servers[i].err_pages.end(),\
-		std::pair<std::vector<std::string>, std::string>(errors_code, errors_page));
+		std::pair<std::vector<int>, std::string>(errors_code, errors_page));
 }
 
 void			http::Config::fill_client_max_body_size( std::string line, size_t i,\

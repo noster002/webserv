@@ -6,14 +6,16 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 13:53:33 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/17 11:41:30 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 http::Client::Client(int fd, Server const & server)\
- : _server(server), _socket(fd), _request(1024/* client_max_body */), _response()
+ : _server(server), _socket(fd), \
+   _request(server.get_conf()), \
+   _response(server.get_conf())
 {
 	return ;
 }
@@ -56,7 +58,7 @@ void			http::Client::read(std::string const & input, int kq)
 	try
 	{
 		_request.parse();
-		_response.build(_request);
+		_response.build(_request.get_error(), _request.get_conf());
 		_socket.set_kevent(kq, EVFILT_WRITE, EV_ENABLE);
 	}
 	catch (std::exception const & e)
@@ -89,7 +91,9 @@ std::string		http::Client::write(int kq)
 // canonical class form
 
 http::Client::Client(Client const & other)\
- : _server(other._server), _socket(), _request(0), _response()
+ : _server(other._server), _socket(), \
+   _request(other._server.get_conf()), \
+   _response(other._server.get_conf())
 {
 	return ;
 }

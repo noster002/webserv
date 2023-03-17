@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 11:55:37 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/17 15:03:24 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,14 @@
 # include <map>
 # include <string>
 # include <iostream>
+# include <fstream>
+# include <sstream>
 # include <cstring>
 # include <cerrno>
+
+// http
+
+# include "utils.hpp"
 
 namespace http
 {
@@ -34,14 +40,16 @@ namespace http
 	{
 		public:
 
-			Response(void);
+			Response(params_t const & conf);
 			~Response(void);
 
 			std::string const &					get_buffer(void) const;
-			void								build(Request const & request);
+			void								build(int error, t_request const & request);
 			void								clear(void);
 
 		private:
+
+			params_t							_server;
 
 			std::string							_buffer;
 
@@ -50,15 +58,29 @@ namespace http
 			std::map<std::string, std::string>	_header;
 			std::string							_body;
 
+			void								_serve_get_request(t_request const & request);
+			void								_serve_post_request(t_request const & request);
+			void								_serve_delete_request(t_request const & request);
+
+			void								_serve_request_error(void);
+			void								_serve_file_error(void);
+
+			void								_set_status_line(void);
+			void								_set_head(void);
+			void								_set_body(void);
+
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
 
 			// canonical class form
 
+			Response(void);
 			Response(Response const & other);
 			Response &	operator=(Response const & rhs);
 
 	};
 }
+
+# include "Request.hpp"
 
 #endif
