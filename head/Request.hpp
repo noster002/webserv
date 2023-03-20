@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/17 11:46:58 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/20 16:32:56 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,8 +50,7 @@ namespace http
 			t_request const &	get_conf(void) const;
 
 			void				add_buffer(std::string const & input);
-			void				parse(void);
-			void				clear(void);
+			int					parse(void);
 
 		private:
 
@@ -66,29 +65,23 @@ namespace http
 
 			bool				_header_complete(void) const;
 
-			void				_read_first_line(size_t & pos);
-			void				_read_method(std::string const & line, size_t & pos);
-			void				_read_path(std::string const & line, size_t & pos);
-			void				_read_version(std::string const & line, size_t & pos);
+			int					_read_first_line(size_t & pos);
+			int					_read_method(std::string const & line, size_t & pos);
+			int					_read_path(std::string const & line, size_t & pos);
+			int					_read_version(std::string const & line, size_t & pos);
 			std::string			_get_next_line(size_t & pos);
 			std::string			_get_key(std::string line);
 			std::string			_get_value(std::string line);
 			std::string			_read_body(size_t pos);
 			void				_process_header_fields(void);
-			void				_process_path(void);
-			void				_process_host(void);
+			int					_process_path(void);
+			int					_process_host(void);
 
 			bool				_is_token(char c) const;
 			bool				_is_whitespace(char c) const;
 
 			static std::set<std::string>		_methods;
 			static std::set<std::string>		_init_methods(void);
-
-			class				BadRequestException;
-			class				URITooLongException;
-			class				NotImplementedException;
-			class				ContentTooLargeException;
-			class				HTTPVersionNotSupportedException;
 
 
 			// canonical class form
@@ -99,45 +92,6 @@ namespace http
 
 	};
 
-	class		Request::BadRequestException : public std::exception
-	{
-		public:
-
-			char const *	what(void) const throw();
-
-	};
-
-	class		Request::URITooLongException : public std::exception
-	{
-		public:
-
-			char const *	what(void) const throw();
-
-	};
-
-	class		Request::NotImplementedException : public std::exception
-	{
-		public:
-
-			char const *	what(void) const throw();
-
-	};
-
-	class		Request::ContentTooLargeException : public std::exception
-	{
-		public:
-
-			char const *	what(void) const throw();
-
-	};
-
-	class		Request::HTTPVersionNotSupportedException : public std::exception
-	{
-		public:
-
-			char const *	what(void) const throw();
-
-	};
 }
 
 #endif

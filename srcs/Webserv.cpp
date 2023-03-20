@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 13:53:54 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/20 15:15:08 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -165,10 +165,10 @@ void				http::Webserv::event_read(struct kevent const & event)
 		std::cerr << "recv: " << std::strerror(errno) << std::endl;
 		return ;
 	}
+	input[bytes_read] = '\0';
 	std::cout << CYAN << "bytes_read: " << bytes_read << std::endl;
 	std::cout << "INPUT:" << std::endl;
 	std::cout << "(" << YELLOW << input << CYAN << ")"  << RESET << std::endl;
-	input[bytes_read] = '\0';
 
 	_clients[fd]->read(input, _kq);
 

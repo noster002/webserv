@@ -65,7 +65,7 @@ namespace http
 			bool						is_empty(const std::string & str);
 			bool						is_route_well_formated( std::vector<std::string> & data,\
 														        size_t i, size_t* cursor );
-			std::vector<std::string>  	get_methods(std::string & str, size_t *cursor);
+			std::set<std::string>		get_methods(std::string & str, size_t *cursor);
 			void						set_dir_listing_options( std::string & str, route_t* route,\
 													             size_t* cursor );
 			void						set_root(std::string & str, route_t* route, size_t* cursor);

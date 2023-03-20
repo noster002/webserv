@@ -93,14 +93,11 @@ void			http::Config::parse_config_file(void)
 			std::cout << "PORT " << k + 1 << ":\t" << this->servers[i].port[k] << "\n";
 		for (size_t l = 0; l < this->servers[i].s_names.size(); ++l)
 			std::cout << "SERVER NAME " << l + 1 << ":\t" << this->servers[i].s_names[l] << "\n";
-		std::map<std::vector<int>, std::string>::iterator err = this->servers[i].err_pages.begin();
+		std::cout << "ERROR PAGE" << "\n";
+		std::map<int, std::string>::iterator err = this->servers[i].err_pages.begin();
 		while (err != this->servers[i].err_pages.end())
 		{
-			for (size_t key = 0; key < err->first.size(); ++key)
-			{
-				std::cout << err->first[key] << " ";
-			}
-			std::cout << " == > " << err->second << "\n";
+			std::cout << err->first << " == > " << err->second << "\n";
 			++err;
 		}
 		std::cout << "MAX BODY : " << "  " << this->servers[i].client_max_body_size << "\n";
@@ -108,9 +105,9 @@ void			http::Config::parse_config_file(void)
 		while (routes != this->servers[i].routes.end())
 		{
 			std::cout << "--ROUTE =>  " << routes->first << "  Methods:  ";
-			for (size_t value = 0; value < routes->second.method.size(); ++value)
+			for (std::set<std::string>::iterator set = routes->second.method.begin(); set != routes->second.method.end(); ++set)
 			{
-				std::cout << routes->second.method[value] << " ";
+				std::cout << *set << " ";
 			}
 			std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
 			std::cout << " ROOT : " << routes->second.root;
@@ -392,11 +389,13 @@ void			http::Config::fill_errors_pages(std::string line, size_t i, size_t* curso
 		return ;
 	}
 	std::string errors_page = *(data.end() - 1);
-	std::vector<int> errors_code;
+	int errors_code;
 	for (size_t j = 0; j < errors_code_str.size(); ++j)
-		errors_code.push_back(std::atoi(errors_code_str[j].c_str()));
-	this->servers[i].err_pages.insert(this->servers[i].err_pages.end(),\
-		std::pair<std::vector<int>, std::string>(errors_code, errors_page));
+	{
+		errors_code = std::atoi(errors_code_str[j].c_str());
+		this->servers[i].err_pages.insert(this->servers[i].err_pages.end(),\
+			std::pair<int, std::string>(errors_code, errors_page));
+	}
 }
 
 void			http::Config::fill_client_max_body_size( std::string line, size_t i,\
@@ -446,7 +445,7 @@ bool	http::Config::is_route_well_formated( std::vector<std::string> & data, size
 	return true;
 }
 
-std::vector<std::string>  http::Config::get_methods(std::string & str, size_t *cursor)
+std::set<std::string>  http::Config::get_methods(std::string & str, size_t *cursor)
 {
 	std::vector<std::string> methods;
 	*cursor += 6;
@@ -464,7 +463,8 @@ std::vector<std::string>  http::Config::get_methods(std::string & str, size_t *c
 		else
 			this->setValidation(false);
 	}
-	return methods;
+	std::set<std::string>	method_set(methods.begin(), methods.end());
+	return method_set;
 }
 
 void			http::Config::set_dir_listing_options( std::string & str, route_t* route,\

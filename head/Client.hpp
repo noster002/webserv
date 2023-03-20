@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 14:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 13:53:40 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/20 16:32:43 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,8 @@ namespace http
 
 			void				read(std::string const & input, int kq);
 			std::string			write(int kq);
+
+			void				clear(void);
 
 		private:
 

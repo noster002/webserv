@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/17 14:54:39 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/20 14:56:22 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include <string>
 # include <vector>
 # include <map>
+# include <set>
 
 # define RESET "\033[0m"
 # define BLACK "\033[30m"
@@ -51,7 +52,7 @@
 # define TAB 9
 
 typedef struct	s_route {
-	std::vector<std::string> 	method;
+	std::set<std::string>		method;
 	bool						directory_listing;
 	std::string					root;
 	std::string					index;
@@ -65,8 +66,7 @@ typedef struct s_params {
 	std::string							host;
 	std::vector<std::string>			port;
 	std::vector<std::string>			s_names;
-	std::map<std::vector<int>,\
-			std::string>				err_pages;
+	std::map<int, std::string>			err_pages;
 	size_t								client_max_body_size;
 	std::map<std::string, route_t>		routes;
 	std::vector<std::string>			files_extensions;

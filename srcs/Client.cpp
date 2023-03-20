@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/17 11:41:30 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/20 16:32:27 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,10 +55,13 @@ void			http::Client::read(std::string const & input, int kq)
 {
 	_request.add_buffer(input);
 
+	_request.parse();
+	std::cout << GREEN << "BUILD" << RESET << std::endl;
+
+	_response.build(_request.get_error(), _request.get_conf());
+
 	try
 	{
-		_request.parse();
-		_response.build(_request.get_error(), _request.get_conf());
 		_socket.set_kevent(kq, EVFILT_WRITE, EV_ENABLE);
 	}
 	catch (std::exception const & e)
@@ -73,10 +76,10 @@ std::string		http::Client::write(int kq)
 {
 	std::string		output = _response.get_buffer();
 
+	clear();
+
 	try
 	{
-		_request.clear();
-		_response.clear();
 		_socket.set_kevent(kq, EVFILT_WRITE, EV_DISABLE);
 	}
 	catch (std::exception const & e)
@@ -85,6 +88,16 @@ std::string		http::Client::write(int kq)
 	}
 
 	return (output);
+}
+
+void			http::Client::clear(void)
+{
+	_request.~Request();
+	new (&_request) Request(_server.get_conf());
+	_response.~Response();
+	new (&_response) Response(_server.get_conf());
+
+	return ;
 }
 
 
