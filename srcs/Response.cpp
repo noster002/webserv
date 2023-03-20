@@ -55,15 +55,7 @@ void				http::Response::build(int error, t_request const & request)
 
 void				http::Response::_serve_get_request(t_request const & request)
 {
-	std::string			pathname = _get_path(request);
-
-	if (pathname.empty())
-		return ;
-
-	_set_content_type(pathname);
-
-	std::fstream		file(pathname.c_str());
-
+	std::fstream	file(request.path);
 	if (file.is_open() == false)
 	{
 		_status = 404;
@@ -86,6 +78,14 @@ void				http::Response::_serve_get_request(t_request const & request)
 
 void				http::Response::_serve_post_request(t_request const & request)
 {
+	std::fstream test_log;
+  	test_log.open ("logfile.txt", std::fstream::in | std::fstream::out | std::fstream::app);
+	test_log << "REQUETE BIEN RECUE" << "\n";
+	test_log << "METHOD : " << request.method << "\n";
+	test_log << "BODY : "<< request.body << "\n";
+	test_log << "UPLD :" << this->_server.routes[request.path].upload << "\n";
+	test_log << "PATH :" << this->_get_path(request);
+	test_log.close();
 	(void)request;
 }
 

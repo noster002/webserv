@@ -364,6 +364,8 @@ std::string			http::Request::_read_body(size_t pos)
 {
 	_buffer.erase(0, pos);
 
+	std::cout << "_buffer.size(): " << _buffer.size() << std::endl;
+	std::cout << "_server.client_max_body_size" << _server.client_max_body_size << std::endl;
 	if (_conf.header.count("Transfer-Encoding") == 0 && \
 		_conf.header.count("Content-Length") == 0)
 		return ("");

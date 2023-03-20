@@ -34,7 +34,7 @@ http::Webserv::~Webserv(void)
 void				http::Webserv::setup(std::string const & filename)
 {
 	_config.parse(filename);
-
+	std::cout << _config.get_server_conf(1).client_max_body_size << std::endl;
 	std::cout << "PARSING FINISHED" << std::endl;
 
 	_kq = ::kqueue();
@@ -156,9 +156,9 @@ void				http::Webserv::event_read(struct kevent const & event)
 {
 	std::cout << RED << "READING" << RESET << std::endl;
 	int				fd = event.ident;
-	char			input[1024/* REQUEST_SIZE */];
+	char			input[10000/* REQUEST_SIZE */];
 
-	ssize_t			bytes_read = ::recv(fd, static_cast<void *>(input), 1023/* REQUEST_SIZE - 1 */, 0);
+	ssize_t			bytes_read = ::recv(fd, static_cast<void *>(input), 10000/* REQUEST_SIZE - 1 */, 0);
 
 	if (bytes_read < 0)
 	{

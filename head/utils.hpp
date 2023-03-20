@@ -88,4 +88,15 @@ typedef struct			s_request
 	std::string			body;
 }						t_request;
 
+namespace utils {
+	template<typename T1, typename T2>
+	void	display_map(const std::map<T1,T2> & m)
+	{
+		typename std::map<T1, T2>::const_iterator it = m.begin();
+		for (; it != m.end(); ++it)
+		{
+			std::cout << it->first << " => " << it->second << "\n";
+		}
+	}
+}
 #endif
