@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 18:29:03 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/21 15:02:04 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,6 @@
 http::Response::Response(params_t const & server)\
  : _server(server), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body()
 {
-	for (std::map<std::string, route_t>::iterator it = _server.routes.begin(); it != _server.routes.end(); ++it)
-		std::cout << "(" << it->first << ")(" << it->second.root << ")" << std::endl;
 	return ;
 }
 
@@ -369,23 +367,50 @@ std::map<std::string, std::string>		http::Response::_init_MIME_types(void)
 	MIME_types[".shtml"] = "text/html";
 	MIME_types[".css"] = "text/css";
 	MIME_types[".xml"] = "text/xml";
-	MIME_types[".rss"] = "text/xml";
 	MIME_types[".gif"] = "image/gif";
 	MIME_types[".jpeg"] = "image/jpeg";
 	MIME_types[".jpg"] = "image/jpeg";
-	MIME_types[".js"] = "application/x-javascript";
-	MIME_types[".txt"] = "text/plain";
-	MIME_types[".htc"] = "text/x-component";
+	MIME_types[".js"] = "application/javascript";
+	MIME_types[".atom"] = "application/atom+xml";
+	MIME_types[".rss"] = "application/rss+xml";
+
 	MIME_types[".mml"] = "text/mathml";
+	MIME_types[".txt"] = "text/plain";
+	MIME_types[".jad"] = "text/vnd.sun.j2me.app-descriptor";
+	MIME_types[".wml"] = "text/vnd.wap.wml";
+	MIME_types[".htc"] = "text/x-component";
+
 	MIME_types[".png"] = "image/png";
+	MIME_types[".tif"] = "image/tiff";
+	MIME_types[".tiff"] = "image/tiff";
+	MIME_types[".wbmp"] = "image/vnd.wap.wbmp";
 	MIME_types[".ico"] = "image/x-icon";
 	MIME_types[".jng"] = "image/x-jng";
-	MIME_types[".wbmp"] = "image/vnd.wap.wbmp";
+	MIME_types[".bmp"] = "image/x-ms-bmp";
+	MIME_types[".svg"] = "image/svg+xml";
+	MIME_types[".svgz"] = "image/svg+xml";
+	MIME_types[".webp"] = "image/webp";
+
+	MIME_types[".woff"] = "application/font-woff";
 	MIME_types[".jar"] = "application/java-archive";
 	MIME_types[".war"] = "application/java-archive";
 	MIME_types[".ear"] = "application/java-archive";
+	MIME_types[".json"] = "application/json";
 	MIME_types[".hqx"] = "application/mac-binhex40";
+	MIME_types[".doc"] = "application/msword";
 	MIME_types[".pdf"] = "application/pdf";
+	MIME_types[".ps"] = "application/postscript";
+	MIME_types[".eps"] = "application/postscript";
+	MIME_types[".ai"] = "application/postscript";
+	MIME_types[".rtf"] = "application/rtf";
+	MIME_types[".m3u8"] = "application/vnd.apple.mpegurl";
+	MIME_types[".xls"] = "application/vnd.ms-excel";
+	MIME_types[".eot"] = "application/vnd.ms-fontobject";
+	MIME_types[".ppt"] = "application/vnd.ms-powerpoint";
+	MIME_types[".wmlc"] = "application/vnd.map.wmlc";
+	MIME_types[".kml"] = "application/vnd.google-earth.kml+xml";
+	MIME_types[".mkz"] = "application/vnd.google-earth.kmz";
+	MIME_types[".7z"] = "application/x-7z-compressed";
 	MIME_types[".cco"] = "application/x-cocoa";
 	MIME_types[".jardiff"] = "application/x-java-archive-diff";
 	MIME_types[".jnlp"] = "application/x-java-jnlp-file";
@@ -405,29 +430,48 @@ std::map<std::string, std::string>		http::Response::_init_MIME_types(void)
 	MIME_types[".pem"] = "application/x-x509-ca-cert";
 	MIME_types[".crt"] = "application/x-x509-ca-cert";
 	MIME_types[".xpi"] = "application/x-xpinstall";
+	MIME_types[".xhtml"] = "application/xhtml+xml";
+	MIME_types[".xspf"] = "application/xspf+xml";
 	MIME_types[".zip"] = "application/zip";
-	MIME_types[".deb"] = "application/octet-stream";
+
 	MIME_types[".bin"] = "application/octet-stream";
 	MIME_types[".exe"] = "application/octet-stream";
 	MIME_types[".dll"] = "application/octet-stream";
+	MIME_types[".deb"] = "application/octet-stream";
 	MIME_types[".dmg"] = "application/octet-stream";
-	MIME_types[".eot"] = "application/octet-stream";
 	MIME_types[".iso"] = "application/octet-stream";
 	MIME_types[".img"] = "application/octet-stream";
 	MIME_types[".msi"] = "application/octet-stream";
 	MIME_types[".msp"] = "application/octet-stream";
 	MIME_types[".msm"] = "application/octet-stream";
+
+	MIME_types[".docx"] = "application/vnd.openxmlformats-officedocument.wordpressingml.document";
+	MIME_types[".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+	MIME_types[".pptx"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+	MIME_types[".mid"] = "audio/midi";
+	MIME_types[".midi"] = "audio/midi";
+	MIME_types[".kar"] = "audio/midi";
 	MIME_types[".mp3"] = "audio/mpeg";
+	MIME_types[".ogg"] = "audio/ogg";
+	MIME_types[".m4a"] = "audio/x-m4a";
 	MIME_types[".ra"] = "audio/x-realaudio";
+
+	MIME_types[".3gpp"] = "video/3ggp";
+	MIME_types[".3gp"] = "video/3ggp";
+	MIME_types[".ts"] = "video/mp2t";
+	MIME_types[".mp4"] = "video/mp4";
 	MIME_types[".mpeg"] = "video/mpeg";
 	MIME_types[".mpg"] = "video/mpeg";
 	MIME_types[".mov"] = "video/quicktime";
+	MIME_types[".webm"] = "video/webm";
 	MIME_types[".flv"] = "video/x-flv";
-	MIME_types[".avi"] = "video/x-msvideo";
-	MIME_types[".wmv"] = "video/x-ms-wmv";
+	MIME_types[".m4v"] = "video/x-m4v";
+	MIME_types[".mng"] = "video/x-mng";
 	MIME_types[".asx"] = "video/x-ms-asf";
 	MIME_types[".asf"] = "video/x-ms-asf";
-	MIME_types[".mng"] = "video/x-mng";
+	MIME_types[".wmv"] = "video/x-ms-wmv";
+	MIME_types[".avi"] = "video/x-msvideo";
 
 	return (MIME_types);
 }

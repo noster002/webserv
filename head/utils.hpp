@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 14:56:22 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/21 18:36:25 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,9 @@ typedef struct			s_request
 	int					port;
 	std::map<std::string, std::string>\
 						header;
+	std::vector<std::vector<std::string> >\
+						encoding;
+	long				body_length;
 	std::string			body;
 }						t_request;
 
