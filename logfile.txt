@@ -1,18 +1,53 @@
 ***********
-a commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
-ça commence à
+Welcome to Building Web Applications.
+
+This tutorial focuses on building Common Gateway Interface (CGI) applications with dBASE Plus. It consists of ten Sessions and culminates with a Hands-on Project in which you will create your own WebStore application.
+
+In Session One there are three tasks that you need to work on: (1) You will begin reading about the nature of CGI applications; (2) you will install a web server and configure it so that it handles CGI application requests; and finally (3) you will install a sample application that is included with dBASE Plus.
+
+An Overview of CGI
+The Common Gateway Interface (CGI) [1] is an interface between your web server and the programs you write. CGI lets those programs process HTML forms or other data coming from clients, and then it lets the CGI programs send a response back to the client. The response can be HTML documents, GIF files, video clips, or any data the client browser can view. This makes your web pages interactive with the user.
+
+The word gateway is used to describe the connection between your program and your HTTP (web) server. Like a gate in a fence between two fields, CGI rests between your program and the server.
+
+The rest of this section describes:
+
+How CGI works
+Accessing CGI programs with URLs
+Data the server sends to the CGI program
+Output from CGI programs
+The CGI Request Process In Detail
+
+This section provides an overview of how CGI fits into the interaction of client software like Internet Explorer, Netscape Navigator, or Opera and HTTP servers like the Apache or IIS. When a client requests a document from a server, the server finds the file and sends it to the client. However, if a client requests a CGI program, the server simply acts as an intermediary between the client and the CGI program.
+
+The following steps list a simplified overview of what happens when a client requests a CGI process.
+
+The client (a web browser) sends a request to the server for a document. If it can, the server responds to the request directly by sending the document.
+If the server determines the request isn't for a document it can simply deliver, the server creates a CGI process.
+The CGI process turns the request information into environment variables. Next, it establishes a current working directory for the child process. Finally, it establishes pipes (data pathways) between the server and an external CGI program.
+After the external CGI program processes the request, it uses the data pathway to send a response back to the server, which in turn, sends the response back to the client.
+In reality, the behavior of the CGI process is a bit more complicated. The specific details that happen at each stage are described next.
+
+The client sends the request. The client sends a request to the server running on your machine. The request might be for a document, or it might be something else, like the contents of an HTML form. If the request is for a regular document (such as an HTML document or a .GIF file), the server sends that document directly back to the client.
+
+If the request is data intended for an external application, then the server needs to use CGI to run that application. For example, the client's request might be to search a database. The CGI application takes the search criteria, searches the database, then sends the results back to the client.
+
+The server creates the CGI process. When a server receives a request that must be handled by an external application (a CGI request) that server creates a copy of itself. This second process is called the CGI process because it is the process in which the CGI program will run. The CGI process has all the same communication pathways that the server process has. The only purpose for the CGI process is to set up communications between the CGI program and the server.
+
+Because it is a copy of the server, the CGI process has access to information about the CGI request. For example, the CGI process knows
+
+Which remote host made the request (if your server uses DNS, this is the user's host name; otherwise, this is the user's IP address).
+Whether that host was authorized with server access control or not.
+What browser software the remote user is running.
+The server assigns variables and opens data paths. The CGI process takes the data the server has about the current request and puts it into environment variables. The CGI process enables the client to pass data to the CGI program as standard input. The CGI process also creates data pathways between your CGI program and the server. This means the server can send to the program any encoded form data the client submitted, and the external CGI program can send a reply back to the client via the server.
+
+The CGI program responds to the client. The CGI program takes the data that the server provides through environment variables, standard input, or command-line arguments. It processes the data, contacts any external services it needs to, and then sends a response to the server by way of the data pathways using standard output. The server then takes the program's response, prepends any necessary protocol headers to the output, and sends it back to the client software. Your program can output any type of data it needs to, including HTML, GIFs, or JPEGs.
+
+Accessing CGI Programs Through URLs
+
+When responding to a request from a client, the server must figure out if it can handle the request itself or if it must create a CGI process. To determine whether a URL that the client requests refers to a CGI program, the server can use two methods. You can configure the server to use either method.
+
+You can specify a MIME type for CGI programs and then store the CGI programs in the same directories as your HTML documents and graphics. When you use this method, any file with the specified extension (like .cgi or .exe) runs as a CGI program. This method is the most flexible, but you need to be careful about which directories you put CGI programs in. You shouldn't put CGI programs in directories into which users can upload information because users can then write CGI programs that return information such as your password file or that delete files from your server machine. When running Apache you would use the AddHandler directive to activate this option.
+You can set up a specific directory for CGI programs. This gives you more control over who writes CGI programs and who has access to them. By using this method, you designate certain virtual paths (URL prefixes) as CGI directories. Then, any URL requesting a file inside those directories is executed as a CGI program. A popular example of this method is the prefix /cgi-bin, which maps to a directory in the server root called cgi-bin. The cgi-bin directory is where you store all of your CGI programs. When running Apache you would use the ScriptAlias directive to activate this option.
+The method of CGI activation you choose determines only part of the URL used to access your program. URLs to CGI programs can be split into three different parts, shown here in brackets:
 **********
-hello.txt
-/test/files/

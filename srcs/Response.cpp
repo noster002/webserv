@@ -96,21 +96,24 @@ void				http::Response::_serve_post_request(t_request const & request)
 		cursor = request.body.find("filename=\"");
 		if (cursor == std::string::npos)
 		{
-
+			this->_status = 202;
 		}
 		cursor += 10;
 		file_name = request.body.substr(cursor, request.body.find("\"", cursor) - cursor);
 		if (file_name.empty())
 			test << "Empty content\n";
-		size_t last = 0;
+		size_t last = 0, first = 0;
 		if (test.is_open())
 		{
 			cursor = request.body.find("Content-Type: ");
 			ending = request.body.find("------WebKit", cursor);
 			content = request.body.substr(cursor, ending - cursor);
+			first = content.find("\r\n");
+			first = content.find("\r\n", first + 1);
+			first += 2;
 			last = content.find_last_of("\r\n");
 			test << "***********\n";
-			test << content.substr(0, last) << "\n" ;
+			test << content.substr(first, last - first) << "\n" ;
 			test << "**********\n";
 
 		}
@@ -122,9 +125,8 @@ void				http::Response::_serve_post_request(t_request const & request)
 			res = fopen(f_upload.c_str(), "w");
 		if (!res)
 			test << "Error";
-		fwrite(content.substr(0, last).c_str(),sizeof(char), last, res);
+		fwrite(content.substr(first, last - first - 1).c_str(), sizeof(char), last - first - 1, res);
 		fclose(res);
-
 	}
 
 	(void)request;
