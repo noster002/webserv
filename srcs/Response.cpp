@@ -86,15 +86,49 @@ void				http::Response::_serve_get_request(t_request const & request)
 
 void				http::Response::_serve_post_request(t_request const & request)
 {
-	std::fstream test_log;
-  	test_log.open ("logfile.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-	test_log << "REQUETE BIEN RECUE" << "\n";
-	test_log << "METHOD : " << request.method << "\n";
-	test_log << "BODY : "<< request.body << "\n";
-	test_log << "PATH :" << this->_server.routes[request.path].upload;
-	test_log << "PATH :" << this->_get_path(request);
-	test_log.close();
+	//std::fstream t_body()
+	std::fstream test("logfile.txt");
+	std::string file_name, f_upload, content;
+	size_t		cursor, ending;
+	FILE *res;
+	if (!request.body.empty())
+	{
+		cursor = request.body.find("filename=\"");
+		if (cursor == std::string::npos)
+		{
+
+		}
+		cursor += 10;
+		file_name = request.body.substr(cursor, request.body.find("\"", cursor) - cursor);
+		if (file_name.empty())
+			test << "Empty content\n";
+		size_t last = 0;
+		if (test.is_open())
+		{
+			cursor = request.body.find("Content-Type: ");
+			ending = request.body.find("------WebKit", cursor);
+			content = request.body.substr(cursor, ending - cursor);
+			last = content.find_last_of("\r\n");
+			test << "***********\n";
+			test << content.substr(0, last) << "\n" ;
+			test << "**********\n";
+
+		}
+		f_upload = "." + this->_get_path(request) + file_name;
+		res = fopen(f_upload.c_str(), "r");
+		if (res)
+			test << "Error\n";
+		else
+			res = fopen(f_upload.c_str(), "w");
+		if (!res)
+			test << "Error";
+		fwrite(content.substr(0, last).c_str(),sizeof(char), last, res);
+		fclose(res);
+
+	}
+
 	(void)request;
+
 }
 
 void				http::Response::_serve_delete_request(t_request const & request)
