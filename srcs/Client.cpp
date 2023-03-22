@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 16:32:27 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/22 17:39:20 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,8 @@ void			http::Client::read(std::string const & input, int kq)
 {
 	_request.add_buffer(input);
 
-	_request.parse();
+	if (_request.parse() == EXIT_FAILURE)
+		return ;
 	std::cout << GREEN << "BUILD" << RESET << std::endl;
 
 	_response.build(_request.get_error(), _request.get_conf());
@@ -92,9 +93,7 @@ std::string		http::Client::write(int kq)
 
 void			http::Client::clear(void)
 {
-	_request.~Request();
 	new (&_request) Request(_server.get_conf());
-	_response.~Response();
 	new (&_response) Response(_server.get_conf());
 
 	return ;

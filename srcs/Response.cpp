@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/21 15:02:04 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/22 17:39:50 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,20 +53,20 @@ void				http::Response::build(int error, t_request const & request)
 
 void				http::Response::_serve_get_request(t_request const & request)
 {
-	std::string			pathname = _get_path(request);
-
-	if (pathname.empty())
+	std::string			path;
+	
+	if (_get_path(request, path))
 		return ;
 
-	_set_content_type(pathname);
-
-	std::fstream		file(pathname.c_str());
+	std::fstream		file(path.c_str());
 
 	if (file.is_open() == false)
 	{
 		_status = 404;
 		return ;
 	}
+
+	_set_content_type(path);
 
 	std::stringstream	body;
 
@@ -92,50 +92,59 @@ void				http::Response::_serve_delete_request(t_request const & request)
 	(void)request;
 }
 
-std::string			http::Response::_get_path(t_request const & request)
+int					http::Response::_get_path(t_request const & request, std::string & path)
 {
-	std::string		path;
 	std::string		match = request.path;
-	size_t			pos = match.find_last_of('/');
+	size_t			pos = match.size();
+	bool			is_dir = (match.back() == '/');
 
-	while (pos != std::string::npos)
+	do
 	{
-		match = match.substr(0, ++pos);
-
-		if (_server.routes.count(match) && \
-			_server.routes[match].method.count(request.method))
-			break ;
-
-		match.pop_back();
-
-		if (_server.routes.count(match) && \
-			_server.routes[match].method.count(request.method))
-			break ;
-
-		pos = match.find_last_of('/');
+		if (_server.routes.count(match))
+		{
+			if (_server.routes[match].method.count(request.method))
+			{
+				if (_server.routes[match].root.empty())
+					return (_empty_path(match));
+				if (is_dir && _server.routes[match].root.back() != '/')
+					--pos;
+				path = _server.routes[match].root + request.path.substr(pos);
+				return (0);
+			}
+			return (_method_not_allowed(match));
+		}
+		if (is_dir)
+		{
+			--pos;
+			is_dir = false;
+		}
+		else
+		{
+			pos = match.find_last_of('/');
+			if (pos == std::string::npos)
+				break ;
+			is_dir = true;
+		}
+		match.erase(pos);
 	}
-	if (pos == std::string::npos)
-	{
-		_status = 404;
-		return ("");
-	}
+	while (pos != 0);
 
-	if ((_server.routes[match].root.empty() == false) && \
-		(_server.routes[match].root.back() != '/'))
-		--pos;
-	path = _server.routes[match].root + request.path.substr(pos);
-
-	return (path);
+	return (_not_found(match));
 }
 
-void			http::Response::_set_content_type(std::string const & path)
+int					http::Response::_empty_path(std::string const & path)
+{
+	(void)path;
+	return (0);
+}
+
+void				http::Response::_set_content_type(std::string const & path)
 {
 	size_t			pos = path.find_last_of('.');
 
 	if (pos != std::string::npos)
 		_header["Content-Type"] = _MIME_types[path.substr(pos)];
-
-	if (_header["Content-Type"].empty())
+	else
 		_header["Content-Type"] = "application/octet-stream";
 }
 
@@ -147,6 +156,7 @@ void				http::Response::_serve_error(void)
 
 		if (file.is_open())
 		{
+			_set_content_type(_server.err_pages[_status].c_str());
 			_serve_error_file(file);
 			return ;
 		}
@@ -155,6 +165,7 @@ void				http::Response::_serve_error(void)
 
 	if (file.is_open())
 	{
+		_set_content_type(_default_err_pages[_status].c_str());
 		_serve_error_file(file);
 		return ;
 	}
@@ -171,7 +182,6 @@ void				http::Response::_serve_error_file(std::fstream & file)
 	while (std::getline(file, buffer))
 		_body += buffer;
 
-	_header["Content-Type"] = "text/html";
 	nbr << _body.size();
 	_header["Content-Length"] = nbr.str();
 
@@ -222,6 +232,20 @@ void				http::Response::_set_body(void)
 {
 	_buffer += _body;
 	return ;
+}
+
+int					http::Response::_not_found(std::string const & path)
+{
+	_status = 404;
+	(void)path;
+	return (_status);
+}
+
+int					http::Response::_method_not_allowed(std::string const & path)
+{
+	_status = 405;
+	(void)path;
+	return (_status);
 }
 
 std::map<int, std::string>		http::Response::_init_statuses(void)

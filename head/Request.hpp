@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/21 19:05:59 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/22 16:06:51 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ namespace http
 			t_request const &	get_conf(void) const;
 
 			void				add_buffer(std::string const & input);
-			int					parse(void);
+			bool				parse(void);
 
 		private:
 
@@ -65,13 +65,11 @@ namespace http
 
 			bool				_is_body;
 
-			bool				_header_complete(void) const;
-
 			int					_read_first_line(size_t & pos);
 			int					_read_method(std::string const & line, size_t & pos);
 			int					_read_path(std::string const & line, size_t & pos);
 			int					_read_version(std::string const & line, size_t & pos);
-			std::string			_get_next_line(size_t & pos);
+			std::string			_get_next_line(std::string const & str, size_t & pos);
 			std::string			_get_key(std::string line);
 			std::string			_get_value(std::string line);
 			int					_process_header_fields(void);
@@ -79,7 +77,10 @@ namespace http
 			int					_process_host(void);
 			int					_process_transfer_encoding(void);
 			int					_process_content_length(void);
-			std::string			_read_body(void);
+			int					_read_body(void);
+			void				_decode_chunk(std::string const & chunk, size_t & pos);
+			int					_read_chunk_size(std::string const & line, size_t & size);
+			int					_read_chunk(std::string const & chunk, size_t size, size_t & pos);
 
 			int					_bad_request(std::string const & error_msg);
 			int					_content_too_large(std::string const & error_msg);
@@ -87,8 +88,9 @@ namespace http
 			int					_not_implemented(std::string const & error_msg);
 			int					_HTTP_version_not_supported(std::string const & error_msg);
 
+			static bool			_section_complete(std::string const & str);
 			static std::vector<std::string>\
-								_split(std::string str, char delim);
+								_split(std::string const & str, char const * delim);
 			static bool			_is_token(char c);
 			static bool			_is_whitespace(char c);
 

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/21 19:06:10 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/22 16:27:24 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,25 +41,31 @@ void				http::Request::add_buffer(std::string const & input)
 	return ;
 }
 
-int					http::Request::parse(void)
+bool				http::Request::parse(void)
 {
 	std::string		line;
 	std::string		key;
 	size_t			pos = 0;
 
-	if (_header_complete() && !_is_body)
+	if (_is_complete)
+		return (EXIT_FAILURE);
+	if (_is_body == false)
 	{
+		if (_section_complete(_buffer))
+			_is_body = true;
+		else
+			return (EXIT_FAILURE);
 		_read_first_line(pos);
 		while (!_error)
 		{
 			if (pos != std::string::npos)
 				pos += 2;
-			line = _get_next_line(pos);
+			line = _get_next_line(_buffer, pos);
 			if (_error)
-				return (_error);
+				return (EXIT_SUCCESS);
 			if (line.empty())
 			{
-				_buffer.erase(pos + 2);
+				_buffer.erase(0, pos + 2);
 				break ;
 			}
 			key = _get_key(line);
@@ -70,11 +76,11 @@ int					http::Request::parse(void)
 				_conf.header[key] += _get_value(line);
 			}
 		}
-		if (_process_header_fields())
-			return (_error);
+		if (_error || _process_header_fields())
+			return (EXIT_SUCCESS);
 	}
-	if (!_error && _is_body)
-		_conf.body += _read_body();
+	if (_is_body == true)
+		_read_body();
 	std::cout << "_conf.host: " << _conf.host << std::endl;
 	std::cout << "_conf.port: " << _conf.port << std::endl;
 	std::cout << "_conf.method: " << _conf.method << std::endl;
@@ -84,18 +90,17 @@ int					http::Request::parse(void)
 	std::cout << "_conf.body: " << _conf.body << std::endl;
 	for (std::map<std::string, std::string>::iterator it = _conf.header.begin(); it != _conf.header.end(); ++it)
 		std::cout << "it->first: " << it->first << " it->second: " << it->second << std::endl;
-	std::cout << RED << "ERROR" << RESET << std::endl;
-	for (std::vector<std::vector<std::string> >::iterator x = _conf.encoding.begin(); x != _conf.encoding.end(); ++x)
+	for (std::vector<std::vector<std::string> >::iterator x = _conf.transfer_encoding.begin(); x != _conf.transfer_encoding.end(); ++x)
 	{
-		for (std::vector<std::string>::iterator y = x->begin(); y != x->end(); ++y)
+		std::cout << YELLOW << *(x->begin()) << ": " << RESET << std::endl;
+		for (std::vector<std::string>::iterator y = (x->begin() + 1); y != x->end(); ++y)
 			std::cout << YELLOW << "\tparam: " << *y << RESET << std::endl;
 	}
-	return (_error);
-}
-
-bool				http::Request::_header_complete(void) const
-{
-	return (_buffer.find("\r\n\r\n") != std::string::npos);
+	std::cout << "_conf.content_length: " << _conf.content_length << std::endl;
+	std::cout << "_is_complete: " << _is_complete << std::endl;
+	if (_error || _is_complete)
+		return (EXIT_SUCCESS);
+	return (EXIT_FAILURE);
 }
 
 int					http::Request::_read_first_line(size_t & pos)
@@ -166,7 +171,7 @@ int					http::Request::_read_version(std::string const & line, size_t & pos)
 	return (_HTTP_version_not_supported("HTTP request header: invalid HTTP version"));
 }
 
-std::string			http::Request::_get_next_line(size_t & pos)
+std::string			http::Request::_get_next_line(std::string const & str, size_t & pos)
 {
 	std::string		line;
 	size_t			pos2;
@@ -176,8 +181,8 @@ std::string			http::Request::_get_next_line(size_t & pos)
 		_bad_request("HTTP request header: no CRLF");
 		return ("");
 	}
-	pos2 = _buffer.find("\r\n", pos);
-	line = _buffer.substr(pos, pos2 - pos);
+	pos2 = str.find("\r\n", pos);
+	line = str.substr(pos, pos2 - pos);
 	pos = pos2;
 
 	return (line);
@@ -187,7 +192,7 @@ std::string			http::Request::_get_key(std::string line)
 {
 	size_t		pos = line.find_first_of(':');
 
-	if (pos == std::string::npos)
+	if (pos == 0 || pos == std::string::npos)
 	{
 		_bad_request("HTTP request header: invalid field name");
 		return ("");
@@ -243,12 +248,14 @@ std::string			http::Request::_get_value(std::string line)
 
 int					http::Request::_process_header_fields(void)
 {
-	if (_error)
-		return (_error);
 	if (_process_path())
 		return (_error);
 	if (_process_host())
 		return (_error);
+	
+	_conf.content_length = 0;
+	_conf.body = "";
+
 	if (_conf.header.count("Transfer-Encoding") == 0 && \
 		_conf.header.count("Content-Length") == 0)
 		return (0);
@@ -257,17 +264,11 @@ int					http::Request::_process_header_fields(void)
 
 	if (_conf.header.count("Transfer-Encoding") && \
 		_conf.header["Transfer-Encoding"].empty() == false)
-	{
-		if (_process_transfer_encoding())
-			return (_error);
-	}
-	else if (!_error && _conf.header.count("Content-Length"))
-	{
-		if (_process_content_length())
-			return (_error);
-	}
+		_process_transfer_encoding();
+	else if (_conf.header.count("Content-Length"))
+		_process_content_length();
 
-	return (0);
+	return (_error);
 }
 
 int					http::Request::_process_path(void)
@@ -348,12 +349,11 @@ int					http::Request::_process_host(void)
 
 int					http::Request::_process_transfer_encoding(void)
 {
-	std::vector<std::string>			codings = _split(_conf.header["Transfer-Encoding"], ',');
+	std::vector<std::string>			codings = _split(_conf.header["Transfer-Encoding"], ",");
 	std::vector<std::string>			parameter;
 	std::vector<std::string>::iterator	it = codings.begin();
 	size_t								pos = 0;
 	bool								is_quote = false;
-	std::cerr << "helllo" << std::endl;
 
 	while (it != codings.end())
 	{
@@ -369,7 +369,7 @@ int					http::Request::_process_transfer_encoding(void)
 				--pos;
 			it->erase(pos);
 
-			parameter = _split(*it, ';');
+			parameter = _split(*it, ";");
 			for (std::vector<std::string>::iterator	ite = parameter.begin(); ite != parameter.end(); ++ite)
 			{
 				pos = ite->find_first_not_of(" \t");
@@ -407,35 +407,200 @@ int					http::Request::_process_transfer_encoding(void)
 						return (_bad_request("HTTP request header: invalid transfer parameter"));
 				}
 			}
-			_conf.encoding.push_back(std::vector<std::string>(parameter.begin(), parameter.end()));
+			_conf.transfer_encoding.push_back(std::vector<std::string>(parameter.begin(), parameter.end()));
 			++it;
 		}
 	}
 	if (codings.empty())
 		return (_bad_request("HTTP request header: expected transfer encoding"));
 
-	if (_conf.encoding.back()[0] == "chunked")
+	if (_conf.transfer_encoding.back()[0] == "chunked")
 		return (0);
 
-	_conf.encoding.clear();
+	_conf.transfer_encoding.clear();
 
 	return (_bad_request("HTTP request header: no chunked transfer coding"));
 }
 
 int					http::Request::_process_content_length(void)
 {
+	std::vector<std::string>			lengths = _split(_conf.header["Content-Length"], ",");
+	std::vector<std::string>::iterator	it = lengths.begin();
+	size_t								pos;
+	size_t								tmp;
+	bool								is_first = true;
+
+	while (it != lengths.end())
+	{
+		if (it->empty())
+			return (_bad_request("HTTP request header: empty content length"));
+
+		for (pos = 0; pos < it->size(); ++pos)
+		{
+			if (!std::isdigit(static_cast<unsigned char>((*it)[pos])))
+				return (_bad_request("HTTP request header: invalid content length"));
+		}
+		tmp = static_cast<size_t>(std::atol(it->c_str()));
+		if (is_first == false && \
+			_conf.content_length != tmp)
+		{
+			return (_bad_request("HTTP request header: different values for content length"));
+		}
+		_conf.content_length = tmp;
+		is_first = false;
+		++it;
+	}
+
 	return (0);
 }
 
-std::string			http::Request::_read_body(void)
+int					http::Request::_read_body(void)
 {
-	if (true)
+	size_t		pos = 0;
+
+	if (_conf.transfer_encoding.empty() == false)
 	{
+		std::string	chunk = _conf.body + _buffer;
+
+		_decode_chunk(chunk, pos);
+		
+		if (_error)
+			return (_error);
+		if (pos != std::string::npos)
+		{
+			pos -= _conf.body.size();
+			_is_complete = true;
+		}
+	}
+	else if (_conf.content_length)
+	{
+		size_t		size = _conf.body.size();
+
+		pos = _conf.content_length - size;
+
+		if (pos <= _buffer.size())
+			_is_complete = true;
+	}
+	else
 		_is_complete = true;
-		return ("");
+
+	_conf.body += _buffer.substr(0, pos);
+
+	_buffer.clear();
+
+	return (0);
+}
+
+void				http::Request::_decode_chunk(std::string const & chunk, size_t & pos)
+{
+	std::string		line = _get_next_line(chunk, pos);
+	std::string		key;
+	size_t			size = 0;
+
+	if (pos == std::string::npos)
+		return ;
+	pos += 2;
+
+	_read_chunk_size(line, size);
+
+	while (size > 0 && !_error)
+	{
+		if (_read_chunk(chunk, size, pos))
+			return ;
+		line = _get_next_line(chunk, pos);
+		if (pos == std::string::npos)
+			return ;
+		pos += 2;
+		_read_chunk_size(line, size);
+	}
+	while (!_error)
+	{
+		line = _get_next_line(chunk, pos);
+		if (pos == std::string::npos)
+			return ;
+		pos += 2;
+		if (line.empty())
+			break ;
+		key = _get_key(line);
+		if (!key.empty())
+		{
+			if (!_conf.trailer[key].empty())
+				_conf.trailer[key] += ", ";
+			_conf.trailer[key] += _get_value(line);
+		}
 	}
 
-	return (_buffer);
+	return ;
+}
+
+int					http::Request::_read_chunk_size(std::string const & line, size_t & size)
+{
+	std::vector<std::string>	extensions = _split(line, ";");
+	size_t						pos = 0;
+	char *						last_nbr;
+	bool						is_quote = false;
+
+	if (extensions.empty())
+		return (_bad_request("HTTP request body: CRLF when chunk size expected"));
+
+	while (std::isxdigit(static_cast<unsigned char>(extensions[0][pos])))
+		++pos;
+	while (_is_whitespace(extensions[0][pos]))
+		++pos;
+	if (pos != extensions[0].size())
+		return (_bad_request("HTTP request body: invalid chunk size"));
+
+	size = static_cast<size_t>(std::strtol(extensions[0].c_str(), &last_nbr, 16));
+
+	for (std::vector<std::string>::iterator	it = (extensions.begin() + 1); it != extensions.end(); ++it)
+	{
+		pos = it->find_first_not_of(" \t");
+
+		if (pos == std::string::npos)
+			return (_bad_request("HTTP request body: empty chunk extension"));
+		it->erase(0, pos);
+		pos = 0;
+		while (_is_token((*it)[pos]))
+			++pos;
+		while (_is_whitespace((*it)[pos]))
+			++pos;
+		if (pos < it->size())
+		{
+			if ((*it)[pos] != '=')
+				return (_bad_request("HTTP request body: chunk extensions not separated"));
+			++pos;
+			while (_is_whitespace((*it)[pos]))
+				++pos;
+			while (pos < it->size())
+			{
+				if ((*it)[pos] == '"')
+				{
+					if (is_quote && (*it)[pos - 1] != '\\')
+						is_quote = false;
+					else
+						is_quote = true;
+					++pos;
+				}
+				else if (_is_token((*it)[pos]))
+					++pos;
+				else
+					return (_bad_request("HTTP request body: invalid chunk extension"));
+			}
+		}
+	}
+
+	return (0);
+}
+
+int					http::Request::_read_chunk(std::string const & chunk, size_t size, size_t & pos)
+{
+	if (pos + size + std::strlen("\r\n") > chunk.size())
+		return (1);
+	pos += size;
+	if (chunk.compare(pos, 2, "\r\n"))
+		return (_bad_request("HTTP request body: no CRLF after chunk content"));
+	pos += 2;
+	return (0);
 }
 
 int					http::Request::_bad_request(std::string const & error_msg)
@@ -473,7 +638,12 @@ int					http::Request::_HTTP_version_not_supported(std::string const & error_msg
 	return (_error);
 }
 
-std::vector<std::string>	http::Request::_split(std::string str, char delim)
+bool				http::Request::_section_complete(std::string const & str)
+{
+	return (str.find("\r\n\r\n") != std::string::npos);
+}
+
+std::vector<std::string>	http::Request::_split(std::string const & str, char const * delim)
 {
 	std::vector<std::string>	split;
 	size_t						pos = 0;
@@ -484,7 +654,7 @@ std::vector<std::string>	http::Request::_split(std::string str, char delim)
 	{
 		while (pos < str.size())
 		{
-			pos2 = str.find_first_of(delim, pos);
+			pos2 = str.find(delim, pos);
 
 			if (pos2 == std::string::npos)
 			{

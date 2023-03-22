@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/21 18:36:25 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/22 16:09:09 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,18 +77,18 @@ typedef struct s_params {
 
 typedef struct			s_request
 {
-	std::string			method;
-	int					version;
-	std::string			path;
-	std::string			query;
-	std::string			host;
-	int					port;
-	std::map<std::string, std::string>\
-						header;
-	std::vector<std::vector<std::string> >\
-						encoding;
-	long				body_length;
-	std::string			body;
+	std::string								method;
+	int										version;
+	std::string								path;
+	std::string								query;
+	std::map<std::string, std::string>		header;
+	std::string								host;
+	int										port;
+	std::vector<std::vector<std::string> >	transfer_encoding;
+	size_t									content_length;
+	std::string								body;
+	std::vector<std::string>				chunk;
+	std::map<std::string, std::string>		trailer;
 }						t_request;
 
 #endif

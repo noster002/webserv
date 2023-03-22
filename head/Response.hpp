@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 18:25:03 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/22 17:25:23 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,8 @@ namespace http
 			void								_serve_post_request(t_request const & request);
 			void								_serve_delete_request(t_request const & request);
 
-			std::string							_get_path(t_request const & request);
+			int									_get_path(t_request const & request, std::string & path);
+			int									_empty_path(std::string const & path);
 			void								_set_content_type(std::string const & path);
 
 			void								_serve_error(void);
@@ -71,6 +72,9 @@ namespace http
 			void								_set_status_line(void);
 			void								_set_head(void);
 			void								_set_body(void);
+
+			int									_not_found(std::string const & path);
+			int									_method_not_allowed(std::string const & path);
 
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
