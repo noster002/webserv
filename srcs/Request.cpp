@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/22 16:27:24 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/23 17:00:41 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,9 +35,10 @@ t_request const &	http::Request::get_conf(void) const
 	return (_conf);
 }
 
-void				http::Request::add_buffer(std::string const & input)
+void				http::Request::add_buffer(char const * input, ssize_t bytes)
 {
-	_buffer += input;
+	for (ssize_t pos = 0; pos < bytes; ++pos)
+		_buffer.push_back(input[pos]);
 	return ;
 }
 
@@ -81,23 +82,29 @@ bool				http::Request::parse(void)
 	}
 	if (_is_body == true)
 		_read_body();
-	std::cout << "_conf.host: " << _conf.host << std::endl;
-	std::cout << "_conf.port: " << _conf.port << std::endl;
-	std::cout << "_conf.method: " << _conf.method << std::endl;
-	std::cout << "_conf.version: " << _conf.version << std::endl;
-	std::cout << "_conf.path: " << _conf.path << std::endl;
-	std::cout << "_conf.query: " << _conf.query << std::endl;
-	std::cout << "_conf.body: " << _conf.body << std::endl;
-	for (std::map<std::string, std::string>::iterator it = _conf.header.begin(); it != _conf.header.end(); ++it)
-		std::cout << "it->first: " << it->first << " it->second: " << it->second << std::endl;
+	std::cout << std::endl;
+	std::cout << YELLOW << "_conf.method:\t(" << BLUE << _conf.method << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.version:\t(" << BLUE << _conf.version << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.path:\t(" << BLUE << _conf.path << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.query:\t(" << BLUE << _conf.query << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.host:\t(" << BLUE << _conf.host << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.port:\t(" << BLUE << _conf.port << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.transfer_encoding:" << std::endl;
 	for (std::vector<std::vector<std::string> >::iterator x = _conf.transfer_encoding.begin(); x != _conf.transfer_encoding.end(); ++x)
 	{
-		std::cout << YELLOW << *(x->begin()) << ": " << RESET << std::endl;
+		std::cout << YELLOW << "\tencoding:\t(" << BLUE << *(x->begin()) << YELLOW << ")" << std::endl;
 		for (std::vector<std::string>::iterator y = (x->begin() + 1); y != x->end(); ++y)
-			std::cout << YELLOW << "\tparam: " << *y << RESET << std::endl;
+			std::cout << YELLOW << "\t\tparam:\t(" << BLUE << *y << YELLOW << ")" << std::endl;
 	}
-	std::cout << "_conf.content_length: " << _conf.content_length << std::endl;
-	std::cout << "_is_complete: " << _is_complete << std::endl;
+	std::cout << YELLOW << "_conf.content_length:\t(" << BLUE << _conf.content_length << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.body:\n(" << BLUE << _conf.body << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.chunks:" << std::endl;
+	for (std::vector<std::string>::iterator it = _conf.chunks.begin(); it != _conf.chunks.end(); ++it)
+		std::cout << "\t(" << BLUE << *it << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.trailer:" << std::endl;
+	for (std::map<std::string, std::string>::iterator it = _conf.trailer.begin(); it != _conf.trailer.end(); ++it)
+		std::cout << YELLOW << "\tname: " << BLUE << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
+	std::cout << RESET << "_is_complete: " << _is_complete << std::endl;
 	if (_error || _is_complete)
 		return (EXIT_SUCCESS);
 	return (EXIT_FAILURE);
@@ -285,22 +292,17 @@ int					http::Request::_process_path(void)
 			return (_bad_request("HTTP request header: invalid path"));
 		lower[pos] = std::tolower(_conf.path[pos]);
 	}
-	if (lower.compare(0, std::strlen("http://"), "http://") == 0 || \
-		lower.compare(0, std::strlen("https://"), "https://") == 0)
+	if (lower.compare(0, std::strlen("http://"), "http://") == 0)
 	{
-		pos2 = _conf.path.find("//");
-		pos2 += 2;
+		pos2 = std::strlen("http://");
 
-		if (pos2 != std::string::npos)
-		{
-			pos = _conf.path.find_first_of('/', pos2);
+		pos = _conf.path.find_first_of('/', pos2);
 
-			_conf.host = _conf.path.substr(pos2, pos);
-			_conf.path.erase(0, pos);
+		_conf.header["Host"] = _conf.path.substr(pos2, pos);
+		_conf.path.erase(0, pos);
 
-			if (pos == std::string::npos)
-				_conf.path = "/";
-		}
+		if (pos == std::string::npos)
+			_conf.path = "/";
 	}
 
 	if (_conf.path[0] != '/')
@@ -319,9 +321,6 @@ int					http::Request::_process_path(void)
 
 int					http::Request::_process_host(void)
 {
-	if (!_conf.host.empty())
-		return (0);
-
 	if (_conf.version == 1 && _conf.header.count("Host") == 0)
 		return (_bad_request("HTTP request header: no host detected"));
 	else if (_conf.header.count("Host") == 1)
@@ -340,8 +339,9 @@ int					http::Request::_process_host(void)
 			_conf.port = std::atoi(port.c_str());
 			_conf.header["Host"].erase(pos);
 		}
+		else
+			_conf.port = 80;
 		_conf.host = _conf.header["Host"];
-		_conf.header.erase("Host");
 	}
 
 	return (0);
@@ -406,6 +406,8 @@ int					http::Request::_process_transfer_encoding(void)
 					else
 						return (_bad_request("HTTP request header: invalid transfer parameter"));
 				}
+				if (is_quote == true)
+					return (_bad_request("HTTP request header: transfer parameter dquote not terminated"));
 			}
 			_conf.transfer_encoding.push_back(std::vector<std::string>(parameter.begin(), parameter.end()));
 			++it;
@@ -463,7 +465,7 @@ int					http::Request::_read_body(void)
 		std::string	chunk = _conf.body + _buffer;
 
 		_decode_chunk(chunk, pos);
-		
+
 		if (_error)
 			return (_error);
 		if (pos != std::string::npos)
@@ -471,6 +473,8 @@ int					http::Request::_read_body(void)
 			pos -= _conf.body.size();
 			_is_complete = true;
 		}
+		else
+			_conf.chunks.clear();
 	}
 	else if (_conf.content_length)
 	{
@@ -586,6 +590,8 @@ int					http::Request::_read_chunk_size(std::string const & line, size_t & size)
 				else
 					return (_bad_request("HTTP request body: invalid chunk extension"));
 			}
+			if (is_quote == true)
+				return (_bad_request("HTTP request body: chunk extension dquote not terminated"));
 		}
 	}
 
@@ -595,7 +601,11 @@ int					http::Request::_read_chunk_size(std::string const & line, size_t & size)
 int					http::Request::_read_chunk(std::string const & chunk, size_t size, size_t & pos)
 {
 	if (pos + size + std::strlen("\r\n") > chunk.size())
+	{
+		pos = std::string::npos;
 		return (1);
+	}
+	_conf.chunks.push_back(chunk.substr(pos, size));
 	pos += size;
 	if (chunk.compare(pos, 2, "\r\n"))
 		return (_bad_request("HTTP request body: no CRLF after chunk content"));

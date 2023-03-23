@@ -505,7 +505,7 @@ void			http::Config::set_redirect(std::string & str, route_t* route, size_t* cur
 {
 	*cursor += 8;
 	std::string value = this->get_inline_value(str, cursor);
-	route->upload = value;
+	route->redirect = value;
 }
 
 void			http::Config::set_cgi_ext(std::string & str, route_t* route, size_t* cursor)

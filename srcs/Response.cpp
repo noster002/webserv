@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/22 17:39:50 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/23 18:45:56 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ void				http::Response::build(int error, t_request const & request)
 		else if (request.method == "DELETE")
 			_serve_delete_request(request);
 	}
-	if (_status >= 300)
+	if (_status >= 400)
 		_serve_error();
 	_set_status_line();
 	_set_head();
@@ -96,56 +96,103 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 {
 	std::string		match = request.path;
 	size_t			pos = match.size();
-	bool			is_dir = (match.back() == '/');
+	bool			is_dir;
 
 	do
 	{
+		is_dir = (match.back() == '/');
 		if (_server.routes.count(match))
 		{
 			if (_server.routes[match].method.count(request.method))
 			{
-				if (_server.routes[match].root.empty())
-					return (_empty_path(match));
+				if (_server.routes[match].redirect.empty() == false)
+					return (_permanent_redirect(match));
+				else if (_server.routes[match].root.empty())
+					return (_gone());
 				if (is_dir && _server.routes[match].root.back() != '/')
 					--pos;
+				else if (!is_dir && _server.routes[match].root.back() == '/')
+					++pos;
 				path = _server.routes[match].root + request.path.substr(pos);
+				if (path.back() == '/')
+				{
+					if (_server.routes[match].index.empty() == false)
+						path += _server.routes[match].index;
+					else if (_server.routes[match].directory_listing == false)
+						return (_not_found());
+					else
+						return (_directory_listing(request, path));
+				}
 				return (0);
 			}
+			std::cout << match << std::endl;
 			return (_method_not_allowed(match));
 		}
 		if (is_dir)
-		{
 			--pos;
-			is_dir = false;
-		}
 		else
 		{
 			pos = match.find_last_of('/');
 			if (pos == std::string::npos)
 				break ;
-			is_dir = true;
+			++pos;
 		}
 		match.erase(pos);
 	}
 	while (pos != 0);
 
-	return (_not_found(match));
+	return (_not_found());
 }
 
-int					http::Response::_empty_path(std::string const & path)
+int					http::Response::_directory_listing(t_request const & request, std::string const & path)
 {
-	(void)path;
-	return (0);
-}
+	DIR *	dir = opendir(path.c_str());
 
-void				http::Response::_set_content_type(std::string const & path)
-{
-	size_t			pos = path.find_last_of('.');
+	if (dir == NULL)
+		return (_not_found());
+	std::stringstream	body;
 
-	if (pos != std::string::npos)
-		_header["Content-Type"] = _MIME_types[path.substr(pos)];
-	else
-		_header["Content-Type"] = "application/octet-stream";
+	body <<"\
+<!DOCTYPE html>\n\
+<html lang=\"en\">\n\
+<head>\n\
+	<title>" << request.path << "</title>\n\
+</head>\n\
+<body>\n\
+<h1>Index of " << request.path << "</h1>\n\
+	<hr>\n\
+	<p>\n";
+
+	for (struct dirent * entry = readdir(dir); entry; entry = readdir(dir))
+	{
+		if (entry->d_type == DT_DIR || entry->d_type == DT_REG)
+		{
+			body << "\t\t<p><a href=\"http://" << request.host << ":" << request.port\
+				 << request.path << entry->d_name;
+			if (entry->d_type == DT_DIR)
+				body << "/\">" << entry->d_name << "/</a></p>\n";
+			else
+				body << "\">" << entry->d_name << "</a></p>\n";
+		}
+	}
+
+	body <<"\
+	</p>\n\
+	<hr>\n\
+</body>\n\
+</html>\n";
+	closedir(dir);
+
+	_status = 200;
+	_header["Content-Type"] = "text/html";
+	_body = body.str();
+
+	std::stringstream	nbr;
+
+	nbr << _body.size();
+	_header["Content-Length"] = nbr.str();
+
+	return (_status);
 }
 
 void				http::Response::_serve_error(void)
@@ -203,6 +250,16 @@ void				http::Response::_serve_error_plain(void)
 	return ;
 }
 
+void				http::Response::_set_content_type(std::string const & path)
+{
+	size_t			pos = path.find_last_of('.');
+
+	if (pos != std::string::npos)
+		_header["Content-Type"] = _MIME_types[path.substr(pos)];
+	else
+		_header["Content-Type"] = "application/octet-stream";
+}
+
 void				http::Response::_set_status_line(void)
 {
 	std::stringstream	status_line;
@@ -234,17 +291,40 @@ void				http::Response::_set_body(void)
 	return ;
 }
 
-int					http::Response::_not_found(std::string const & path)
+int					http::Response::_permanent_redirect(std::string const & path)
+{
+	_header["Location"] = _server.routes[path].redirect;
+	_status = 308;
+	return (_status);
+}
+
+int					http::Response::_not_found(void)
 {
 	_status = 404;
-	(void)path;
 	return (_status);
 }
 
 int					http::Response::_method_not_allowed(std::string const & path)
 {
+	std::set<std::string>::iterator		it = _server.routes[path].method.begin();
+	std::set<std::string>::iterator		end = _server.routes[path].method.end();
+	std::set<std::string>::iterator		last = end;
+
+	--last;
+	while (it != end)
+	{
+		_header["Allow"] += *it;
+		if (it != last)
+			_header["Allow"] += ", ";
+		++it;
+	}
 	_status = 405;
-	(void)path;
+	return (_status);
+}
+
+int					http::Response::_gone(void)
+{
+	_status = 410;
 	return (_status);
 }
 

@@ -1,17 +1,15 @@
 
 body {
-	background: #c5c5ff;
+	background: white;
 	color: black;
+	text-align: center;
 }
 
 h1 {
-	background: white;
-	color: #0000c5;
-	text-align: center;
+	color: #00c500;
 	font-size: 50px;
 }
 
 p {
-	text-align: center;
 	font-size: 30px;
 }

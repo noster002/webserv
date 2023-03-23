@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/22 16:06:51 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/23 09:07:32 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ namespace http
 			int					get_error(void) const;
 			t_request const &	get_conf(void) const;
 
-			void				add_buffer(std::string const & input);
+			void				add_buffer(char const * input, ssize_t bytes);
 			bool				parse(void);
 
 		private:

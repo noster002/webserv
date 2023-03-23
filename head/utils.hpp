@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/22 16:09:09 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/23 10:03:56 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,7 +87,7 @@ typedef struct			s_request
 	std::vector<std::vector<std::string> >	transfer_encoding;
 	size_t									content_length;
 	std::string								body;
-	std::vector<std::string>				chunk;
+	std::vector<std::string>				chunks;
 	std::map<std::string, std::string>		trailer;
 }						t_request;
 
