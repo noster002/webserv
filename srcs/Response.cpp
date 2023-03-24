@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/23 18:45:56 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 13:46:15 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,20 +51,17 @@ void				http::Response::build(int error, t_request const & request)
 	return ;
 }
 
-void				http::Response::_serve_get_request(t_request const & request)
+int					http::Response::_serve_get_request(t_request const & request)
 {
 	std::string			path;
 	
 	if (_get_path(request, path))
-		return ;
+		return (_status);
 
 	std::fstream		file(path.c_str());
 
 	if (file.is_open() == false)
-	{
-		_status = 404;
-		return ;
-	}
+		return (_not_found());
 
 	_set_content_type(path);
 
@@ -77,9 +74,8 @@ void				http::Response::_serve_get_request(t_request const & request)
 
 	size << _body.size();
 	_header["Content-Length"] = size.str();
-	_status = 200;
 
-	return ;
+	return (_OK());
 }
 
 void				http::Response::_serve_post_request(t_request const & request)
@@ -183,7 +179,6 @@ int					http::Response::_directory_listing(t_request const & request, std::strin
 </html>\n";
 	closedir(dir);
 
-	_status = 200;
 	_header["Content-Type"] = "text/html";
 	_body = body.str();
 
@@ -192,7 +187,7 @@ int					http::Response::_directory_listing(t_request const & request, std::strin
 	nbr << _body.size();
 	_header["Content-Length"] = nbr.str();
 
-	return (_status);
+	return (_OK());
 }
 
 void				http::Response::_serve_error(void)
@@ -289,6 +284,12 @@ void				http::Response::_set_body(void)
 {
 	_buffer += _body;
 	return ;
+}
+
+int					http::Response::_OK(void)
+{
+	_status = 200;
+	return (_status);
 }
 
 int					http::Response::_permanent_redirect(std::string const & path)

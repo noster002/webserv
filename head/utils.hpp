@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/23 10:03:56 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 13:33:23 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,7 @@ typedef struct s_params {
 typedef struct			s_request
 {
 	std::string								method;
-	int										version;
+	std::string								protocol;
 	std::string								path;
 	std::string								query;
 	std::map<std::string, std::string>		header;

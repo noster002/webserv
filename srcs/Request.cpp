@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/23 17:00:41 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 13:44:17 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,7 +84,7 @@ bool				http::Request::parse(void)
 		_read_body();
 	std::cout << std::endl;
 	std::cout << YELLOW << "_conf.method:\t(" << BLUE << _conf.method << YELLOW << ")" << std::endl;
-	std::cout << YELLOW << "_conf.version:\t(" << BLUE << _conf.version << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.protocol:\t(" << BLUE << _conf.protocol << YELLOW << ")" << std::endl;
 	std::cout << YELLOW << "_conf.path:\t(" << BLUE << _conf.path << YELLOW << ")" << std::endl;
 	std::cout << YELLOW << "_conf.query:\t(" << BLUE << _conf.query << YELLOW << ")" << std::endl;
 	std::cout << YELLOW << "_conf.host:\t(" << BLUE << _conf.host << YELLOW << ")" << std::endl;
@@ -164,14 +164,13 @@ int					http::Request::_read_path(std::string const & line, size_t & pos)
 
 int					http::Request::_read_version(std::string const & line, size_t & pos)
 {
-	size_t	len = std::strlen(" HTTP/1.");
+	size_t	len = std::strlen(" HTTP/1.1");
 
-	if (line.length() == (pos + len + 1) && \
-		(line.compare(pos, len, " HTTP/1.") == 0 && \
-		(line[pos + len] == '0' || line[pos + len] == '1')))
+	if (line.length() == (pos + len) && \
+		line.compare(pos, len, " HTTP/1.1") == 0)
 	{
-		_conf.version = line[pos + len] - '0';
-		pos += len + 1;
+		_conf.protocol = line.substr(pos + 1, len);
+		pos += len;
 		return (0);
 	}
 
@@ -321,28 +320,26 @@ int					http::Request::_process_path(void)
 
 int					http::Request::_process_host(void)
 {
-	if (_conf.version == 1 && _conf.header.count("Host") == 0)
+	if (_conf.header.count("Host") == 0)
 		return (_bad_request("HTTP request header: no host detected"));
-	else if (_conf.header.count("Host") == 1)
+
+	size_t		pos = _conf.header["Host"].find_first_of(':');
+
+	if (pos != std::string::npos)
 	{
-		size_t		pos = _conf.header["Host"].find_first_of(':');
+		std::string		port = _conf.header["Host"].substr(pos + 1);
 
-		if (pos != std::string::npos)
+		for (size_t	i = 0; i < port.length(); ++i)
 		{
-			std::string		port = _conf.header["Host"].substr(pos + 1);
-
-			for (size_t	i = 0; i < port.length(); ++i)
-			{
-				if (!std::isdigit(port[i]))
-					return (_bad_request("HTTP request header: invalid port"));
-			}
-			_conf.port = std::atoi(port.c_str());
-			_conf.header["Host"].erase(pos);
+			if (!std::isdigit(port[i]))
+				return (_bad_request("HTTP request header: invalid port"));
 		}
-		else
-			_conf.port = 80;
-		_conf.host = _conf.header["Host"];
+		_conf.port = std::atoi(port.c_str());
+		_conf.header["Host"].erase(pos);
 	}
+	else
+		_conf.port = 80;
+	_conf.host = _conf.header["Host"];
 
 	return (0);
 }

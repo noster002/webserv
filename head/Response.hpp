@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/23 16:32:11 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 11:41:53 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,7 @@ namespace http
 			std::map<std::string, std::string>	_header;
 			std::string							_body;
 
-			void								_serve_get_request(t_request const & request);
+			int									_serve_get_request(t_request const & request);
 			void								_serve_post_request(t_request const & request);
 			void								_serve_delete_request(t_request const & request);
 
@@ -75,6 +75,7 @@ namespace http
 			void								_set_head(void);
 			void								_set_body(void);
 
+			int									_OK(void);
 			int									_permanent_redirect(std::string const & path);
 			int									_not_found(void);
 			int									_method_not_allowed(std::string const & path);
