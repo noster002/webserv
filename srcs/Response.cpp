@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 18:29:03 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 13:46:15 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,6 @@
 http::Response::Response(params_t const & server)\
  : _server(server), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body()
 {
-	for (std::map<std::string, route_t>::iterator it = _server.routes.begin(); it != _server.routes.end(); ++it)
-		std::cout << "(" << it->first << ")(" << it->second.root << ")" << std::endl;
 	return ;
 }
 
@@ -37,14 +35,16 @@ void				http::Response::build(int error, t_request const & request)
 
 	if (_status < 300)
 	{
-		if (request.method == "GET")
+		if (_is_cgi_request(request))
+			_cgi_handler(request);
+		else if (request.method == "GET")
 			_serve_get_request(request);
 		else if (request.method == "POST")
 			_serve_post_request(request);
 		else if (request.method == "DELETE")
 			_serve_delete_request(request);
 	}
-	if (_status >= 300)
+	if (_status >= 400)
 		_serve_error();
 	_set_status_line();
 	_set_head();
@@ -53,22 +53,19 @@ void				http::Response::build(int error, t_request const & request)
 	return ;
 }
 
-void				http::Response::_serve_get_request(t_request const & request)
+int					http::Response::_serve_get_request(t_request const & request)
 {
-	std::string			pathname = _get_path(request);
+	std::string			path;
+	
+	if (_get_path(request, path))
+		return (_status);
 
-	if (pathname.empty())
-		return ;
-
-	_set_content_type(pathname);
-
-	std::fstream		file(pathname.c_str());
+	std::fstream		file(path.c_str());
 
 	if (file.is_open() == false)
-	{
-		_status = 404;
-		return ;
-	}
+		return (_not_found());
+
+	_set_content_type(path);
 
 	std::stringstream	body;
 
@@ -79,57 +76,55 @@ void				http::Response::_serve_get_request(t_request const & request)
 
 	size << _body.size();
 	_header["Content-Length"] = size.str();
-	_status = 200;
 
-	return ;
+	return (_OK());
 }
 
 void				http::Response::_serve_post_request(t_request const & request)
 {
-	//std::fstream t_body()
-	std::fstream test("logfile.txt");
-	std::string file_name, f_upload, content;
-	size_t		cursor, ending;
-	FILE *res;
+	std::fstream test("logfile.txt"), target_stream;
+	std::string file_name, target, file_content, file_path, file_type;
+	size_t cursor, ending, start;
+	FILE* res;
 	if (!request.body.empty())
 	{
 		cursor = request.body.find("filename=\"");
 		if (cursor == std::string::npos)
 		{
-			this->_status = 202;
+			test << "QUOI?\n";
+			test << request.body;
+			return ;
 		}
 		cursor += 10;
 		file_name = request.body.substr(cursor, request.body.find("\"", cursor) - cursor);
 		if (file_name.empty())
-			test << "Empty content\n";
-		size_t last = 0, first = 0;
-		if (test.is_open())
 		{
-			cursor = request.body.find("Content-Type: ");
-			ending = request.body.find("------WebKit", cursor);
-			content = request.body.substr(cursor, ending - cursor);
-			first = content.find("\r\n");
-			first = content.find("\r\n", first + 1);
-			first += 2;
-			last = content.find_last_of("\r\n");
-			test << "***********\n";
-			test << content.substr(first, last - first) << "\n" ;
-			test << "**********\n";
-
+			test << "EMPTY\n";
+			return;
 		}
-		f_upload = "." + this->_get_path(request) + file_name;
-		res = fopen(f_upload.c_str(), "r");
-		if (res)
-			test << "Error\n";
+		cursor = request.body.find("Content-Type: ");
+		start = request.body.find_first_of("\n", cursor) + 3;
+		ending = request.body.find("------WebKit", start) - 2;
+		file_content = request.body.substr(start, ending - start);
+		file_type = request.body.substr(cursor + 14, request.body.find("\n", cursor + 14) - cursor - 15);
+		this->_get_path(request, file_path);
+		target = file_path + file_name;
+		if (!file_type.compare("text/plain"))
+		{
+			res = fopen(target.c_str(), "w");
+			fclose(res);
+			target_stream.open(target, std::ios::out);
+		}
 		else
-			res = fopen(f_upload.c_str(), "w");
-		if (!res)
-			test << "Error";
-		fwrite(content.substr(first, last - first - 1).c_str(), sizeof(char), last - first - 1, res);
-		fclose(res);
+		{
+			res = fopen(target.c_str(), "wb");
+			fclose(res);
+			target_stream.open(target, std::ios::out | std::ios::binary);
+		}
+		target_stream << file_content;
+		test.close();
+		target_stream.close();
 	}
-
-	(void)request;
 
 }
 
@@ -138,51 +133,106 @@ void				http::Response::_serve_delete_request(t_request const & request)
 	(void)request;
 }
 
-std::string			http::Response::_get_path(t_request const & request)
+int					http::Response::_get_path(t_request const & request, std::string & path)
 {
-	std::string		path;
 	std::string		match = request.path;
-	size_t			pos = match.find_last_of('/');
+	size_t			pos = match.size();
+	bool			is_dir;
 
-	while (pos != std::string::npos)
+	do
 	{
-		match = match.substr(0, ++pos);
-
-		if (_server.routes.count(match) && \
-			_server.routes[match].method.count(request.method))
-			break ;
-
-		match.pop_back();
-
-		if (_server.routes.count(match) && \
-			_server.routes[match].method.count(request.method))
-			break ;
-
-		pos = match.find_last_of('/');
+		is_dir = (match.back() == '/');
+		if (_server.routes.count(match))
+		{
+			if (_server.routes[match].method.count(request.method))
+			{
+				if (_server.routes[match].redirect.empty() == false)
+					return (_permanent_redirect(match));
+				else if (_server.routes[match].root.empty())
+					return (_gone());
+				if (is_dir && _server.routes[match].root.back() != '/')
+					--pos;
+				else if (!is_dir && _server.routes[match].root.back() == '/')
+					++pos;
+				path = _server.routes[match].root + request.path.substr(pos);
+				if (path.back() == '/')
+				{
+					if (_server.routes[match].index.empty() == false)
+						path += _server.routes[match].index;
+					else if (_server.routes[match].directory_listing == false)
+						return (_not_found());
+					else
+						return (_directory_listing(request, path));
+				}
+				return (0);
+			}
+			std::cout << match << std::endl;
+			return (_method_not_allowed(match));
+		}
+		if (is_dir)
+			--pos;
+		else
+		{
+			pos = match.find_last_of('/');
+			if (pos == std::string::npos)
+				break ;
+			++pos;
+		}
+		match.erase(pos);
 	}
-	if (pos == std::string::npos)
-	{
-		_status = 404;
-		return ("");
-	}
+	while (pos != 0);
 
-	if ((_server.routes[match].root.empty() == false) && \
-		(_server.routes[match].root.back() != '/'))
-		--pos;
-	path = _server.routes[match].root + request.path.substr(pos);
-
-	return (path);
+	return (_not_found());
 }
 
-void			http::Response::_set_content_type(std::string const & path)
+int					http::Response::_directory_listing(t_request const & request, std::string const & path)
 {
-	size_t			pos = path.find_last_of('.');
+	DIR *	dir = opendir(path.c_str());
 
-	if (pos != std::string::npos)
-		_header["Content-Type"] = _MIME_types[path.substr(pos)];
+	if (dir == NULL)
+		return (_not_found());
+	std::stringstream	body;
 
-	if (_header["Content-Type"].empty())
-		_header["Content-Type"] = "application/octet-stream";
+	body <<"\
+<!DOCTYPE html>\n\
+<html lang=\"en\">\n\
+<head>\n\
+	<title>" << request.path << "</title>\n\
+</head>\n\
+<body>\n\
+<h1>Index of " << request.path << "</h1>\n\
+	<hr>\n\
+	<p>\n";
+
+	for (struct dirent * entry = readdir(dir); entry; entry = readdir(dir))
+	{
+		if (entry->d_type == DT_DIR || entry->d_type == DT_REG)
+		{
+			body << "\t\t<p><a href=\"http://" << request.host << ":" << request.port\
+				 << request.path << entry->d_name;
+			if (entry->d_type == DT_DIR)
+				body << "/\">" << entry->d_name << "/</a></p>\n";
+			else
+				body << "\">" << entry->d_name << "</a></p>\n";
+		}
+	}
+
+	body <<"\
+	</p>\n\
+	<hr>\n\
+</body>\n\
+</html>\n";
+	closedir(dir);
+
+	_header["Content-Type"] = "text/html";
+	_body = body.str();
+
+	std::stringstream	nbr;
+
+	nbr << _body.size();
+	_header["Content-Length"] = nbr.str();
+
+	return (_OK());
 }
 
 void				http::Response::_serve_error(void)
@@ -193,6 +243,7 @@ void				http::Response::_serve_error(void)
 
 		if (file.is_open())
 		{
+			_set_content_type(_server.err_pages[_status].c_str());
 			_serve_error_file(file);
 			return ;
 		}
@@ -201,6 +252,7 @@ void				http::Response::_serve_error(void)
 
 	if (file.is_open())
 	{
+		_set_content_type(_default_err_pages[_status].c_str());
 		_serve_error_file(file);
 		return ;
 	}
@@ -217,7 +269,6 @@ void				http::Response::_serve_error_file(std::fstream & file)
 	while (std::getline(file, buffer))
 		_body += buffer;
 
-	_header["Content-Type"] = "text/html";
 	nbr << _body.size();
 	_header["Content-Length"] = nbr.str();
 
@@ -237,6 +288,16 @@ void				http::Response::_serve_error_plain(void)
 	_header["Content-Length"] = nbr.str();
 
 	return ;
+}
+
+void				http::Response::_set_content_type(std::string const & path)
+{
+	size_t			pos = path.find_last_of('.');
+
+	if (pos != std::string::npos)
+		_header["Content-Type"] = _MIME_types[path.substr(pos)];
+	else
+		_header["Content-Type"] = "application/octet-stream";
 }
 
 void				http::Response::_set_status_line(void)
@@ -268,6 +329,49 @@ void				http::Response::_set_body(void)
 {
 	_buffer += _body;
 	return ;
+}
+
+int					http::Response::_OK(void)
+{
+	_status = 200;
+	return (_status);
+}
+
+int					http::Response::_permanent_redirect(std::string const & path)
+{
+	_header["Location"] = _server.routes[path].redirect;
+	_status = 308;
+	return (_status);
+}
+
+int					http::Response::_not_found(void)
+{
+	_status = 404;
+	return (_status);
+}
+
+int					http::Response::_method_not_allowed(std::string const & path)
+{
+	std::set<std::string>::iterator		it = _server.routes[path].method.begin();
+	std::set<std::string>::iterator		end = _server.routes[path].method.end();
+	std::set<std::string>::iterator		last = end;
+
+	--last;
+	while (it != end)
+	{
+		_header["Allow"] += *it;
+		if (it != last)
+			_header["Allow"] += ", ";
+		++it;
+	}
+	_status = 405;
+	return (_status);
+}
+
+int					http::Response::_gone(void)
+{
+	_status = 410;
+	return (_status);
 }
 
 std::map<int, std::string>		http::Response::_init_statuses(void)
@@ -413,23 +517,50 @@ std::map<std::string, std::string>		http::Response::_init_MIME_types(void)
 	MIME_types[".shtml"] = "text/html";
 	MIME_types[".css"] = "text/css";
 	MIME_types[".xml"] = "text/xml";
-	MIME_types[".rss"] = "text/xml";
 	MIME_types[".gif"] = "image/gif";
 	MIME_types[".jpeg"] = "image/jpeg";
 	MIME_types[".jpg"] = "image/jpeg";
-	MIME_types[".js"] = "application/x-javascript";
-	MIME_types[".txt"] = "text/plain";
-	MIME_types[".htc"] = "text/x-component";
+	MIME_types[".js"] = "application/javascript";
+	MIME_types[".atom"] = "application/atom+xml";
+	MIME_types[".rss"] = "application/rss+xml";
+
 	MIME_types[".mml"] = "text/mathml";
+	MIME_types[".txt"] = "text/plain";
+	MIME_types[".jad"] = "text/vnd.sun.j2me.app-descriptor";
+	MIME_types[".wml"] = "text/vnd.wap.wml";
+	MIME_types[".htc"] = "text/x-component";
+
 	MIME_types[".png"] = "image/png";
+	MIME_types[".tif"] = "image/tiff";
+	MIME_types[".tiff"] = "image/tiff";
+	MIME_types[".wbmp"] = "image/vnd.wap.wbmp";
 	MIME_types[".ico"] = "image/x-icon";
 	MIME_types[".jng"] = "image/x-jng";
-	MIME_types[".wbmp"] = "image/vnd.wap.wbmp";
+	MIME_types[".bmp"] = "image/x-ms-bmp";
+	MIME_types[".svg"] = "image/svg+xml";
+	MIME_types[".svgz"] = "image/svg+xml";
+	MIME_types[".webp"] = "image/webp";
+
+	MIME_types[".woff"] = "application/font-woff";
 	MIME_types[".jar"] = "application/java-archive";
 	MIME_types[".war"] = "application/java-archive";
 	MIME_types[".ear"] = "application/java-archive";
+	MIME_types[".json"] = "application/json";
 	MIME_types[".hqx"] = "application/mac-binhex40";
+	MIME_types[".doc"] = "application/msword";
 	MIME_types[".pdf"] = "application/pdf";
+	MIME_types[".ps"] = "application/postscript";
+	MIME_types[".eps"] = "application/postscript";
+	MIME_types[".ai"] = "application/postscript";
+	MIME_types[".rtf"] = "application/rtf";
+	MIME_types[".m3u8"] = "application/vnd.apple.mpegurl";
+	MIME_types[".xls"] = "application/vnd.ms-excel";
+	MIME_types[".eot"] = "application/vnd.ms-fontobject";
+	MIME_types[".ppt"] = "application/vnd.ms-powerpoint";
+	MIME_types[".wmlc"] = "application/vnd.map.wmlc";
+	MIME_types[".kml"] = "application/vnd.google-earth.kml+xml";
+	MIME_types[".mkz"] = "application/vnd.google-earth.kmz";
+	MIME_types[".7z"] = "application/x-7z-compressed";
 	MIME_types[".cco"] = "application/x-cocoa";
 	MIME_types[".jardiff"] = "application/x-java-archive-diff";
 	MIME_types[".jnlp"] = "application/x-java-jnlp-file";
@@ -449,29 +580,48 @@ std::map<std::string, std::string>		http::Response::_init_MIME_types(void)
 	MIME_types[".pem"] = "application/x-x509-ca-cert";
 	MIME_types[".crt"] = "application/x-x509-ca-cert";
 	MIME_types[".xpi"] = "application/x-xpinstall";
+	MIME_types[".xhtml"] = "application/xhtml+xml";
+	MIME_types[".xspf"] = "application/xspf+xml";
 	MIME_types[".zip"] = "application/zip";
-	MIME_types[".deb"] = "application/octet-stream";
+
 	MIME_types[".bin"] = "application/octet-stream";
 	MIME_types[".exe"] = "application/octet-stream";
 	MIME_types[".dll"] = "application/octet-stream";
+	MIME_types[".deb"] = "application/octet-stream";
 	MIME_types[".dmg"] = "application/octet-stream";
-	MIME_types[".eot"] = "application/octet-stream";
 	MIME_types[".iso"] = "application/octet-stream";
 	MIME_types[".img"] = "application/octet-stream";
 	MIME_types[".msi"] = "application/octet-stream";
 	MIME_types[".msp"] = "application/octet-stream";
 	MIME_types[".msm"] = "application/octet-stream";
+
+	MIME_types[".docx"] = "application/vnd.openxmlformats-officedocument.wordpressingml.document";
+	MIME_types[".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+	MIME_types[".pptx"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+	MIME_types[".mid"] = "audio/midi";
+	MIME_types[".midi"] = "audio/midi";
+	MIME_types[".kar"] = "audio/midi";
 	MIME_types[".mp3"] = "audio/mpeg";
+	MIME_types[".ogg"] = "audio/ogg";
+	MIME_types[".m4a"] = "audio/x-m4a";
 	MIME_types[".ra"] = "audio/x-realaudio";
+
+	MIME_types[".3gpp"] = "video/3ggp";
+	MIME_types[".3gp"] = "video/3ggp";
+	MIME_types[".ts"] = "video/mp2t";
+	MIME_types[".mp4"] = "video/mp4";
 	MIME_types[".mpeg"] = "video/mpeg";
 	MIME_types[".mpg"] = "video/mpeg";
 	MIME_types[".mov"] = "video/quicktime";
+	MIME_types[".webm"] = "video/webm";
 	MIME_types[".flv"] = "video/x-flv";
-	MIME_types[".avi"] = "video/x-msvideo";
-	MIME_types[".wmv"] = "video/x-ms-wmv";
+	MIME_types[".m4v"] = "video/x-m4v";
+	MIME_types[".mng"] = "video/x-mng";
 	MIME_types[".asx"] = "video/x-ms-asf";
 	MIME_types[".asf"] = "video/x-ms-asf";
-	MIME_types[".mng"] = "video/x-mng";
+	MIME_types[".wmv"] = "video/x-ms-wmv";
+	MIME_types[".avi"] = "video/x-msvideo";
 
 	return (MIME_types);
 }
@@ -499,4 +649,62 @@ http::Response &	http::Response::operator=(Response const & rhs)
 	(void)rhs;
 
 	return (*this);
+}
+
+
+bool				http::Response::_is_cgi_request(t_request const & request)
+{
+	if (this->_server.routes.find(request.path) != this->_server.routes.end())
+		return this->_server.routes[request.path].cgi_pass == CGI;
+	std::cout << "hello" << std::endl;
+	return false;
+}
+
+void				http::Response::_cgi_handler(t_request const & request)
+{
+	std::fstream test("logfile.txt");
+	for (std::map<std::string, std::string>::const_iterator it = request.header.begin(); it != request.header.end(); ++it)
+	{
+		test << it->first << " " << it->second << "\n";
+	}
+	int fds[2];
+	pipe(fds);
+	char  body[100000];
+	pid_t pid = fork();
+
+	if (pid < 0)
+	{
+		std::cout << "Error: starting process\n";
+		return ;
+	}
+	else if (pid == 0)
+	{
+		char* args[2];
+		char* env[10];
+		std::string php_cgi_bin = CGI;
+		args[0] = strdup("test/php/sample.php");
+		args[1] = NULL;
+		env[0] = strdup("GATEWAY_INTERFACE=CGI/1.1");
+		env[1] = strdup("REDIRECT_STATUS=200");
+		env[2] = strdup("REDIRECT_STATUS=200");
+		env[3] = strdup("SCRIPT_FILENAME=test/php/sample.php");
+		env[4] = strdup("REQUEST_METHOD=GET");
+		env[5] = NULL;
+		close(fds[0]);
+		dup2(fds[1], STDOUT_FILENO);
+		if (execve(php_cgi_bin.c_str(), args, env) < 0)
+			std::cerr << std::strerror(errno);
+	}
+	else
+	{
+		waitpid(pid, NULL, -1);
+		close(fds[1]);
+		int bytes = read(fds[0], body, 100000);
+		std::cout << "bytes : " << bytes << "\n";
+		std::cout << body << std::endl;
+		_body = body;
+		_header["Content-type"] = "text/html";
+		_status = 200;
+		
+	}
 }
