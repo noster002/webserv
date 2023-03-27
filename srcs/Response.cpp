@@ -6,14 +6,15 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 15:44:55 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/27 11:30:08 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
 http::Response::Response(void)\
- : _server(), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body()
+ : _server(), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body(),\
+   _is_cgi(false)
 {
 	return ;
 }
@@ -116,7 +117,7 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					return (_gone());
 				if (is_dir && _server.routes[match].root.back() != '/')
 					--pos;
-				else if (!is_dir && _server.routes[match].root.back() == '/')
+				else if (!is_dir && _server.routes[match].root.back() == '/' && pos < request.path.size())
 					++pos;
 				path = _server.routes[match].root + request.path.substr(pos);
 				if (path.back() == '/')
@@ -128,9 +129,11 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					else
 						return (_directory_listing(request, path));
 				}
+				if (_server.routes[match].cgi_pass.empty() == false && \
+					_server.routes[match].cgi_ext == ".php")
+					_is_cgi = true;
 				return (0);
 			}
-			std::cout << match << std::endl;
 			return (_method_not_allowed(match));
 		}
 		if (is_dir)

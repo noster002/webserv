@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 15:40:42 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/27 11:25:12 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,8 @@ namespace http
 			int									_status;
 			std::map<std::string, std::string>	_header;
 			std::string							_body;
+
+			bool								_is_cgi;
 
 			int									_serve_get_request(t_request const & request);
 			void								_serve_post_request(t_request const & request);
