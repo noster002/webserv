@@ -6,14 +6,15 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 13:46:15 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/27 11:30:08 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-http::Response::Response(params_t const & server)\
- : _server(server), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body()
+http::Response::Response(void)\
+ : _server(), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body(),\
+   _is_cgi(false)
 {
 	return ;
 }
@@ -29,9 +30,18 @@ std::string const &	http::Response::get_buffer(void) const
 	return (_buffer);
 }
 
+void				http::Response::set_server(params_t const & server)
+{
+	_server = server;
+	return ;
+}
+
 void				http::Response::build(int error, t_request const & request)
 {
 	_status = error;
+
+	if (request.body.size() > _server.client_max_body_size)
+		_content_too_large("HTTP request body: content too large");
 
 	if (_status < 300)
 	{
@@ -152,7 +162,7 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					return (_gone());
 				if (is_dir && _server.routes[match].root.back() != '/')
 					--pos;
-				else if (!is_dir && _server.routes[match].root.back() == '/')
+				else if (!is_dir && _server.routes[match].root.back() == '/' && pos < request.path.size())
 					++pos;
 				path = _server.routes[match].root + request.path.substr(pos);
 				if (path.back() == '/')
@@ -164,9 +174,11 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					else
 						return (_directory_listing(request, path));
 				}
+				if (_server.routes[match].cgi_pass.empty() == false && \
+					_server.routes[match].cgi_ext == ".php")
+					_is_cgi = true;
 				return (0);
 			}
-			std::cout << match << std::endl;
 			return (_method_not_allowed(match));
 		}
 		if (is_dir)
@@ -371,6 +383,13 @@ int					http::Response::_method_not_allowed(std::string const & path)
 int					http::Response::_gone(void)
 {
 	_status = 410;
+	return (_status);
+}
+
+int					http::Response::_content_too_large(std::string const & error_msg)
+{
+	std::cerr << error_msg << std::endl;
+	_status = 413;
 	return (_status);
 }
 
@@ -634,8 +653,6 @@ std::map<std::string, std::string>		http::Response::_MIME_types = Response::_ini
 
 
 // canonical class form
-
-http::Response::Response(void) {}
 
 http::Response::Response(Response const & other)
 {

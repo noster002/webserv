@@ -6,19 +6,19 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/23 09:07:18 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/27 08:10:37 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-http::Client::Client(int fd, Server const & server)\
- : _server(server), _socket(fd), \
+http::Client::Client(int fd, std::vector<Server> const & servers)\
+ : _servers(servers), _socket(fd), \
    _request(NULL), \
    _response(NULL)
 {
-	_request = new Request(server.get_conf());
-	_response = new Response(server.get_conf());
+	_request = new Request();
+	_response = new Response();
 	return ;
 }
 
@@ -59,7 +59,11 @@ void			http::Client::read(char const * input, ssize_t bytes, int kq)
 {
 	_request->add_buffer(input, bytes);
 
-	if (_request->parse() == EXIT_FAILURE)
+	int		is_interpreted = _request->parse();
+
+	_response->set_server(_get_server(_request->get_conf()));
+
+	if (is_interpreted == EXIT_FAILURE)
 		return ;
 	std::cout << GREEN << "BUILD" << RESET << std::endl;
 
@@ -97,22 +101,35 @@ std::string		http::Client::write(int kq)
 
 void			http::Client::clear(void)
 {
-	new (_request) Request(_server.get_conf());
-	new (_response) Response(_server.get_conf());
+	new (_request) Request();
+	new (_response) Response();
 
 	return ;
+}
+
+params_t const &	http::Client::_get_server(t_request const & request)
+{
+	for (std::vector<Server>::const_iterator server = _servers.begin(); server != _servers.end(); ++server)
+	{
+		for (size_t cnt = 0; cnt < server->get_conf().s_names.size(); ++cnt)
+		{
+			if (server->get_conf().s_names[cnt] == request.host)
+				return (server->get_conf());
+		}
+	}
+	return (_servers[0].get_conf());
 }
 
 
 // canonical class form
 
 http::Client::Client(Client const & other)\
- : _server(other._server), _socket(), \
+ : _servers(other._servers), _socket(), \
    _request(NULL), \
    _response(NULL)
 {
-	_request = new Request(other._server.get_conf());
-	_response = new Response(other._server.get_conf());
+	_request = new Request();
+	_response = new Response();
 	return ;
 }
 

@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Config.cpp                                     :+:      :+:    :+:   */
+/*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 17:59:32 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 16:13:52 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,6 +67,7 @@ void			http::Config::parse_config_file(void)
 		std::cout << RED << "**********SERVER[ " << i + 1 << " ]*******************" << RESET << "\n";
 		while (this->servers[i].start_data <= this->servers[i].end_data)
 		{
+			this->servers[i].client_max_body_size = 1048576;
 			j = 0;
 			http::Config::skipe_empty_line(data, &this->servers[i].start_data);
 			http::Config::skipe_spaces(data[this->servers[i].start_data], &j);
@@ -505,7 +506,7 @@ void			http::Config::set_redirect(std::string & str, route_t* route, size_t* cur
 {
 	*cursor += 8;
 	std::string value = this->get_inline_value(str, cursor);
-	route->upload = value;
+	route->redirect = value;
 }
 
 void			http::Config::set_cgi_ext(std::string & str, route_t* route, size_t* cursor)

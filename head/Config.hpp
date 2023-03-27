@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Config.hpp                                     :+:      :+:    :+:   */
+/*   Config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:47 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/08 17:59:01 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 15:07:38 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ namespace http
 			params_t &				get_server_conf(int i);
 
 		private:
-			std::vector<params_t>	servers;	
+			std::vector<params_t>	servers;
 			bool 					validation;
 			std::string				_file;
 			int						nb_servers;

@@ -6,10 +6,10 @@ SRCDIR			= srcs
 OBJDIR			= objs
 HEADDIR			= head
 SRC				= $(addprefix $(SRCDIR)/,$(addsuffix .cpp,\
-				  main Webserv Server Config Error Client Socket Request Response))
+				  main Webserv Server Config Client Socket Request Response))
 OBJ				= $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRC))
 HEAD			= $(addprefix $(HEADDIR)/,$(addsuffix .hpp,\
-				  utils Webserv Server Config Error Client Socket Request Response))
+				  utils Webserv Server Config Client Socket Request Response))
 
 all:			$(NAME)
 

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 14:56:22 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 15:08:46 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,7 @@
 # define KEY_HOST "host"
 # define DOT '.'
 # define TAB 9
+# define CGI "cgi/php-cgi"
 
 typedef struct	s_route {
 	std::set<std::string>		method;
@@ -80,15 +81,18 @@ typedef struct s_params {
 
 typedef struct			s_request
 {
-	std::string			method;
-	int					version;
-	std::string			path;
-	std::string			query;
-	std::string			host;
-	int					port;
-	std::map<std::string, std::string>\
-						header;
-	std::string			body;
+	std::string								method;
+	std::string								protocol;
+	std::string								path;
+	std::string								query;
+	std::map<std::string, std::string>		header;
+	std::string								host;
+	int										port;
+	std::vector<std::vector<std::string> >	transfer_encoding;
+	size_t									content_length;
+	std::string								body;
+	std::vector<std::string>				chunks;
+	std::map<std::string, std::string>		trailer;
 }						t_request;
 
 // namespace utils {

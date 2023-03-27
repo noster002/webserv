@@ -43,10 +43,11 @@ namespace http
 	{
 		public:
 
-			Response(params_t const & conf);
+			Response(void);
 			~Response(void);
 
 			std::string const &					get_buffer(void) const;
+			void								set_server(params_t const & server);
 			void								build(int error, t_request const & request);
 
 		private:
@@ -59,6 +60,8 @@ namespace http
 			int									_status;
 			std::map<std::string, std::string>	_header;
 			std::string							_body;
+
+			bool								_is_cgi;
 
 			int									_serve_get_request(t_request const & request);
 			void								_serve_post_request(t_request const & request);
@@ -84,6 +87,7 @@ namespace http
 			int									_gone(void);
 			bool								_is_cgi_request(t_request const & request);
 			void								_cgi_handler(t_request const & request);
+			int									_content_too_large(std::string const & error_msg);
 
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
@@ -94,7 +98,6 @@ namespace http
 
 			// canonical class form
 
-			Response(void);
 			Response(Response const & other);
 			Response &	operator=(Response const & rhs);
 

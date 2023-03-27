@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 15:15:05 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/27 08:03:13 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,10 +51,9 @@ namespace http
 
 			params_t const &	get_conf(void) const;
 
-			int		get_socket_fd(int index) const;
-			int		get_nbr_sockets(void) const;
+			int		get_last_socket_fd(void) const;
 
-			void	setup(int kq);
+			void	setup(int kq, std::string const & host, std::string const & port);
 			void	clean(void);
 
 		private:
@@ -62,7 +61,7 @@ namespace http
 			params_t					_conf;
 			std::vector<Socket *>		_sockets;
 
-			void	set_addr_info(Socket & socket, char const * port);
+			void	set_addr_info(Socket & socket, char const * host, char const * port);
 
 	};
 }
