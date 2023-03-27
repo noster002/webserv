@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 16:32:27 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/23 09:07:18 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,18 @@
 
 http::Client::Client(int fd, Server const & server)\
  : _server(server), _socket(fd), \
-   _request(server.get_conf()), \
-   _response(server.get_conf())
+   _request(NULL), \
+   _response(NULL)
 {
+	_request = new Request(server.get_conf());
+	_response = new Response(server.get_conf());
 	return ;
 }
 
 http::Client::~Client(void)
 {
+	delete _request;
+	delete _response;
 	return ;
 }
 
@@ -51,14 +55,15 @@ void			http::Client::disconnect(int kq)
 	return ;
 }
 
-void			http::Client::read(std::string const & input, int kq)
+void			http::Client::read(char const * input, ssize_t bytes, int kq)
 {
-	_request.add_buffer(input);
+	_request->add_buffer(input, bytes);
 
-	_request.parse();
+	if (_request->parse() == EXIT_FAILURE)
+		return ;
 	std::cout << GREEN << "BUILD" << RESET << std::endl;
 
-	_response.build(_request.get_error(), _request.get_conf());
+	_response->build(_request->get_error(), _request->get_conf());
 
 	try
 	{
@@ -74,7 +79,7 @@ void			http::Client::read(std::string const & input, int kq)
 
 std::string		http::Client::write(int kq)
 {
-	std::string		output = _response.get_buffer();
+	std::string		output = _response->get_buffer();
 
 	clear();
 
@@ -92,10 +97,8 @@ std::string		http::Client::write(int kq)
 
 void			http::Client::clear(void)
 {
-	_request.~Request();
-	new (&_request) Request(_server.get_conf());
-	_response.~Response();
-	new (&_response) Response(_server.get_conf());
+	new (_request) Request(_server.get_conf());
+	new (_response) Response(_server.get_conf());
 
 	return ;
 }
@@ -105,9 +108,11 @@ void			http::Client::clear(void)
 
 http::Client::Client(Client const & other)\
  : _server(other._server), _socket(), \
-   _request(other._server.get_conf()), \
-   _response(other._server.get_conf())
+   _request(NULL), \
+   _response(NULL)
 {
+	_request = new Request(other._server.get_conf());
+	_response = new Response(other._server.get_conf());
 	return ;
 }
 

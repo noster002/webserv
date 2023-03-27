@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 14:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 16:32:43 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/23 09:04:43 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,7 @@ namespace http
 			void				connect(int kq);
 			void				disconnect(int kq);
 
-			void				read(std::string const & input, int kq);
+			void				read(char const * input, ssize_t bytes, int kq);
 			std::string			write(int kq);
 
 			void				clear(void);
@@ -53,8 +53,8 @@ namespace http
 
 			Server const &		_server;
 			Socket				_socket;
-			Request				_request;
-			Response			_response;
+			Request *			_request;
+			Response *			_response;
 
 
 			// canonical class form
