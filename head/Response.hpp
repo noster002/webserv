@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/20 18:25:03 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 11:41:53 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,9 @@
 
 # include <sys/socket.h>
 # include <sys/types.h>
+# include <dirent.h>
+# include <unistd.h>
+
 
 // C++98
 
@@ -57,20 +60,30 @@ namespace http
 			std::map<std::string, std::string>	_header;
 			std::string							_body;
 
-			void								_serve_get_request(t_request const & request);
+			int									_serve_get_request(t_request const & request);
 			void								_serve_post_request(t_request const & request);
 			void								_serve_delete_request(t_request const & request);
 
-			std::string							_get_path(t_request const & request);
-			void								_set_content_type(std::string const & path);
+			int									_get_path(t_request const & request, std::string & path);
+			int									_directory_listing(t_request const & request, std::string const & path);
 
 			void								_serve_error(void);
 			void								_serve_error_file(std::fstream & file);
 			void								_serve_error_plain(void);
 
+			void								_set_content_type(std::string const & path);
+
 			void								_set_status_line(void);
 			void								_set_head(void);
 			void								_set_body(void);
+
+			int									_OK(void);
+			int									_permanent_redirect(std::string const & path);
+			int									_not_found(void);
+			int									_method_not_allowed(std::string const & path);
+			int									_gone(void);
+			bool								_is_cgi_request(t_request const & request);
+			void								_cgi_handler(t_request const & request);
 
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
