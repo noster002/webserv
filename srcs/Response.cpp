@@ -673,22 +673,22 @@ bool				http::Response::_is_cgi_request(t_request const & request)
 {
 	if (this->_server.routes.find(request.path) != this->_server.routes.end())
 		return this->_server.routes[request.path].cgi_pass == CGI;
-	std::cout << "hello" << std::endl;
 	return false;
 }
 
 void				http::Response::_cgi_handler(t_request const & request)
 {
-	std::fstream test("logfile.txt");
 	for (std::map<std::string, std::string>::const_iterator it = request.header.begin(); it != request.header.end(); ++it)
-	{
-		test << it->first << " " << it->second << "\n";
-	}
+		_header[it->first] = it->second;
 	int fds[2];
 	pipe(fds);
 	char  body[100000];
 	pid_t pid = fork();
-
+	std::string path;
+	this->_get_path(request, path);
+	std::fstream test("logfile.txt");
+	test << path << "\n";
+	test.close();
 	if (pid < 0)
 	{
 		std::cout << "Error: starting process\n";
@@ -697,31 +697,43 @@ void				http::Response::_cgi_handler(t_request const & request)
 	else if (pid == 0)
 	{
 		char* args[2];
-		char* env[10];
+		char* env[8];
 		std::string php_cgi_bin = CGI;
-		args[0] = strdup("test/php/sample.php");
+		std::stringstream ss;
+		ss << request.content_length;
+		args[0] = strdup(path.c_str());
 		args[1] = NULL;
 		env[0] = strdup("GATEWAY_INTERFACE=CGI/1.1");
 		env[1] = strdup("REDIRECT_STATUS=200");
-		env[2] = strdup("REDIRECT_STATUS=200");
-		env[3] = strdup("SCRIPT_FILENAME=test/php/sample.php");
-		env[4] = strdup("REQUEST_METHOD=GET");
-		env[5] = NULL;
+		env[2] = strdup(("SCRIPT_FILENAME=" + path).c_str());
+		env[3] = strdup(("CONTENT_LENGTH=" + ss.str()).c_str());
+		env[4] = strdup(("REQUEST_METHOD=" + request.method).c_str());
+		env[5] = strdup("CONTENT_TYPE=text/html"); // !!!should be dynamic
+		env[6] = strdup(("QUERY_STRING=" + request.query).c_str());
+		env[7] = NULL;
+
 		close(fds[0]);
 		dup2(fds[1], STDOUT_FILENO);
 		if (execve(php_cgi_bin.c_str(), args, env) < 0)
-			std::cerr << std::strerror(errno);
+			std::cerr << "execve: " << std::strerror(errno) << std::endl;
+		exit(0);
 	}
 	else
 	{
 		waitpid(pid, NULL, -1);
 		close(fds[1]);
-		int bytes = read(fds[0], body, 100000);
-		std::cout << "bytes : " << bytes << "\n";
-		std::cout << body << std::endl;
-		_body = body;
+		int bytes;
+		int count = 0;
+		std::string tmp_body;
+		do {
+			bytes = read(fds[0], &body[count], 1);
+			count++;
+		}
+		while(bytes > 0);
+		close(fds[0]);
 		_header["Content-type"] = "text/html";
+		tmp_body = body;
+		_body = tmp_body.substr(tmp_body.find("\n", tmp_body.find("Content-type")) + 2);
 		_status = 200;
-		
 	}
 }
