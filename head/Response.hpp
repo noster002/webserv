@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 11:41:53 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 15:40:42 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,10 +41,11 @@ namespace http
 	{
 		public:
 
-			Response(params_t const & conf);
+			Response(void);
 			~Response(void);
 
 			std::string const &					get_buffer(void) const;
+			void								set_server(params_t const & server);
 			void								build(int error, t_request const & request);
 
 		private:
@@ -80,6 +81,7 @@ namespace http
 			int									_not_found(void);
 			int									_method_not_allowed(std::string const & path);
 			int									_gone(void);
+			int									_content_too_large(std::string const & error_msg);
 
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
@@ -90,7 +92,6 @@ namespace http
 
 			// canonical class form
 
-			Response(void);
 			Response(Response const & other);
 			Response &	operator=(Response const & rhs);
 

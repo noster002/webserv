@@ -6,14 +6,14 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 13:46:15 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 15:44:55 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-http::Response::Response(params_t const & server)\
- : _server(server), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body()
+http::Response::Response(void)\
+ : _server(), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body()
 {
 	return ;
 }
@@ -29,9 +29,18 @@ std::string const &	http::Response::get_buffer(void) const
 	return (_buffer);
 }
 
+void				http::Response::set_server(params_t const & server)
+{
+	_server = server;
+	return ;
+}
+
 void				http::Response::build(int error, t_request const & request)
 {
 	_status = error;
+
+	if (request.body.size() > _server.client_max_body_size)
+		_content_too_large("HTTP request body: content too large");
 
 	if (_status < 300)
 	{
@@ -329,6 +338,13 @@ int					http::Response::_gone(void)
 	return (_status);
 }
 
+int					http::Response::_content_too_large(std::string const & error_msg)
+{
+	std::cerr << error_msg << std::endl;
+	_status = 413;
+	return (_status);
+}
+
 std::map<int, std::string>		http::Response::_init_statuses(void)
 {
 	std::map<int, std::string>	statuses;
@@ -589,8 +605,6 @@ std::map<std::string, std::string>		http::Response::_MIME_types = Response::_ini
 
 
 // canonical class form
-
-http::Response::Response(void) {}
 
 http::Response::Response(Response const & other)
 {

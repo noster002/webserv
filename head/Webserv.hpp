@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:53:54 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/14 10:54:33 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 16:20:49 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,14 +55,14 @@ namespace http
 
 		private:
 
-			Config						_config;
-			std::map<int, Server>		_servers;
-			std::map<int, Client *>		_clients;
+			Config									_config;
+			std::map<int, std::vector<Server> >		_servers;
+			std::map<int, Client *>					_clients;
 
-			bool						_is_setup;
-			unsigned int				_up;
+			bool									_is_setup;
+			unsigned int							_up;
 
-			int							_kq;
+			int										_kq;
 
 			void		event_client_connect(struct kevent const & event);
 			void		event_eof(struct kevent const & event);

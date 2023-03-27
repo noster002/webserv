@@ -6,15 +6,14 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 13:44:17 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 15:31:39 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Request.hpp"
 
-http::Request::Request(params_t const & server)\
- : _server(server), _buffer(), _error(0),\
-   _conf(), _is_complete(false), _is_body(false)
+http::Request::Request(void)\
+ : _buffer(), _error(0), _conf(), _is_complete(false), _is_body(false)
 {
 	return ;
 }
@@ -262,12 +261,6 @@ int					http::Request::_process_header_fields(void)
 	_conf.content_length = 0;
 	_conf.body = "";
 
-	if (_conf.header.count("Transfer-Encoding") == 0 && \
-		_conf.header.count("Content-Length") == 0)
-		return (0);
-	else if (_buffer.size() > _server.client_max_body_size)
-		return (_content_too_large("HTTP request body: content too large"));
-
 	if (_conf.header.count("Transfer-Encoding") && \
 		_conf.header["Transfer-Encoding"].empty() == false)
 		_process_transfer_encoding();
@@ -335,11 +328,13 @@ int					http::Request::_process_host(void)
 				return (_bad_request("HTTP request header: invalid port"));
 		}
 		_conf.port = std::atoi(port.c_str());
-		_conf.header["Host"].erase(pos);
+		_conf.host = _conf.header["Host"].substr(0, pos);
 	}
 	else
+	{
 		_conf.port = 80;
-	_conf.host = _conf.header["Host"];
+		_conf.host = _conf.header["Host"];
+	}
 
 	return (0);
 }
@@ -617,13 +612,6 @@ int					http::Request::_bad_request(std::string const & error_msg)
 	return (_error);
 }
 
-int					http::Request::_content_too_large(std::string const & error_msg)
-{
-	std::cerr << error_msg << std::endl;
-	_error = 413;
-	return (_error);
-}
-
 int					http::Request::_URI_too_long(std::string const & error_msg)
 {
 	std::cerr << error_msg << std::endl;
@@ -726,11 +714,6 @@ std::set<std::string>		http::Request::_methods = Request::_init_methods();
 
 
 // canonical class form
-
-http::Request::Request(void)
-{
-	return ;
-}
 
 http::Request::Request(Request const & other)
 {

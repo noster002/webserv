@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 11:42:05 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/27 08:03:59 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,44 +61,36 @@ params_t const &	http::Server::get_conf(void) const
 }
 
 
-int			http::Server::get_socket_fd(int index) const
+int			http::Server::get_last_socket_fd(void) const
 {
-	return (_sockets[index]->get_fd());
+	return (_sockets.back()->get_fd());
 }
 
-int			http::Server::get_nbr_sockets(void) const
+void		http::Server::setup(int kq, std::string const & host, std::string const & port)
 {
-	return (_sockets.size());
-}
+	Socket	socket;
 
-void		http::Server::setup(int kq)
-{
-	for (std::vector<std::string>::iterator it = _conf.port.begin(); it != _conf.port.end(); ++it)
+	try
 	{
-		Socket	socket;
+		set_addr_info(socket, host.c_str(), port.c_str());
+		socket.create();
+		socket.set_non_blocking();
+		socket.set_opt(SOL_SOCKET, SO_REUSEADDR);
+		socket.bind();
+		socket.listen(1024/* max_pending_clients */);
+		socket.set_kevent(kq, EVFILT_READ, EV_ADD);
 
-		try
-		{
-			set_addr_info(socket, it->c_str());
-			socket.create();
-			socket.set_non_blocking();
-			socket.set_opt(SOL_SOCKET, SO_REUSEADDR);
-			socket.bind();
-			socket.listen(1024/* max_pending_clients */);
-			socket.set_kevent(kq, EVFILT_READ, EV_ADD);
-
-			_sockets.push_back(new Socket(socket));
-		}
-		catch (http::Socket::Exception const & e)
-		{
-			std::cerr << e.what() << std::endl;
-			if (e.get_level() > e_create)
-				socket.clean();
-		}
-		catch (std::exception const & e)
-		{
-			std::cerr << e.what() << std::endl;
-		}
+		_sockets.push_back(new Socket(socket));
+	}
+	catch (http::Socket::Exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
+		if (e.get_level() > e_create)
+			socket.clean();
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
 	}
 
 	return ;
@@ -112,7 +104,7 @@ void		http::Server::clean(void)
 	return ;
 }
 
-void		http::Server::set_addr_info(Socket & socket, char const * port)
+void		http::Server::set_addr_info(Socket & socket, char const * host, char const * port)
 {
 	struct addrinfo		hints;
 	struct protoent *	protocol;
@@ -128,7 +120,7 @@ void		http::Server::set_addr_info(Socket & socket, char const * port)
 	hints.ai_canonname = NULL;
 	hints.ai_next = NULL;
 
-	socket.get_addr_info(_conf.host.c_str(), port, &hints);
+	socket.get_addr_info(host, port, &hints);
 
 	return ;
 }

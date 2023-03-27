@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/23 09:07:32 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/24 14:18:42 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ namespace http
 	{
 		public:
 
-			Request(params_t const & server);
+			Request(void);
 			~Request(void);
 
 			int					get_error(void) const;
@@ -100,7 +100,6 @@ namespace http
 
 			// canonical class form
 
-			Request(void);
 			Request(Request const & other);
 			Request &	operator=(Request const & rhs);
 

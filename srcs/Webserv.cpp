@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/23 09:12:07 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/27 08:02:58 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,14 +45,24 @@ void				http::Webserv::setup(std::string const & filename)
 		throw SetupException();
 	}
 
+	std::map<std::pair<std::string, std::string>, int>	host_ports;
+
 	for (int i = 0; i < _config.get_nbr_servers(); ++i)
 	{
 		Server		server(_config.get_server_conf(i));
+		params_t	conf = server.get_conf();
 
-		server.setup(_kq);
+		for (size_t j = 0; j < conf.port.size(); ++j)
+		{
+			std::pair<std::string, std::string>			host_port = std::make_pair(conf.host, conf.port[j]);
 
-		for (int j = 0; j < server.get_nbr_sockets(); ++j)
-			_servers[server.get_socket_fd(j)] = server;
+			if (host_ports.count(host_port) == 0)
+			{
+				server.setup(_kq, conf.host, conf.port[j]);
+				host_ports[host_port] = server.get_last_socket_fd();
+			}
+			_servers[host_ports[host_port]].push_back(server);
+		}
 	}
 
 	_is_setup = true;
@@ -102,9 +112,10 @@ void				http::Webserv::clean(void)
 		it->second->disconnect(_kq);
 		delete it->second;
 	}
-	for (std::map<int, Server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+	for (std::map<int, std::vector<Server> >::iterator it = _servers.begin(); it != _servers.end(); ++it)
 	{
-		it->second.clean();
+		for (std::vector<Server>::iterator ite = it->second.begin(); ite != it->second.end(); ++ite)
+			ite->clean();
 	}
 	return ;
 }
