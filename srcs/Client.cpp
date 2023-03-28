@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/27 08:10:37 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/27 16:35:32 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,8 +44,14 @@ void			http::Client::disconnect(int kq)
 	try
 	{
 		_socket.set_kevent(kq, EVFILT_READ, EV_DELETE);
+	}
+	catch (std::exception const & e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
+	try
+	{
 		_socket.set_kevent(kq, EVFILT_WRITE, EV_DELETE);
-		_socket.close();
 	}
 	catch (std::exception const & e)
 	{

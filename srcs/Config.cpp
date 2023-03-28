@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 16:13:52 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/28 10:16:40 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,12 +15,6 @@
 // constructor & destructor
 
 http::Config::Config(void) {}
-
-http::Config::Config(std::string const & filename)\
- : servers(), validation(true), _file(filename), nb_servers(0)
-{
-	this->parse_config_file();
-}
 
 http::Config::~Config(void) {}
 
@@ -198,7 +192,7 @@ int 			http::Config::find_close_symbol( const std::vector<std::string> & confdat
 			if (confdata[*cursor].substr(j, 5) == KEY_ROUTE)
 			{
 				std::cout << confdata[*cursor].substr(j) << "\n";
-				std::cout << "LEVEL 1.1";
+				std::cout << "LEVEL 1.1" << std::endl;
 				return (-1);
 			}
 		}
@@ -210,12 +204,12 @@ int 			http::Config::find_close_symbol( const std::vector<std::string> & confdat
 			http::Config::skipe_spaces(confdata[*cursor], &j);
 			if (confdata[*cursor][j] == '\0')
 				return (j);
-			std::cout << "LEVEL 2.2";
+			std::cout << "LEVEL 2.2" << std::endl;
 			return (-1);
 		}
 		*cursor += 1;
 	}
-	std::cout << "LEVEL 3.3";
+	std::cout << "LEVEL 3.3" << std::endl;
 	return (-1);
 }
 

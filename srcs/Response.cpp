@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/27 11:30:08 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/28 13:50:34 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,8 @@ void				http::Response::build(int error, t_request const & request)
 	}
 	if (_status >= 400)
 		_serve_error();
+	else if (_is_cgi)
+		_set_cgi();
 	_set_status_line();
 	_set_head();
 	_set_body();
@@ -167,7 +169,7 @@ int					http::Response::_directory_listing(t_request const & request, std::strin
 	<title>" << request.path << "</title>\n\
 </head>\n\
 <body>\n\
-<h1>Index of " << request.path << "</h1>\n\
+	<h1>Index of " << request.path << "</h1>\n\
 	<hr>\n\
 	<p>\n";
 
@@ -274,6 +276,22 @@ void				http::Response::_set_status_line(void)
 	status_line << _protocol << ' ' << _status << ' ' << _statuses[_status] << "\r\n";
 
 	_buffer = status_line.str();
+
+	return ;
+}
+
+void				http::Response::_set_cgi(void)
+{
+	size_t		pos = _body.find("\r\n\r\n");
+	size_t		length = _body.size();
+
+	if (pos != std::string::npos)
+		length -= pos;
+
+	std::stringstream	nbr;
+
+	nbr << length;
+	_header["Content-Length"] = nbr.str();
 
 	return ;
 }

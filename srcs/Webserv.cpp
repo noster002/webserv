@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/27 08:02:58 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/28 10:17:23 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,6 @@
 
 http::Webserv::Webserv(void)\
  : _config(), _servers(), _clients(), _is_setup(false), _up(0)
-{
-	return ;
-}
-
-http::Webserv::Webserv(std::string const & filename)\
- : _config(filename), _servers(), _clients(), _is_setup(false), _up(0)
 {
 	return ;
 }
@@ -35,6 +29,11 @@ void				http::Webserv::setup(std::string const & filename)
 {
 	_config.parse(filename);
 
+	if (_config.getValidation() == false)
+	{
+		std::cerr << "configuration file: bad syntax" << std::endl;
+		throw SetupException();
+	}
 	std::cout << "PARSING FINISHED" << std::endl;
 
 	_kq = ::kqueue();
@@ -46,6 +45,7 @@ void				http::Webserv::setup(std::string const & filename)
 	}
 
 	std::map<std::pair<std::string, std::string>, int>	host_ports;
+	int		setup = EXIT_SUCCESS;
 
 	for (int i = 0; i < _config.get_nbr_servers(); ++i)
 	{
@@ -58,10 +58,12 @@ void				http::Webserv::setup(std::string const & filename)
 
 			if (host_ports.count(host_port) == 0)
 			{
-				server.setup(_kq, conf.host, conf.port[j]);
-				host_ports[host_port] = server.get_last_socket_fd();
+				setup = server.setup(_kq, conf.host, conf.port[j]);
+				if (setup == EXIT_SUCCESS)
+					host_ports[host_port] = server.get_last_socket_fd();
 			}
-			_servers[host_ports[host_port]].push_back(server);
+			if (setup == EXIT_SUCCESS)
+				_servers[host_ports[host_port]].push_back(server);
 		}
 	}
 
@@ -73,7 +75,7 @@ void				http::Webserv::run(void)
 {
 	if (!_is_setup)
 	{
-		std::cout << "Provide a configuration file and set servers up first" << std::endl;
+		std::cout << "run loop: no servers setup" << std::endl;
 		throw SetupException();
 	}
 	std::cout << _up << " sockets are setup" << std::endl;
@@ -140,9 +142,7 @@ void				http::Webserv::event_client_connect(struct kevent const & event)
 	catch (std::exception const & e)
 	{
 		std::cerr << e.what() << std::endl;
-		_clients[fd]->disconnect(_kq);
-		delete _clients[fd];
-		_clients.erase(fd);
+		event_client_disconnect(event);
 		return ;
 	}
 	std::cout << fd << " connected" << std::endl;
@@ -150,7 +150,7 @@ void				http::Webserv::event_client_connect(struct kevent const & event)
 	return ;
 }
 
-void				http::Webserv::event_eof(struct kevent const & event)
+void				http::Webserv::event_client_disconnect(struct kevent const & event)
 {
 	std::cout << RED << "DISCONNECTING" << RESET << std::endl;
 	int		fd = event.ident;
@@ -158,7 +158,20 @@ void				http::Webserv::event_eof(struct kevent const & event)
 	_clients[fd]->disconnect(_kq);
 	delete _clients[fd];
 	_clients.erase(fd);
+
+	if (::close(fd) < 0)
+	{
+		std::cerr << "close: " << fd << ": " << std::strerror(errno) << std::endl;
+	}
 	std::cout << fd << " disconnected" << std::endl;
+
+	return ;
+}
+
+void				http::Webserv::event_eof(struct kevent const & event)
+{
+	if (_clients.count(event.ident))
+		event_client_disconnect(event);
 
 	return ;
 }
