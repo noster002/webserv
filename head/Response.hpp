@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/03 13:29:01 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 17:43:05 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,12 +65,13 @@ namespace http
 			bool								_is_cgi;
 			bool								_is_upload;
 
-			int									_serve_get_request(std::string const & path);
-			void								_serve_post_request(t_request const & request, std::string const & path);
+			int									_serve_get_request(t_request const & request, std::string & path);
+			int									_serve_post_request(t_request const & request, std::string const & path);
 			void								_serve_delete_request(std::string const & path);
 
 			int									_get_path(t_request const & request, std::string & path);
 			int									_directory_listing(t_request const & request, std::string const & path);
+			int									_check_directory(t_request & request);
 
 			void								_serve_error(void);
 			void								_serve_error_file(std::fstream & file);
@@ -85,6 +86,8 @@ namespace http
 			void								_set_body(void);
 
 			int									_OK(void);
+			int									_created(void);
+			int									_no_content(void);
 			int									_permanent_redirect(std::string const & path);
 			int									_forbidden(void);
 			int									_not_found(void);
@@ -100,7 +103,7 @@ namespace http
 														   std::string const & path, int fds[] );
 			void								_get_cgi_response( int fds[], char body[],\
 																   const std::string method );
-			void								_get_filename_to_upload( t_request const & request,\
+			int									_get_filename_to_upload( t_request const & request,\
 																	     size_t & cursor,\
 												                         std::string & file_name );
 			void								_get_file_type( t_request const & request,\

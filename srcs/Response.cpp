@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/03 13:51:34 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 19:33:55 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,9 +50,9 @@ void				http::Response::build(int error, t_request const & request)
 	{
 		if (_is_cgi)
 			_cgi_handler(request, path);
-		else if (request.method == "GET")
-			_serve_get_request(path);
-		else if (request.method == "POST")
+		else if (request.method == "GET" || request.method == "HEAD")
+			_serve_get_request(request, path);
+		else if (request.method == "POST" || request.method == "PUT")
 			_serve_post_request(request, path);
 		else if (request.method == "DELETE")
 			_serve_delete_request(path);
@@ -63,17 +63,31 @@ void				http::Response::build(int error, t_request const & request)
 		_set_cgi();
 	_set_status_line();
 	_set_head();
-	_set_body();
+	if (request.method != "HEAD")
+		_set_body();
 
 	return ;
 }
 
-int					http::Response::_serve_get_request(std::string const & path)
+int					http::Response::_serve_get_request(t_request const & request, std::string & path)
 {
 	std::fstream		file(path.c_str());
 
 	if (file.is_open() == false)
-		return (_not_found());
+	{
+		t_request	modified(request);
+
+		if (_check_directory(modified))
+		{
+			std::cout << "hl" << std::endl;
+			_get_path(modified, path);
+			std::cout << path << std::endl;
+			_serve_get_request(modified, path);
+			return (0);
+		}
+		else
+			return (_not_found());
+	}
 
 	_set_content_type(path);
 
@@ -87,19 +101,37 @@ int					http::Response::_serve_get_request(std::string const & path)
 	return (_OK());
 }
 
-void				http::Response::_serve_post_request(t_request const & request, std::string const & path)
+int					http::Response::_check_directory(t_request & request)
+{
+	if (request.path.back() == '/')
+		return (0);
+
+	request.path += '/';
+	return (1);
+}
+
+int					http::Response::_serve_post_request(t_request const & request, std::string const & path)
 {
 	std::string	file_name, target, file_content, file_type;
 	size_t 		cursor = 0, ending, start, pos;
 
+
 	if (_is_upload == false)
+		return (_forbidden());
+	if (!request.chunks.empty())
 	{
-		_forbidden();
-		return ;
+		for (size_t i = 0; i < request.chunks.size(); ++i)
+		{
+			file_content += request.chunks[i];
+		}
+		_upload(path, "", file_content);
+		_created();
+		return (0);
 	}
-	_get_filename_to_upload(request, cursor, file_name);
-	if (file_name.empty())
-		return ;
+
+	if (_get_filename_to_upload(request, cursor, file_name))
+		return (_no_content());
+
 	cursor = request.body.find("Content-Type: ");
 	start = request.body.find_first_of("\n", cursor) + 3;
 	ending = request.body.find("------WebKit", start) - 2;
@@ -109,14 +141,12 @@ void				http::Response::_serve_post_request(t_request const & request, std::stri
 	target = path.substr(0, ++pos) + file_name;
 	_upload(target, file_type, file_content);
 	_continue_to_next_field(request, ending, path);
-	if (_status != 204 && _status != 202)
-		_status = 201;
-	if (_status == 201)
-	{
-		_body += "<h2>Request successfully performed</h2>\n";
-		_header["Content-Type"] = "text/html";
-		_header["Location"] = target;
-	}
+
+	_body += "<h2>Request successfully performed</h2>\n";
+	_header["Content-Type"] = "text/html";
+	_header["Location"] = target;
+
+	return (_created());
 }
 
 void				http::Response::_serve_delete_request(std::string const & path)
@@ -154,12 +184,16 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					_is_upload = true;
 				if (path.back() == '/')
 				{
-					if (_server.routes[match].index.empty() == false)
+					if (_is_upload && request.chunks.empty() == false)
+						return (_not_found());
+					else if (_server.routes[match].index.empty() == false)
 						path += _server.routes[match].index;
-					else if ((_is_upload == false || request.method == "GET") &&\
+					else if ((_is_upload == false || \
+							 request.method == "GET" || request.method == "HEAD") &&\
 							 _server.routes[match].directory_listing)
 						return (_directory_listing(request, path));
-					else if (_is_upload == false || request.method == "GET")
+					else if (_is_upload == false || \
+							 request.method == "GET" || request.method == "GET")
 						return (_not_found());
 				}
 				pos = path.find_last_of('.');
@@ -289,11 +323,7 @@ void				http::Response::_serve_error_plain(void)
 
 void				http::Response::_set_cgi(void)
 {
-	size_t		pos = _body.find("\r\n\r\n");
 	size_t		length = _body.size();
-
-	if (pos != std::string::npos)
-		length -= (pos + std::strlen("\r\n\r\n"));
 
 	_set_content_length(length);
 
@@ -346,8 +376,7 @@ void				http::Response::_set_head(void)
 	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); ++it)
 		head << it->first << ": " << it->second << "\r\n";
 
-	if (_is_cgi == false)
-		head << "\r\n";
+	head << "\r\n";
 
 	_buffer += head.str();
 
@@ -363,6 +392,18 @@ void				http::Response::_set_body(void)
 int					http::Response::_OK(void)
 {
 	_status = 200;
+	return (_status);
+}
+
+int					http::Response::_created(void)
+{
+	_status = 201;
+	return (_status);
+}
+
+int					http::Response::_no_content(void)
+{
+	_status = 204;
 	return (_status);
 }
 
@@ -764,28 +805,24 @@ void	http::Response::_get_cgi_response(int fds[], char body[], const std::string
 	close(fds[0]);
 	_header["Content-type"] = "text/html";
 	tmp_body = body;
-	_body = tmp_body.substr(tmp_body.find("\n", tmp_body.find("Content-type")) + 2);
+	_body = tmp_body.substr(tmp_body.find("\r\n\r\n", tmp_body.find("Content-type")) + 4);
 	_status = 200;
 	(void)method;
 }
 
-void	http::Response::_get_filename_to_upload( t_request const & request, size_t & cursor,\
+int		http::Response::_get_filename_to_upload( t_request const & request, size_t & cursor,\
 												 std::string & file_name )
 {
 	cursor = request.body.find("filename=\"");
 	if (cursor == std::string::npos)
-	{
-		_status = 204;
-		return ;
-	}
+		return (_no_content());
+
 	cursor += 10;
 	file_name = request.body.substr(cursor, request.body.find("\"", cursor) - cursor);
 	if (file_name.empty())
-	{
-		// not too sure about the status, will discuss
-		_status = 204;
-		return;
-	}
+		return (_no_content());
+
+	return (0);
 }
 
 void	http::Response::_get_file_type(t_request const & request, size_t cursor, std::string & file_type)
@@ -825,6 +862,6 @@ void	http::Response::_continue_to_next_field(t_request const & request, size_t e
 	{
 		t_request sub_req(request);
 		sub_req.body = tmp_body;
-		return _serve_post_request(sub_req, path);
+		_serve_post_request(sub_req, path);
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/03 12:40:12 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 17:48:13 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -456,6 +456,10 @@ std::set<std::string>  http::Config::get_methods(std::string & str, size_t *curs
 			count_post += 1;
 		else if (*it == "GET" && count_get == 0)
 			count_get += 1;
+		else if (*it == "HEAD" && count_get == 0)
+			count_get += 1;
+		else if (*it == "PUT" && count_del == 0)
+			count_del += 1;
 		else if (*it == "DELETE" && count_del == 0)
 			count_del += 1;
 		else

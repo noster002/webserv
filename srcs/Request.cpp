@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 15:31:39 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 17:41:30 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -705,6 +705,8 @@ std::set<std::string>		http::Request::_init_methods(void)
 
 	methods.insert("GET");
 	methods.insert("POST");
+	methods.insert("HEAD");
+	methods.insert("PUT");
 	methods.insert("DELETE");
 
 	return (methods);
