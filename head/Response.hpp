@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 11:41:53 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/28 13:50:52 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,7 @@ namespace http
 			void								_serve_error_plain(void);
 
 			void								_set_content_type(std::string const & path);
+			void								_set_cgi(void);
 
 			void								_set_status_line(void);
 			void								_set_head(void);

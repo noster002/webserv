@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/27 11:30:08 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 08:23:57 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,9 +43,12 @@ void				http::Response::build(int error, t_request const & request)
 	if (request.body.size() > _server.client_max_body_size)
 		_content_too_large("HTTP request body: content too large");
 
-	if (_status < 300)
+	std::string		tmp;
+	_get_path(request, tmp);
+
+	if (_status)
 	{
-		if (_is_cgi_request(request)) // !! more clearence needed, will discuss about.
+		if (_is_cgi)
 			_cgi_handler(request);
 		else if (request.method == "GET")
 			_serve_get_request(request);
@@ -56,6 +59,8 @@ void				http::Response::build(int error, t_request const & request)
 	}
 	if (_status >= 400)
 		_serve_error();
+	else if (_is_cgi)
+		_set_cgi();
 	_set_status_line();
 	_set_head();
 	_set_body();
@@ -187,7 +192,7 @@ int					http::Response::_directory_listing(t_request const & request, std::strin
 	<title>" << request.path << "</title>\n\
 </head>\n\
 <body>\n\
-<h1>Index of " << request.path << "</h1>\n\
+	<h1>Index of " << request.path << "</h1>\n\
 	<hr>\n\
 	<p>\n";
 
@@ -298,6 +303,22 @@ void				http::Response::_set_status_line(void)
 	return ;
 }
 
+void				http::Response::_set_cgi(void)
+{
+	size_t		pos = _body.find("\r\n\r\n");
+	size_t		length = _body.size();
+
+	if (pos != std::string::npos)
+		length -= pos;
+
+	std::stringstream	nbr;
+
+	nbr << length;
+	_header["Content-Length"] = nbr.str();
+
+	return ;
+}
+
 void				http::Response::_set_head(void)
 {
 	std::stringstream	head;
@@ -305,7 +326,8 @@ void				http::Response::_set_head(void)
 	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); ++it)
 		head << it->first << ": " << it->second << "\r\n";
 
-	head << "\r\n";
+	if (_is_cgi == false)
+		head << "\r\n";
 
 	_buffer += head.str();
 

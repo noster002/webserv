@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 10:31:09 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/27 09:42:48 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/28 10:30:20 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ int		main(int argc, char** argv)
 	else
 	{
 		std::cerr << "Wrong number of arguments" << std::endl <<\
-					"Usage: ./webserv [conf_file]" << std::endl;
+					 "Usage: ./webserv [conf_file]" << std::endl;
 		return (1);
 	}
 	

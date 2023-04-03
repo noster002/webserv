@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:47 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 15:07:38 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/28 10:16:47 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@ namespace http
 	{
 		public:
 			Config(void);
-			Config(std::string const & filename);
 			~Config(void);
 
 			void					parse(std::string const & filename);
