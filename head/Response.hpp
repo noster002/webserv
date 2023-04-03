@@ -18,6 +18,8 @@
 # include <sys/socket.h>
 # include <sys/types.h>
 # include <dirent.h>
+# include <unistd.h>
+
 
 // C++98
 
@@ -84,8 +86,27 @@ namespace http
 			int									_not_found(void);
 			int									_method_not_allowed(std::string const & path);
 			int									_gone(void);
+			bool								_is_cgi_request(t_request const & request);
+			void								_cgi_handler(t_request const & request);
 			int									_content_too_large(std::string const & error_msg);
-
+			void								_init_cgi_env( char *args[], char *env[],\
+															   t_request const & request,\
+															   const std::string path );
+			void								_exec_cgi( t_request const & request,\
+														   std::string const & path, int fds[] );
+			void								_get_cgi_response( int fds[], char body[],\
+																   const std::string method );
+			void								_get_filename_to_upload( t_request const & request,\
+																	     size_t & cursor,\
+												                         std::string & file_name );
+			void								_get_file_type( t_request const & request,\
+											                    size_t cursor,\
+																std::string & file_type );
+			void								_upload( std::string const & target,\
+														 std::string const & file_type,\
+														 std::string const & file_content );
+			void								_continue_to_next_field( t_request const & request,\
+												                          size_t ending );
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
 			static std::map<int, std::string>	_default_err_pages;

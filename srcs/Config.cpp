@@ -56,6 +56,7 @@ void			http::Config::parse_config_file(void)
 	this->nb_servers  = this->count_servers(data);
 	if (!this->is_valid_server_nb(this->nb_servers))
 		return ;
+	std::cout << servers[4].start_data << "\n";
 	for (int i = 0; i < this->nb_servers; ++i)
 	{
 		std::cout << RED << "**********SERVER[ " << i + 1 << " ]*******************" << RESET << "\n";

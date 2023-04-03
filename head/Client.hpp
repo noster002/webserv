@@ -44,8 +44,8 @@ namespace http
 			void							connect(int kq);
 			void							disconnect(int kq);
 
-			void							read(char const * input, ssize_t bytes, int kq);
-			std::string						write(int kq);
+			void				read(char const * input, ssize_t bytes, int kq);
+			std::string			write(int kq);
 
 			void							clear(void);
 

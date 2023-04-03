@@ -97,7 +97,25 @@ int					http::Response::_serve_get_request(t_request const & request)
 
 void				http::Response::_serve_post_request(t_request const & request)
 {
-	(void)request;
+	std::string	file_name, target, file_content, file_path, file_type;
+	size_t 		cursor = 0, ending, start;
+
+	_get_filename_to_upload(request, cursor, file_name);
+	if (file_name.empty())
+		return ;
+	cursor = request.body.find("Content-Type: ");
+	start = request.body.find_first_of("\n", cursor) + 3;
+	ending = request.body.find("------WebKit", start) - 2;
+	file_content = request.body.substr(start, ending - start);
+	_get_file_type(request, cursor, file_type);
+	this->_get_path(request, file_path);
+	target = file_path + file_name;
+	_upload(target, file_type, file_content);
+	_continue_to_next_field(request, ending);
+	if (_status != 204 && _status != 202)
+		_status = 200;
+	_header["Content-Type"] = "text/html";
+	_body += "<h2>Request successfully performed</h2>\n";
 }
 
 void				http::Response::_serve_delete_request(t_request const & request)
@@ -645,4 +663,150 @@ http::Response &	http::Response::operator=(Response const & rhs)
 	(void)rhs;
 
 	return (*this);
+}
+
+
+bool				http::Response::_is_cgi_request(t_request const & request)
+{
+	if (this->_server.routes.find(request.path) != this->_server.routes.end())
+		return this->_server.routes[request.path].cgi_pass == CGI;
+	return false;
+}
+
+void				http::Response::_cgi_handler(t_request const & request)
+{
+	int 		fds[2];
+	char		body[100000];
+	pid_t 		pid;
+	std::string	path;
+	pipe(fds);
+	std::map<std::string, std::string>::const_iterator it = request.header.begin();
+	for (; it != request.header.end(); ++it)
+		_header[it->first] = it->second;
+	this->_get_path(request, path);
+	pid = fork();
+	if (pid < 0)
+		std::cout << "Error: starting process\n";
+	else if (pid == 0)
+		_exec_cgi(request, path, fds);
+	else
+	{
+		waitpid(pid, NULL, -1);
+		close(fds[1]);
+		_get_cgi_response(fds, body,request.method);
+	}
+}
+
+void	http::Response::_init_cgi_env( char *args[], char *env[], t_request const & request,\
+									   const std::string path )
+{
+	std::stringstream ss;
+
+	ss << request.content_length;
+	args[0] = strdup(path.c_str());
+	args[1] = NULL;
+	env[0] = strdup("GATEWAY_INTERFACE=CGI/1.1");
+	env[1] = strdup("REDIRECT_STATUS=200");
+	env[2] = strdup(("SCRIPT_FILENAME=" + path).c_str());
+	env[3] = strdup(("CONTENT_LENGTH=" + ss.str()).c_str());
+	env[4] = strdup(("REQUEST_METHOD=" + request.method).c_str());
+	env[5] = strdup("CONTENT_TYPE=text/html"); // !!!should be dynamic
+	env[6] = strdup(("QUERY_STRING=" + request.query).c_str());
+	env[7] = NULL;
+}
+
+
+void	http::Response::_exec_cgi(t_request const & request, std::string const & path, int fds[])
+{
+	char* args[2];
+	char* env[8];
+	std::string php_cgi_bin = CGI;
+	_init_cgi_env(args, env, request, path);
+	close(fds[0]);
+	dup2(fds[1], STDOUT_FILENO);
+	if (execve(php_cgi_bin.c_str(), args, env) < 0)
+		std::cerr << "execve: " << std::strerror(errno) << std::endl;
+	std::cout << "QUOI ?\n";
+	exit(0);
+}
+
+
+void	http::Response::_get_cgi_response(int fds[], char body[], const std::string method)
+{
+	int 		bytes;
+	int 		count = 0;
+	std::string tmp_body;
+
+	do 
+	{
+		bytes = read(fds[0], &body[count], 1);
+		count++;
+	}
+	while(bytes > 0);
+	close(fds[0]);
+	_header["Content-type"] = "text/html";
+	tmp_body = body;
+	_body = tmp_body.substr(tmp_body.find("\n", tmp_body.find("Content-type")) + 2);
+	_status = 200;
+	(void)method;
+}
+
+void	http::Response::_get_filename_to_upload( t_request const & request, size_t & cursor,\
+												 std::string & file_name )
+{
+	cursor = request.body.find("filename=\"");
+	if (cursor == std::string::npos)
+	{
+		_status = 204;
+		return ;
+	}
+	cursor += 10;
+	file_name = request.body.substr(cursor, request.body.find("\"", cursor) - cursor);
+	if (file_name.empty())
+	{
+		// not too sure about the status, will discuss
+		_status = 204;
+		return;
+	}
+}
+
+void	http::Response::_get_file_type(t_request const & request, size_t cursor, std::string & file_type)
+{
+	size_t cursor_to_content_type = cursor + 14;
+	size_t end_of_the_line = request.body.find("\n", cursor + 14);
+	size_t len = end_of_the_line - cursor - 15;
+	file_type = request.body.substr(cursor_to_content_type, len);
+}
+
+void	http::Response::_upload( std::string const & target, std::string const & file_type,\
+								 std::string const & file_content )
+{
+	FILE* 			res;
+	std::fstream	target_stream;
+	if (!file_type.compare("text/plain"))
+	{
+		res = fopen(target.c_str(), "w");
+		fclose(res);
+		target_stream.open(target, std::ios::out);
+	}
+	else
+	{
+		res = fopen(target.c_str(), "wb");
+		fclose(res);
+		target_stream.open(target, std::ios::out | std::ios::binary);
+	}
+	target_stream << file_content;
+	target_stream.close();
+}
+
+void	http::Response::_continue_to_next_field(t_request const & request, size_t ending)
+{
+	std::string	tmp_body = request.body.substr(ending + 2);
+
+	if (tmp_body.substr(tmp_body.find("\n") + 2) != "")
+	{
+		t_request sub_req(request);
+		sub_req.body = tmp_body;
+		return _serve_post_request(sub_req);
+	}
 }

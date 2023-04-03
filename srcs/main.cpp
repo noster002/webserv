@@ -26,7 +26,7 @@ int		main(int argc, char** argv)
 					 "Usage: ./webserv [conf_file]" << std::endl;
 		return (1);
 	}
-
+	
 	try
 	{
 		http::Webserv	webserv;
