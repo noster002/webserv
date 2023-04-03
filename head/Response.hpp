@@ -19,6 +19,7 @@
 # include <sys/types.h>
 # include <dirent.h>
 # include <unistd.h>
+#include <sys/stat.h>
 
 
 // C++98
@@ -106,6 +107,7 @@ namespace http
 														 std::string const & file_content );
 			void								_continue_to_next_field( t_request const & request,\
 												                          size_t ending );
+			int									_is_file(const std::string & path);
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
 			static std::map<int, std::string>	_default_err_pages;

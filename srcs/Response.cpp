@@ -115,7 +115,19 @@ void				http::Response::_serve_post_request(t_request const & request)
 
 void				http::Response::_serve_delete_request(t_request const & request)
 {
-	(void)request;
+	std::string  path;
+	this->_get_path(request, path);
+	if (_is_file(path))
+	{
+		if (remove(path.c_str()) == 0)
+			_status = 204;
+		else
+			_status = 403;
+	}
+	else
+		_status = 404;
+	if (_status == 403 || _status == 404)
+		_body = "";
 }
 
 int					http::Response::_get_path(t_request const & request, std::string & path)
@@ -787,4 +799,18 @@ void	http::Response::_continue_to_next_field(t_request const & request, size_t e
 		sub_req.body = tmp_body;
 		return _serve_post_request(sub_req);
 	}
+}
+
+int		http::Response::_is_file(const std::string & path)
+{
+	struct stat f;
+	if (stat(path.c_str(), &f) == 0 )
+	{
+		if (f.st_mode & S_IFDIR)
+			return 0;
+		if (f.st_mode & S_IFREG)
+			return 1;
+		return 0;
+	}
+	return 0;
 }
