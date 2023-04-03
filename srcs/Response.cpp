@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/03 08:23:57 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 13:51:34 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 http::Response::Response(void)\
  : _server(), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body(),\
-   _is_cgi(false)
+   _is_cgi(false), _is_upload(false)
 {
 	return ;
 }
@@ -51,11 +51,11 @@ void				http::Response::build(int error, t_request const & request)
 		if (_is_cgi)
 			_cgi_handler(request, path);
 		else if (request.method == "GET")
-			_serve_get_request(request, path);
+			_serve_get_request(path);
 		else if (request.method == "POST")
 			_serve_post_request(request, path);
 		else if (request.method == "DELETE")
-			_serve_delete_request(request, path);
+			_serve_delete_request(path);
 	}
 	if (_status >= 400)
 		_serve_error();
@@ -68,9 +68,8 @@ void				http::Response::build(int error, t_request const & request)
 	return ;
 }
 
-int					http::Response::_serve_get_request(t_request const & request, std::string const & path)
+int					http::Response::_serve_get_request(std::string const & path)
 {
-	(void)request;
 	std::fstream		file(path.c_str());
 
 	if (file.is_open() == false)
@@ -83,10 +82,7 @@ int					http::Response::_serve_get_request(t_request const & request, std::strin
 	body << file.rdbuf();
 	_body = body.str();
 
-	std::stringstream	size;
-
-	size << _body.size();
-	_header["Content-Length"] = size.str();
+	_set_content_length(_body.size());
 
 	return (_OK());
 }
@@ -96,6 +92,11 @@ void				http::Response::_serve_post_request(t_request const & request, std::stri
 	std::string	file_name, target, file_content, file_type;
 	size_t 		cursor = 0, ending, start, pos;
 
+	if (_is_upload == false)
+	{
+		_forbidden();
+		return ;
+	}
 	_get_filename_to_upload(request, cursor, file_name);
 	if (file_name.empty())
 		return ;
@@ -109,22 +110,22 @@ void				http::Response::_serve_post_request(t_request const & request, std::stri
 	_upload(target, file_type, file_content);
 	_continue_to_next_field(request, ending, path);
 	if (_status != 204 && _status != 202)
-		_status = 200;
-	if (_status == 200)
+		_status = 201;
+	if (_status == 201)
 	{
 		_body += "<h2>Request successfully performed</h2>\n";
 		_header["Content-Type"] = "text/html";
+		_header["Location"] = target;
 	}
 }
 
-void				http::Response::_serve_delete_request(t_request const & request, std::string const & path)
+void				http::Response::_serve_delete_request(std::string const & path)
 {
 	if (remove(path.c_str()) == 0)
 		_status = 204;
 	else
 		_status = 404;
 	_body = "";
-	(void)request;
 }
 
 int					http::Response::_get_path(t_request const & request, std::string & path)
@@ -149,17 +150,23 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 				else if (!is_dir && _server.routes[match].root.back() == '/' && pos < request.path.size())
 					++pos;
 				path = _server.routes[match].root + request.path.substr(pos);
+				if (_server.routes[match].upload)
+					_is_upload = true;
 				if (path.back() == '/')
 				{
 					if (_server.routes[match].index.empty() == false)
 						path += _server.routes[match].index;
-					else if (_server.routes[match].directory_listing == false)
-						return (_not_found());
-					else
+					else if ((_is_upload == false || request.method == "GET") &&\
+							 _server.routes[match].directory_listing)
 						return (_directory_listing(request, path));
+					else if (_is_upload == false || request.method == "GET")
+						return (_not_found());
 				}
-				if (_server.routes[match].cgi_pass.empty() == false && \
-					_server.routes[match].cgi_ext == ".php")
+				pos = path.find_last_of('.');
+
+				if (pos != std::string::npos && \
+					_server.routes[match].cgi_pass.empty() == false && \
+					_server.routes[match].cgi_ext == path.substr(pos))
 					_is_cgi = true;
 				return (0);
 			}
@@ -223,10 +230,7 @@ int					http::Response::_directory_listing(t_request const & request, std::strin
 	_header["Content-Type"] = "text/html";
 	_body = body.str();
 
-	std::stringstream	nbr;
-
-	nbr << _body.size();
-	_header["Content-Length"] = nbr.str();
+	_set_content_length(_body.size());
 
 	return (_OK());
 }
@@ -260,13 +264,11 @@ void				http::Response::_serve_error(void)
 void				http::Response::_serve_error_file(std::fstream & file)
 {
 	std::string			buffer;
-	std::stringstream	nbr;
 
 	while (std::getline(file, buffer))
 		_body += buffer;
 
-	nbr << _body.size();
-	_header["Content-Length"] = nbr.str();
+	_set_content_length(_body.size());
 
 	return ;
 }
@@ -274,14 +276,26 @@ void				http::Response::_serve_error_file(std::fstream & file)
 void				http::Response::_serve_error_plain(void)
 {
 	std::stringstream	body;
-	std::stringstream	nbr;
 
 	body << "ERROR" << std::endl << _status << ' ' <<_statuses[_status] << std::endl;
 	_body = body.str();
 
 	_header["Content-Type"] = "text/plain";
-	nbr << _body.size();
-	_header["Content-Length"] = nbr.str();
+
+	_set_content_length(_body.size());
+
+	return ;
+}
+
+void				http::Response::_set_cgi(void)
+{
+	size_t		pos = _body.find("\r\n\r\n");
+	size_t		length = _body.size();
+
+	if (pos != std::string::npos)
+		length -= (pos + std::strlen("\r\n\r\n"));
+
+	_set_content_length(length);
 
 	return ;
 }
@@ -297,6 +311,21 @@ void				http::Response::_set_content_type(std::string const & path)
 		_header["Content-Type"] = _MIME_types[path.substr(pos)];
 	else
 		_header["Content-Type"] = "application/octet-stream";
+
+	return ;
+}
+
+void				http::Response::_set_content_length(size_t length)
+{
+	if (_header["Content-Length"].empty() == false)
+		return ;
+
+	std::stringstream	nbr;
+
+	nbr << length;
+	_header["Content-Length"] = nbr.str();
+
+	return ;
 }
 
 void				http::Response::_set_status_line(void)
@@ -306,22 +335,6 @@ void				http::Response::_set_status_line(void)
 	status_line << _protocol << ' ' << _status << ' ' << _statuses[_status] << "\r\n";
 
 	_buffer = status_line.str();
-
-	return ;
-}
-
-void				http::Response::_set_cgi(void)
-{
-	size_t		pos = _body.find("\r\n\r\n");
-	size_t		length = _body.size();
-
-	if (pos != std::string::npos)
-		length -= pos;
-
-	std::stringstream	nbr;
-
-	nbr << length;
-	_header["Content-Length"] = nbr.str();
 
 	return ;
 }
@@ -357,6 +370,12 @@ int					http::Response::_permanent_redirect(std::string const & path)
 {
 	_header["Location"] = _server.routes[path].redirect;
 	_status = 308;
+	return (_status);
+}
+
+int					http::Response::_forbidden(void)
+{
+	_status = 403;
 	return (_status);
 }
 
@@ -476,57 +495,57 @@ std::map<int, std::string>		http::Response::_init_default_err_pages(void)
 {
 	std::map<int, std::string>	default_err_pages;
 
-	default_err_pages[300] = "http/html/error/300.html";
-	default_err_pages[301] = "http/html/error/301.html";
-	default_err_pages[302] = "http/html/error/302.html";
-	default_err_pages[303] = "http/html/error/303.html";
-	default_err_pages[304] = "http/html/error/304.html";
-	default_err_pages[305] = "http/html/error/305.html";
-	default_err_pages[306] = "http/html/error/306.html";
-	default_err_pages[307] = "http/html/error/307.html";
-	default_err_pages[308] = "http/html/error/308.html";
+	default_err_pages[300] = "error/html/300.html";
+	default_err_pages[301] = "error/html/301.html";
+	default_err_pages[302] = "error/html/302.html";
+	default_err_pages[303] = "error/html/303.html";
+	default_err_pages[304] = "error/html/304.html";
+	default_err_pages[305] = "error/html/305.html";
+	default_err_pages[306] = "error/html/306.html";
+	default_err_pages[307] = "error/html/307.html";
+	default_err_pages[308] = "error/html/308.html";
 
-	default_err_pages[400] = "http/html/error/400.html";
-	default_err_pages[401] = "http/html/error/401.html";
-	default_err_pages[402] = "http/html/error/402.html";
-	default_err_pages[403] = "http/html/error/403.html";
-	default_err_pages[404] = "http/html/error/404.html";
-	default_err_pages[405] = "http/html/error/405.html";
-	default_err_pages[406] = "http/html/error/406.html";
-	default_err_pages[407] = "http/html/error/407.html";
-	default_err_pages[408] = "http/html/error/408.html";
-	default_err_pages[409] = "http/html/error/409.html";
-	default_err_pages[410] = "http/html/error/410.html";
-	default_err_pages[411] = "http/html/error/411.html";
-	default_err_pages[412] = "http/html/error/412.html";
-	default_err_pages[413] = "http/html/error/413.html";
-	default_err_pages[414] = "http/html/error/414.html";
-	default_err_pages[415] = "http/html/error/415.html";
-	default_err_pages[416] = "http/html/error/416.html";
-	default_err_pages[417] = "http/html/error/417.html";
-	default_err_pages[418] = "http/html/error/418.html";
-	default_err_pages[421] = "http/html/error/421.html";
-	default_err_pages[422] = "http/html/error/422.html";
-	default_err_pages[423] = "http/html/error/423.html";
-	default_err_pages[424] = "http/html/error/424.html";
-	default_err_pages[425] = "http/html/error/425.html";
-	default_err_pages[426] = "http/html/error/426.html";
-	default_err_pages[428] = "http/html/error/428.html";
-	default_err_pages[429] = "http/html/error/429.html";
-	default_err_pages[431] = "http/html/error/431.html";
-	default_err_pages[451] = "http/html/error/451.html";
+	default_err_pages[400] = "error/html/400.html";
+	default_err_pages[401] = "error/html/401.html";
+	default_err_pages[402] = "error/html/402.html";
+	default_err_pages[403] = "error/html/403.html";
+	default_err_pages[404] = "error/html/404.html";
+	default_err_pages[405] = "error/html/405.html";
+	default_err_pages[406] = "error/html/406.html";
+	default_err_pages[407] = "error/html/407.html";
+	default_err_pages[408] = "error/html/408.html";
+	default_err_pages[409] = "error/html/409.html";
+	default_err_pages[410] = "error/html/410.html";
+	default_err_pages[411] = "error/html/411.html";
+	default_err_pages[412] = "error/html/412.html";
+	default_err_pages[413] = "error/html/413.html";
+	default_err_pages[414] = "error/html/414.html";
+	default_err_pages[415] = "error/html/415.html";
+	default_err_pages[416] = "error/html/416.html";
+	default_err_pages[417] = "error/html/417.html";
+	default_err_pages[418] = "error/html/418.html";
+	default_err_pages[421] = "error/html/421.html";
+	default_err_pages[422] = "error/html/422.html";
+	default_err_pages[423] = "error/html/423.html";
+	default_err_pages[424] = "error/html/424.html";
+	default_err_pages[425] = "error/html/425.html";
+	default_err_pages[426] = "error/html/426.html";
+	default_err_pages[428] = "error/html/428.html";
+	default_err_pages[429] = "error/html/429.html";
+	default_err_pages[431] = "error/html/431.html";
+	default_err_pages[451] = "error/html/451.html";
 
-	default_err_pages[500] = "http/html/error/500.html";
-	default_err_pages[501] = "http/html/error/501.html";
-	default_err_pages[502] = "http/html/error/502.html";
-	default_err_pages[503] = "http/html/error/503.html";
-	default_err_pages[504] = "http/html/error/504.html";
-	default_err_pages[505] = "http/html/error/505.html";
-	default_err_pages[506] = "http/html/error/506.html";
-	default_err_pages[507] = "http/html/error/507.html";
-	default_err_pages[508] = "http/html/error/508.html";
-	default_err_pages[510] = "http/html/error/510.html";
-	default_err_pages[511] = "http/html/error/511.html";
+	default_err_pages[500] = "error/html/500.html";
+	default_err_pages[501] = "error/html/501.html";
+	default_err_pages[502] = "error/html/502.html";
+	default_err_pages[503] = "error/html/503.html";
+	default_err_pages[504] = "error/html/504.html";
+	default_err_pages[505] = "error/html/505.html";
+	default_err_pages[506] = "error/html/506.html";
+	default_err_pages[507] = "error/html/507.html";
+	default_err_pages[508] = "error/html/508.html";
+	default_err_pages[510] = "error/html/510.html";
+	default_err_pages[511] = "error/html/511.html";
 
 	return (default_err_pages);
 }
@@ -673,13 +692,6 @@ http::Response &	http::Response::operator=(Response const & rhs)
 }
 
 
-bool				http::Response::_is_cgi_request(t_request const & request)
-{
-	if (this->_server.routes.find(request.path) != this->_server.routes.end())
-		return this->_server.routes[request.path].cgi_pass == CGI;
-	return false;
-}
-
 void				http::Response::_cgi_handler(t_request const & request, std::string const & path)
 {
 	int 		fds[2];
@@ -699,7 +711,7 @@ void				http::Response::_cgi_handler(t_request const & request, std::string cons
 	{
 		waitpid(pid, NULL, -1);
 		close(fds[1]);
-		_get_cgi_response(fds, body,request.method);
+		_get_cgi_response(fds, body, request.method);
 	}
 }
 

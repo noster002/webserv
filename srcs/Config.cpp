@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/28 10:16:40 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 12:40:12 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,7 @@ void			http::Config::parse_config_file(void)
 			std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
 			std::cout << " ROOT : " << routes->second.root;
 			std::cout << " INDEX : " << routes->second.index;
-			std::cout << " UPLOAD : " << routes->second.upload;
+			std::cout << " UPLOAD : " << ((routes->second.upload) ? "on" : "of");
 			std::cout << " REDIRECT : " << routes->second.redirect;
 			std::cout << " CGI_EXT : " << routes->second.cgi_ext;
 			std::cout << " CGI_PASS : " << routes->second.cgi_pass;
@@ -232,6 +232,8 @@ void					http::Config::fill_routes( std::vector<std::string> & data, size_t i,\
 		this->setValidation(false);
 		return ;
 	}
+	this->servers[i].routes[route_name].directory_listing = false;
+	this->servers[i].routes[route_name].upload = false;
 	while (this->servers[i].start_data < end_route)
 	{
 		this->fill_route_params(data, i, cursor, route_name);
@@ -494,7 +496,12 @@ void			http::Config::set_upload(std::string & str, route_t* route, size_t* curso
 {
 	*cursor += 6;
 	std::string value = this->get_inline_value(str, cursor);
-	route->upload = value;
+	if (value != "on" && value != "off")
+	{
+		this->setValidation(false);
+		return ;
+	}
+	route->upload = (value == "on")? true : false;
 }
 
 void			http::Config::set_redirect(std::string & str, route_t* route, size_t* cursor)

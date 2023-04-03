@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/28 13:50:52 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 13:29:01 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,10 +63,11 @@ namespace http
 			std::string							_body;
 
 			bool								_is_cgi;
+			bool								_is_upload;
 
-			int									_serve_get_request(t_request const & request, std::string const & path);
+			int									_serve_get_request(std::string const & path);
 			void								_serve_post_request(t_request const & request, std::string const & path);
-			void								_serve_delete_request(t_request const & request, std::string const & path);
+			void								_serve_delete_request(std::string const & path);
 
 			int									_get_path(t_request const & request, std::string & path);
 			int									_directory_listing(t_request const & request, std::string const & path);
@@ -75,8 +76,9 @@ namespace http
 			void								_serve_error_file(std::fstream & file);
 			void								_serve_error_plain(void);
 
-			void								_set_content_type(std::string const & path);
 			void								_set_cgi(void);
+			void								_set_content_type(std::string const & path);
+			void								_set_content_length(size_t length);
 
 			void								_set_status_line(void);
 			void								_set_head(void);
@@ -84,10 +86,11 @@ namespace http
 
 			int									_OK(void);
 			int									_permanent_redirect(std::string const & path);
+			int									_forbidden(void);
 			int									_not_found(void);
 			int									_method_not_allowed(std::string const & path);
 			int									_gone(void);
-			bool								_is_cgi_request(t_request const & request);
+
 			void								_cgi_handler(t_request const & request, std::string const & path);
 			int									_content_too_large(std::string const & error_msg);
 			void								_init_cgi_env( char *args[], char *env[],\

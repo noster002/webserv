@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 15:08:46 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 12:22:59 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,7 @@ typedef struct	s_route {
 	bool						directory_listing;
 	std::string					root;
 	std::string					index;
-	std::string					upload;
+	bool						upload;
 	std::string					redirect;
 	std::string					cgi_ext;
 	std::string					cgi_pass;				
