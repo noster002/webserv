@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/27 08:03:59 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/28 10:09:12 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ int			http::Server::get_last_socket_fd(void) const
 	return (_sockets.back()->get_fd());
 }
 
-void		http::Server::setup(int kq, std::string const & host, std::string const & port)
+int			http::Server::setup(int kq, std::string const & host, std::string const & port)
 {
 	Socket	socket;
 
@@ -87,13 +87,15 @@ void		http::Server::setup(int kq, std::string const & host, std::string const & 
 		std::cerr << e.what() << std::endl;
 		if (e.get_level() > e_create)
 			socket.clean();
+		return (EXIT_FAILURE);
 	}
 	catch (std::exception const & e)
 	{
 		std::cerr << e.what() << std::endl;
+		return (EXIT_FAILURE);
 	}
 
-	return ;
+	return (EXIT_SUCCESS);
 }
 
 void		http::Server::clean(void)

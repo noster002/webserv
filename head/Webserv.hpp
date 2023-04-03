@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:53:54 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 16:20:49 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/03/28 10:17:10 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,6 @@ namespace http
 		public:
 
 			Webserv(void);
-			Webserv(std::string const & filename);
 			~Webserv(void);
 
 			void		setup(std::string const & filename);
@@ -65,6 +64,7 @@ namespace http
 			int										_kq;
 
 			void		event_client_connect(struct kevent const & event);
+			void		event_client_disconnect(struct kevent const & event);
 			void		event_eof(struct kevent const & event);
 			void		event_read(struct kevent const & event);
 			void		event_write(struct kevent const & event);
