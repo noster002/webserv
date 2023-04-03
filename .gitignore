@@ -2,3 +2,6 @@
 test/*
 webserv
 logfile.txt
+objs/*
+objs/.gitignore
+conf/*

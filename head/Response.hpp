@@ -19,6 +19,7 @@
 # include <sys/types.h>
 # include <dirent.h>
 # include <unistd.h>
+#include <sys/stat.h>
 
 
 // C++98
@@ -63,9 +64,9 @@ namespace http
 
 			bool								_is_cgi;
 
-			int									_serve_get_request(t_request const & request);
-			void								_serve_post_request(t_request const & request);
-			void								_serve_delete_request(t_request const & request);
+			int									_serve_get_request(t_request const & request, std::string const & path);
+			void								_serve_post_request(t_request const & request, std::string const & path);
+			void								_serve_delete_request(t_request const & request, std::string const & path);
 
 			int									_get_path(t_request const & request, std::string & path);
 			int									_directory_listing(t_request const & request, std::string const & path);
@@ -87,7 +88,7 @@ namespace http
 			int									_method_not_allowed(std::string const & path);
 			int									_gone(void);
 			bool								_is_cgi_request(t_request const & request);
-			void								_cgi_handler(t_request const & request);
+			void								_cgi_handler(t_request const & request, std::string const & path);
 			int									_content_too_large(std::string const & error_msg);
 			void								_init_cgi_env( char *args[], char *env[],\
 															   t_request const & request,\
@@ -106,7 +107,8 @@ namespace http
 														 std::string const & file_type,\
 														 std::string const & file_content );
 			void								_continue_to_next_field( t_request const & request,\
-												                          size_t ending );
+												                          size_t ending,\
+																		  std::string const & path );
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
 			static std::map<int, std::string>	_default_err_pages;
