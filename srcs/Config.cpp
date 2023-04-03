@@ -60,9 +60,9 @@ void			http::Config::parse_config_file(void)
 	for (int i = 0; i < this->nb_servers; ++i)
 	{
 		std::cout << RED << "**********SERVER[ " << i + 1 << " ]*******************" << RESET << "\n";
+		this->servers[i].client_max_body_size = 1048576;
 		while (this->servers[i].start_data <= this->servers[i].end_data)
 		{
-			this->servers[i].client_max_body_size = 1048576;
 			j = 0;
 			http::Config::skipe_empty_line(data, &this->servers[i].start_data);
 			http::Config::skipe_spaces(data[this->servers[i].start_data], &j);

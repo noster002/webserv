@@ -38,24 +38,24 @@ void				http::Response::set_server(params_t const & server)
 
 void				http::Response::build(int error, t_request const & request)
 {
+	std::string		path;
+
 	_status = error;
 
-	if (request.body.size() > _server.client_max_body_size)
+	if (!_status && request.body.size() > _server.client_max_body_size)
 		_content_too_large("HTTP request body: content too large");
-
-	std::string		tmp;
-	_get_path(request, tmp);
-
-	if (_status)
+	if (!_status)
+		_get_path(request, path);
+	if (!_status)
 	{
 		if (_is_cgi)
-			_cgi_handler(request);
+			_cgi_handler(request, path);
 		else if (request.method == "GET")
-			_serve_get_request(request);
+			_serve_get_request(request, path);
 		else if (request.method == "POST")
-			_serve_post_request(request);
+			_serve_post_request(request, path);
 		else if (request.method == "DELETE")
-			_serve_delete_request(request);
+			_serve_delete_request(request, path);
 	}
 	if (_status >= 400)
 		_serve_error();
@@ -68,13 +68,9 @@ void				http::Response::build(int error, t_request const & request)
 	return ;
 }
 
-int					http::Response::_serve_get_request(t_request const & request)
+int					http::Response::_serve_get_request(t_request const & request, std::string const & path)
 {
-	std::string			path;
-	
-	if (_get_path(request, path))
-		return (_status);
-
+	(void)request;
 	std::fstream		file(path.c_str());
 
 	if (file.is_open() == false)
@@ -95,10 +91,10 @@ int					http::Response::_serve_get_request(t_request const & request)
 	return (_OK());
 }
 
-void				http::Response::_serve_post_request(t_request const & request)
+void				http::Response::_serve_post_request(t_request const & request, std::string const & path)
 {
-	std::string	file_name, target, file_content, file_path, file_type;
-	size_t 		cursor = 0, ending, start;
+	std::string	file_name, target, file_content, file_type;
+	size_t 		cursor = 0, ending, start, pos;
 
 	_get_filename_to_upload(request, cursor, file_name);
 	if (file_name.empty())
@@ -108,31 +104,27 @@ void				http::Response::_serve_post_request(t_request const & request)
 	ending = request.body.find("------WebKit", start) - 2;
 	file_content = request.body.substr(start, ending - start);
 	_get_file_type(request, cursor, file_type);
-	this->_get_path(request, file_path);
-	target = file_path + file_name;
+	pos = path.find_last_of('/');
+	target = path.substr(0, ++pos) + file_name;
 	_upload(target, file_type, file_content);
-	_continue_to_next_field(request, ending);
+	_continue_to_next_field(request, ending, path);
 	if (_status != 204 && _status != 202)
 		_status = 200;
-	_header["Content-Type"] = "text/html";
-	_body += "<h2>Request successfully performed</h2>\n";
+	if (_status == 200)
+	{
+		_body += "<h2>Request successfully performed</h2>\n";
+		_header["Content-Type"] = "text/html";
+	}
 }
 
-void				http::Response::_serve_delete_request(t_request const & request)
+void				http::Response::_serve_delete_request(t_request const & request, std::string const & path)
 {
-	std::string  path;
-	this->_get_path(request, path);
-	if (_is_file(path))
-	{
-		if (remove(path.c_str()) == 0)
-			_status = 204;
-		else
-			_status = 403;
-	}
+	if (remove(path.c_str()) == 0)
+		_status = 204;
 	else
 		_status = 404;
-	if (_status == 403 || _status == 404)
-		_body = "";
+	_body = "";
+	(void)request;
 }
 
 int					http::Response::_get_path(t_request const & request, std::string & path)
@@ -296,6 +288,9 @@ void				http::Response::_serve_error_plain(void)
 
 void				http::Response::_set_content_type(std::string const & path)
 {
+	if (_header["Content-Type"].empty() == false)
+		return ;
+
 	size_t			pos = path.find_last_of('.');
 
 	if (pos != std::string::npos)
@@ -685,17 +680,16 @@ bool				http::Response::_is_cgi_request(t_request const & request)
 	return false;
 }
 
-void				http::Response::_cgi_handler(t_request const & request)
+void				http::Response::_cgi_handler(t_request const & request, std::string const & path)
 {
 	int 		fds[2];
 	char		body[100000];
 	pid_t 		pid;
-	std::string	path;
+
 	pipe(fds);
 	std::map<std::string, std::string>::const_iterator it = request.header.begin();
 	for (; it != request.header.end(); ++it)
 		_header[it->first] = it->second;
-	this->_get_path(request, path);
 	pid = fork();
 	if (pid < 0)
 		std::cout << "Error: starting process\n";
@@ -811,7 +805,7 @@ void	http::Response::_upload( std::string const & target, std::string const & fi
 	target_stream.close();
 }
 
-void	http::Response::_continue_to_next_field(t_request const & request, size_t ending)
+void	http::Response::_continue_to_next_field(t_request const & request, size_t ending, std::string const & path)
 {
 	std::string	tmp_body = request.body.substr(ending + 2);
 
@@ -819,20 +813,6 @@ void	http::Response::_continue_to_next_field(t_request const & request, size_t e
 	{
 		t_request sub_req(request);
 		sub_req.body = tmp_body;
-		return _serve_post_request(sub_req);
+		return _serve_post_request(sub_req, path);
 	}
-}
-
-int		http::Response::_is_file(const std::string & path)
-{
-	struct stat f;
-	if (stat(path.c_str(), &f) == 0 )
-	{
-		if (f.st_mode & S_IFDIR)
-			return 0;
-		if (f.st_mode & S_IFREG)
-			return 1;
-		return 0;
-	}
-	return 0;
 }
