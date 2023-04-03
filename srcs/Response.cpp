@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/28 13:50:34 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/03 08:23:57 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,9 +43,14 @@ void				http::Response::build(int error, t_request const & request)
 	if (request.body.size() > _server.client_max_body_size)
 		_content_too_large("HTTP request body: content too large");
 
-	if (_status < 300)
+	std::string		tmp;
+	_get_path(request, tmp);
+
+	if (_status)
 	{
-		if (request.method == "GET")
+		if (_is_cgi)
+			_cgi_handler(request);
+		else if (request.method == "GET")
 			_serve_get_request(request);
 		else if (request.method == "POST")
 			_serve_post_request(request);
@@ -303,7 +308,8 @@ void				http::Response::_set_head(void)
 	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); ++it)
 		head << it->first << ": " << it->second << "\r\n";
 
-	head << "\r\n";
+	if (_is_cgi == false)
+		head << "\r\n";
 
 	_buffer += head.str();
 
