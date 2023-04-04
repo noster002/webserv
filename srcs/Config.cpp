@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/03 17:48:13 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/04 09:34:28 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -191,11 +191,7 @@ int 			http::Config::find_close_symbol( const std::vector<std::string> & confdat
 		{
 			http::Config::skipe_spaces(confdata[*cursor], &j);
 			if (confdata[*cursor].substr(j, 5) == KEY_ROUTE)
-			{
-				std::cout << confdata[*cursor].substr(j) << "\n";
-				std::cout << "LEVEL 1.1" << std::endl;
 				return (-1);
-			}
 		}
 		if (confdata[*cursor][j] == CLOSE_SYMBOL)
 		{
@@ -205,12 +201,10 @@ int 			http::Config::find_close_symbol( const std::vector<std::string> & confdat
 			http::Config::skipe_spaces(confdata[*cursor], &j);
 			if (confdata[*cursor][j] == '\0')
 				return (j);
-			std::cout << "LEVEL 2.2" << std::endl;
 			return (-1);
 		}
 		*cursor += 1;
 	}
-	std::cout << "LEVEL 3.3" << std::endl;
 	return (-1);
 }
 

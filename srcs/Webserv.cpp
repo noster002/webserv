@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/28 10:17:23 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/04 10:26:58 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,7 +104,6 @@ void				http::Webserv::run(void)
 				event_write(event);
 		}
 	}
-	std::cout << _up << " sockets are setup" << std::endl;
 }
 
 void				http::Webserv::clean(void)
@@ -189,12 +188,12 @@ void				http::Webserv::event_read(struct kevent const & event)
 		std::cerr << "recv: " << std::strerror(errno) << std::endl;
 		return ;
 	}
-	std::cout << CYAN << "bytes_read: " << bytes_read << std::endl;
-	std::cout << "INPUT:" << std::endl;
+	std::cout << CYAN << "bytes_read: " << bytes_read << RESET << std::endl;
+	/*std::cout << "INPUT:" << std::endl;
 	std::cout << "(" << YELLOW;
 	for (ssize_t pos = 0; pos < bytes_read; ++pos)
 		std::cout << input[pos];
-	std::cout << CYAN << ")"  << RESET << std::endl;
+	std::cout << CYAN << ")"  << RESET << std::endl;*/
 
 	_clients[fd]->read(input, bytes_read, _kq);
 

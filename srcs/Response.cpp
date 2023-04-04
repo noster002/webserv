@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/03 19:33:55 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/04 18:09:52 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 http::Response::Response(void)\
  : _server(), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body(),\
-   _is_cgi(false), _is_upload(false)
+   _is_cgi(false), _is_upload(false), _is_chunk(false), _first_chunk(false)
 {
 	return ;
 }
@@ -25,9 +25,47 @@ http::Response::~Response(void)
 }
 
 
-std::string const &	http::Response::get_buffer(void) const
+bool				http::Response::get_buffer(std::string & buffer)
 {
-	return (_buffer);
+	size_t			pos;
+
+	if (_first_chunk)
+	{
+		pos = _buffer.find("\r\n\r\n");
+
+		if (pos == std::string::npos)
+			return (false);
+		pos += std::strlen("\r\n\r\n");
+		buffer = _buffer.substr(0, pos);
+		_buffer.erase(0, pos);
+		_first_chunk = false;
+	}
+	else if (_is_chunk)
+	{
+		std::stringstream	size;
+		pos = 0x10000;
+
+		if (_buffer.size() < pos)
+		{
+			size << std::hex << _buffer.size();
+		std::cout << pos;
+			buffer = size.str() + "\r\n";
+			buffer += _buffer + "\r\n";
+			buffer += "0\r\n\r\n";
+			_buffer.clear();
+			_is_chunk = false;
+		}
+		else
+		{
+			buffer = "10000\r\n";
+			buffer += _buffer.substr(0, pos) + "\r\n";
+			_buffer.erase(0, pos);
+		}
+	}
+	else
+		buffer = _buffer;
+
+	return (_is_chunk);
 }
 
 void				http::Response::set_server(params_t const & server)
@@ -62,6 +100,8 @@ void				http::Response::build(int error, t_request const & request)
 	else if (_is_cgi)
 		_set_cgi();
 	_set_status_line();
+	if (_body.size() > 0x10000)
+		_chunk();
 	_set_head();
 	if (request.method != "HEAD")
 		_set_body();
@@ -79,9 +119,7 @@ int					http::Response::_serve_get_request(t_request const & request, std::strin
 
 		if (_check_directory(modified))
 		{
-			std::cout << "hl" << std::endl;
 			_get_path(modified, path);
-			std::cout << path << std::endl;
 			_serve_get_request(modified, path);
 			return (0);
 		}
@@ -114,48 +152,63 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 {
 	std::string	file_name, target, file_content, file_type;
 	size_t 		cursor = 0, ending, start, pos;
-
+	bool		is_open = false;
 
 	if (_is_upload == false)
 		return (_forbidden());
 	if (!request.chunks.empty())
 	{
+		target = path;
+		file_type = "application/octet-stream";
 		for (size_t i = 0; i < request.chunks.size(); ++i)
-		{
 			file_content += request.chunks[i];
-		}
-		_upload(path, "", file_content);
-		_created();
-		return (0);
 	}
+	else
+	{
+		if (_get_filename_to_upload(request, cursor, file_name))
+			return (_no_content());
 
-	if (_get_filename_to_upload(request, cursor, file_name))
-		return (_no_content());
+		cursor = request.body.find("Content-Type: ");
+		start = request.body.find_first_of("\n", cursor) + 3;
+		ending = request.body.find("------WebKit", start) - 2;
+		file_content = request.body.substr(start, ending - start);
+		_get_file_type(request, cursor, file_type);
+		pos = path.find_last_of('/');
+		target = path.substr(0, ++pos) + file_name;
+	}
+	std::fstream	file(target);
 
-	cursor = request.body.find("Content-Type: ");
-	start = request.body.find_first_of("\n", cursor) + 3;
-	ending = request.body.find("------WebKit", start) - 2;
-	file_content = request.body.substr(start, ending - start);
-	_get_file_type(request, cursor, file_type);
-	pos = path.find_last_of('/');
-	target = path.substr(0, ++pos) + file_name;
+	if (file.is_open())
+	{
+		is_open = true;
+		file.close();
+	}
 	_upload(target, file_type, file_content);
-	_continue_to_next_field(request, ending, path);
+	if (request.chunks.empty())
+		_continue_to_next_field(request, ending, path);
 
-	_body += "<h2>Request successfully performed</h2>\n";
-	_header["Content-Type"] = "text/html";
 	_header["Location"] = target;
 
+	std::string		buffer;
+
+	file.open(target);
+	while (std::getline(file, buffer))
+		_body += buffer;
+	file.close();
+
+	_set_content_type(target);
+	_set_content_length(_body.size());
+
+	if (is_open)
+		return (_OK());
 	return (_created());
 }
 
-void				http::Response::_serve_delete_request(std::string const & path)
+int					http::Response::_serve_delete_request(std::string const & path)
 {
 	if (remove(path.c_str()) == 0)
-		_status = 204;
-	else
-		_status = 404;
-	_body = "";
+		return (_no_content());
+	return (_not_found());
 }
 
 int					http::Response::_get_path(t_request const & request, std::string & path)
@@ -323,11 +376,28 @@ void				http::Response::_serve_error_plain(void)
 
 void				http::Response::_set_cgi(void)
 {
+	size_t		pos = _body.find("\r\n\r\n");
 	size_t		length = _body.size();
+
+	if (pos != std::string::npos)
+	{
+		pos += std::strlen("\r\n\r\n");
+		length -= pos;
+	}
 
 	_set_content_length(length);
 
 	return ;
+}
+
+void				http::Response::_chunk(void)
+{
+	std::map<std::string, std::string>::iterator	it = _header.find("Content-Length");
+
+	_header.erase(it);
+	_header["Transfer-Encoding"] = "chunked";
+	_is_chunk = true;
+	_first_chunk = true;
 }
 
 void				http::Response::_set_content_type(std::string const & path)
@@ -376,7 +446,8 @@ void				http::Response::_set_head(void)
 	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); ++it)
 		head << it->first << ": " << it->second << "\r\n";
 
-	head << "\r\n";
+	if (_is_cgi == false)
+		head << "\r\n";
 
 	_buffer += head.str();
 
@@ -735,33 +806,68 @@ http::Response &	http::Response::operator=(Response const & rhs)
 
 void				http::Response::_cgi_handler(t_request const & request, std::string const & path)
 {
-	int 		fds[2];
-	char		body[100000];
-	pid_t 		pid;
+	pid_t 	pid;
+	int		save_in = dup(STDIN_FILENO);
+	int		save_out = dup(STDOUT_FILENO);
+	FILE *	tmp_in = std::tmpfile();
+	FILE *	tmp_out = std::tmpfile();
+	int		fd_in = fileno(tmp_in);
+	int		fd_out = fileno(tmp_out);
+	std::string		buffer;
 
-	pipe(fds);
-	std::map<std::string, std::string>::const_iterator it = request.header.begin();
-	for (; it != request.header.end(); ++it)
-		_header[it->first] = it->second;
+	if (request.chunks.empty())
+		buffer = request.body;
+	else
+	{
+		for (size_t	i = 0; i < request.chunks.size(); ++i)
+			buffer += request.chunks[i];
+	}
+
+	for (size_t	i = 0; i < buffer.size(); ++i)
+	{
+		if (std::fputc(buffer[i], tmp_in) != EOF)
+			break ;
+	}
+
 	pid = fork();
 	if (pid < 0)
 		std::cout << "Error: starting process\n";
 	else if (pid == 0)
-		_exec_cgi(request, path, fds);
+	{
+		dup2(fd_in, STDIN_FILENO);
+		dup2(fd_out, STDOUT_FILENO);
+		std::fseek(tmp_in, 0, SEEK_SET);
+		_exec_cgi(request, path);
+	}
 	else
 	{
-		waitpid(pid, NULL, -1);
-		close(fds[1]);
-		_get_cgi_response(fds, body, request.method);
+		waitpid(-1, NULL, 0);
+		_get_cgi_response(tmp_out);
+		dup2(save_in, STDIN_FILENO);
+		dup2(save_out, STDOUT_FILENO);
+		fclose(tmp_in);
+		fclose(tmp_out);
+		close(fd_in);
+		close(fd_out);
+		close(save_in);
+		close(save_out);
 	}
 }
 
 void	http::Response::_init_cgi_env( char *args[], char *env[], t_request const & request,\
 									   const std::string path )
 {
-	std::stringstream ss;
+	std::stringstream	ss;
+	size_t				size = 0;
 
-	ss << request.content_length;
+	if (request.chunks.empty())
+		ss << request.content_length;
+	else
+	{
+		for (size_t	i = 0; i < request.chunks.size(); ++i)
+			size += request.chunks[i].length();
+		ss << size;
+	}
 	args[0] = strdup(path.c_str());
 	args[1] = NULL;
 	env[0] = strdup("GATEWAY_INTERFACE=CGI/1.1");
@@ -769,45 +875,43 @@ void	http::Response::_init_cgi_env( char *args[], char *env[], t_request const &
 	env[2] = strdup(("SCRIPT_FILENAME=" + path).c_str());
 	env[3] = strdup(("CONTENT_LENGTH=" + ss.str()).c_str());
 	env[4] = strdup(("REQUEST_METHOD=" + request.method).c_str());
-	env[5] = strdup("CONTENT_TYPE=text/html"); // !!!should be dynamic
+	if (request.header.count("Content-Type"))
+		env[5] = strdup(("CONTENT_TYPE=" + request.header.at("Content-Type")).c_str()); // !!!should be dynamic
+	else
+		env[5] = strdup("CONTENT_TYPE=application/octet-stream"); // !!!should be dynamic
 	env[6] = strdup(("QUERY_STRING=" + request.query).c_str());
-	env[7] = NULL;
+	env[7] = strdup(("SCRIPT_NAME=" + path).c_str());
+	env[8] = strdup(("PATH_INFO=" + request.path).c_str());
+	env[9] = NULL;
 }
 
 
-void	http::Response::_exec_cgi(t_request const & request, std::string const & path, int fds[])
+void	http::Response::_exec_cgi(t_request const & request, std::string const & path)
 {
 	char* args[2];
 	char* env[8];
 	std::string php_cgi_bin = CGI;
+
 	_init_cgi_env(args, env, request, path);
-	close(fds[0]);
-	dup2(fds[1], STDOUT_FILENO);
+
 	if (execve(php_cgi_bin.c_str(), args, env) < 0)
 		std::cerr << "execve: " << std::strerror(errno) << std::endl;
-	std::cout << "QUOI ?\n";
-	exit(0);
+	exit(EXIT_FAILURE);
 }
 
 
-void	http::Response::_get_cgi_response(int fds[], char body[], const std::string method)
+void	http::Response::_get_cgi_response(FILE * tmp_out)
 {
-	int 		bytes;
-	int 		count = 0;
-	std::string tmp_body;
+	std::fseek(tmp_out, 0, SEEK_SET);
 
-	do 
+	int	tmp = std::fgetc(tmp_out);
+
+	while(tmp != EOF)
 	{
-		bytes = read(fds[0], &body[count], 1);
-		count++;
+		_body += tmp;
+		tmp = std::fgetc(tmp_out);
 	}
-	while(bytes > 0);
-	close(fds[0]);
-	_header["Content-type"] = "text/html";
-	tmp_body = body;
-	_body = tmp_body.substr(tmp_body.find("\r\n\r\n", tmp_body.find("Content-type")) + 4);
-	_status = 200;
-	(void)method;
+	_OK();
 }
 
 int		http::Response::_get_filename_to_upload( t_request const & request, size_t & cursor,\

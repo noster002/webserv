@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/27 16:35:32 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/04 11:23:17 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,10 @@ void			http::Client::read(char const * input, ssize_t bytes, int kq)
 
 std::string		http::Client::write(int kq)
 {
-	std::string		output = _response->get_buffer();
+	std::string		output;
+
+	if (_response->get_buffer(output))
+		return (output);
 
 	clear();
 

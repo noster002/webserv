@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/03 17:43:05 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/04 16:17:11 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 # include <sys/types.h>
 # include <dirent.h>
 # include <unistd.h>
-#include <sys/stat.h>
+# include <sys/stat.h>
 
 
 // C++98
@@ -47,7 +47,7 @@ namespace http
 			Response(void);
 			~Response(void);
 
-			std::string const &					get_buffer(void) const;
+			bool								get_buffer(std::string & buffer);
 			void								set_server(params_t const & server);
 			void								build(int error, t_request const & request);
 
@@ -64,10 +64,12 @@ namespace http
 
 			bool								_is_cgi;
 			bool								_is_upload;
+			bool								_is_chunk;
+			bool								_first_chunk;
 
 			int									_serve_get_request(t_request const & request, std::string & path);
 			int									_serve_post_request(t_request const & request, std::string const & path);
-			void								_serve_delete_request(std::string const & path);
+			int									_serve_delete_request(std::string const & path);
 
 			int									_get_path(t_request const & request, std::string & path);
 			int									_directory_listing(t_request const & request, std::string const & path);
@@ -78,6 +80,7 @@ namespace http
 			void								_serve_error_plain(void);
 
 			void								_set_cgi(void);
+			void								_chunk(void);
 			void								_set_content_type(std::string const & path);
 			void								_set_content_length(size_t length);
 
@@ -93,16 +96,15 @@ namespace http
 			int									_not_found(void);
 			int									_method_not_allowed(std::string const & path);
 			int									_gone(void);
+			int									_content_too_large(std::string const & error_msg);
 
 			void								_cgi_handler(t_request const & request, std::string const & path);
-			int									_content_too_large(std::string const & error_msg);
 			void								_init_cgi_env( char *args[], char *env[],\
 															   t_request const & request,\
 															   const std::string path );
 			void								_exec_cgi( t_request const & request,\
-														   std::string const & path, int fds[] );
-			void								_get_cgi_response( int fds[], char body[],\
-																   const std::string method );
+														   std::string const & path );
+			void								_get_cgi_response( FILE * tmp_out );
 			int									_get_filename_to_upload( t_request const & request,\
 																	     size_t & cursor,\
 												                         std::string & file_name );

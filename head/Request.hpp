@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 14:18:42 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/04 08:21:29 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,6 @@ namespace http
 			int					_read_chunk(std::string const & chunk, size_t size, size_t & pos);
 
 			int					_bad_request(std::string const & error_msg);
-			int					_content_too_large(std::string const & error_msg);
 			int					_URI_too_long(std::string const & error_msg);
 			int					_not_implemented(std::string const & error_msg);
 			int					_HTTP_version_not_supported(std::string const & error_msg);
