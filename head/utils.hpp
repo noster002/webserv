@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/03 12:22:59 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/05 11:37:42 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,9 @@
 # define CYAN "\033[36m"
 # define WHITE "\033[37m"
 
+# define REQUEST_LINE_MAX_LEN 8000
+# define REQUEST_SIZE 0x10000
+
 # define OPEN_SYMBOL '{'
 # define CLOSE_SYMBOL '}'
 # define SEMI_COLUMN ';'
@@ -53,7 +56,6 @@
 # define KEY_HOST "host"
 # define DOT '.'
 # define TAB 9
-# define CGI "cgi/php-cgi"
 
 typedef struct	s_route {
 	std::set<std::string>		method;

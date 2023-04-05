@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/04 10:26:58 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/05 07:55:02 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,9 +179,9 @@ void				http::Webserv::event_read(struct kevent const & event)
 {
 	std::cout << RED << "READING" << RESET << std::endl;
 	int				fd = event.ident;
-	char			input[10000/* REQUEST_SIZE */];
+	char			input[REQUEST_SIZE];
 
-	ssize_t			bytes_read = ::recv(fd, static_cast<void *>(input), 10000/* REQUEST_SIZE - 1 */, 0);
+	ssize_t			bytes_read = ::recv(fd, static_cast<void *>(input), REQUEST_SIZE, 0);
 
 	if (bytes_read < 0)
 	{

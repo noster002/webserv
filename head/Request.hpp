@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/04 08:21:29 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/05 07:49:31 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,8 +33,6 @@
 // http
 
 # include "utils.hpp"
-
-# define REQUEST_LINE_MAX_LEN 8000
 
 namespace http
 {

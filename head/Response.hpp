@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/04 16:17:11 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/05 12:20:38 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,7 @@
 # include <sys/types.h>
 # include <dirent.h>
 # include <unistd.h>
-# include <sys/stat.h>
-
+# include <sys/wait.h>
 
 // C++98
 
@@ -62,6 +61,8 @@ namespace http
 			std::map<std::string, std::string>	_header;
 			std::string							_body;
 
+			std::map<std::string, std::string>	_cgi;
+
 			bool								_is_cgi;
 			bool								_is_upload;
 			bool								_is_chunk;
@@ -79,7 +80,7 @@ namespace http
 			void								_serve_error_file(std::fstream & file);
 			void								_serve_error_plain(void);
 
-			void								_set_cgi(void);
+			void								_set_cgi(std::string const & path);
 			void								_chunk(void);
 			void								_set_content_type(std::string const & path);
 			void								_set_content_length(size_t length);
@@ -99,9 +100,9 @@ namespace http
 			int									_content_too_large(std::string const & error_msg);
 
 			void								_cgi_handler(t_request const & request, std::string const & path);
-			void								_init_cgi_env( char *args[], char *env[],\
+			void								_init_cgi_env( char * argv[], char *env[],\
 															   t_request const & request,\
-															   const std::string path );
+															   const std::string & path );
 			void								_exec_cgi( t_request const & request,\
 														   std::string const & path );
 			void								_get_cgi_response( FILE * tmp_out );
