@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 07:55:02 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/05 17:46:28 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -212,9 +212,14 @@ void				http::Webserv::event_write(struct kevent const & event)
 	{
 		std::cerr << "send: " << std::strerror(errno) << std::endl;
 	}
-	std::cout << CYAN << "bytes_sent: " << bytes_sent << std::endl;
+	std::cout << CYAN << "bytes_sent: " << bytes_sent << RESET << std::endl;
 	std::cout << "OUTPUT:" << std::endl;
 	std::cout << "(" << YELLOW << output << CYAN << ")"  << RESET << std::endl;
+
+	int		wait = 10000000;
+
+	while (wait)
+		--wait;
 
 	return ;
 }

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 12:20:38 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/05 16:05:56 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,7 @@ namespace http
 			bool								_first_chunk;
 
 			int									_serve_get_request(t_request const & request, std::string & path);
-			int									_serve_post_request(t_request const & request, std::string const & path);
+			int									_serve_post_request(t_request const & request, std::string & path);
 			int									_serve_delete_request(std::string const & path);
 
 			int									_get_path(t_request const & request, std::string & path);
@@ -100,7 +100,8 @@ namespace http
 			int									_content_too_large(std::string const & error_msg);
 
 			void								_cgi_handler(t_request const & request, std::string const & path);
-			void								_init_cgi_env( char * argv[], char *env[],\
+			void								_init_cgi_env( std::vector<std::string> & argv, \
+															   std::map<std::string, std::string> & env,\
 															   t_request const & request,\
 															   const std::string & path );
 			void								_exec_cgi( t_request const & request,\
@@ -117,7 +118,10 @@ namespace http
 														 std::string const & file_content );
 			void								_continue_to_next_field( t_request const & request,\
 												                          size_t ending,\
-																		  std::string const & path );
+																		  std::string & path );
+
+			static char **						_vector_to_array(std::vector<std::string> vec);
+			static char **						_map_to_array(std::map<std::string, std::string> map);
 			static std::map<int, std::string>	_statuses;
 			static std::map<int, std::string>	_init_statuses(void);
 			static std::map<int, std::string>	_default_err_pages;

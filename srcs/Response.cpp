@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 13:23:59 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/05 18:46:11 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,6 +84,38 @@ void				http::Response::build(int error, t_request const & request)
 		_content_too_large("HTTP request body: content too large");
 	if (!_status)
 		_get_path(request, path);
+	if (_status == 204)
+	{
+		std::fstream	file("logfile.txt");
+
+		if (file.is_open())
+			std::cout << "hellO" << std::endl;
+		file << "request.method:\t(" << request.method << ")" << std::endl;
+		file << "request.protocol:\t(" << request.protocol << ")" << std::endl;
+		file << "request.path:\t(" << request.path << ")" << std::endl;
+		file << "request.query:\t(" << request.query << ")" << std::endl;
+		file << "request.host:\t(" << request.host << ")" << std::endl;
+		file << "request.port:\t(" << request.port << ")" << std::endl;
+		file << "request.header:" << std::endl;
+		for (std::map<std::string, std::string>::const_iterator it = request.header.begin(); it != request.header.end(); ++it)
+			file << "\tname: " << it->first << "\n\t\tvalue: " << it->second << std::endl;
+		file << "request.transfer_encoding:" << std::endl;
+		for (std::vector<std::vector<std::string> >::const_iterator x = request.transfer_encoding.begin(); x != request.transfer_encoding.end(); ++x)
+		{
+			file << "\tencoding:\t(" << *(x->begin()) << ")" << std::endl;
+			for (std::vector<std::string>::const_iterator y = (x->begin() + 1); y != x->end(); ++y)
+				file << "\t\tparam:\t(" << *y << ")" << std::endl;
+		}
+		file << "request.content_length:\t(" << request.content_length << ")" << std::endl;
+		file << "request.body:\n(" << request.body << ")" << std::endl;
+		file << "request.chunks:" << std::endl;
+		for (std::vector<std::string>::const_iterator it = request.chunks.begin(); it != request.chunks.end(); ++it)
+			file << "\t(" << *it << ")" << std::endl;
+		file << "request.trailer:" << std::endl;
+		for (std::map<std::string, std::string>::const_iterator it = request.trailer.begin(); it != request.trailer.end(); ++it)
+			file << "\tname: " << it->first << "\n\t\tvalue: " << it->second << std::endl;
+		file.close();
+	}
 	if (!_status)
 	{
 		if (_is_cgi)
@@ -120,8 +152,7 @@ int					http::Response::_serve_get_request(t_request const & request, std::strin
 		if (_check_directory(modified))
 		{
 			_get_path(modified, path);
-			_serve_get_request(modified, path);
-			return (0);
+			return (_serve_get_request(modified, path));
 		}
 		else
 			return (_not_found());
@@ -148,12 +179,27 @@ int					http::Response::_check_directory(t_request & request)
 	return (1);
 }
 
-int					http::Response::_serve_post_request(t_request const & request, std::string const & path)
+int					http::Response::_serve_post_request(t_request const & request, std::string & path)
 {
 	std::string	file_name, target, file_content, file_type;
 	size_t 		cursor = 0, ending, start, pos;
 	bool		is_open = false;
 
+	if (path.back() != '/')
+	{
+		std::fstream	try_open(path);
+
+		if (try_open.is_open() == false)
+		{
+			t_request	modified(request);
+
+			modified.path += '/';
+			_get_path(modified, path);
+			return (_serve_post_request(modified, path));
+		}
+		else
+			try_open.close();
+	}
 	if (_is_upload == false)
 		return (_forbidden());
 	if (!request.chunks.empty())
@@ -238,7 +284,7 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 				if (path.back() == '/')
 				{
 					if (_is_upload && request.chunks.empty() == false)
-						return (_not_found());
+						return (_no_content());
 					else if (_server.routes[match].index.empty() == false)
 						path += _server.routes[match].index;
 					else if ((_is_upload == false || \
@@ -246,7 +292,7 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 							 _server.routes[match].directory_listing)
 						return (_directory_listing(request, path));
 					else if (_is_upload == false || \
-							 request.method == "GET" || request.method == "GET")
+							 request.method == "GET" || request.method == "HEAD")
 						return (_not_found());
 				}
 				pos = path.find_last_of('.');
@@ -258,7 +304,14 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					_cgi[path] = _server.routes[match].cgi_pass;
 					_is_cgi = true;
 				}
-				return (0);
+				return (_status);
+			}
+			if (request.path.back() != '/' && request.method != "DELETE")
+			{
+				t_request	modified(request);
+
+				modified.path += '/';
+				return (_get_path(modified, path));
 			}
 			return (_method_not_allowed(match));
 		}
@@ -522,6 +575,44 @@ int					http::Response::_content_too_large(std::string const & error_msg)
 	std::cerr << error_msg << std::endl;
 	_status = 413;
 	return (_status);
+}
+
+char **	http::Response::_vector_to_array(std::vector<std::string> vec)
+{
+	char **		array;
+
+	array = static_cast<char **>(std::malloc((vec.size() + 1) * sizeof(char *)));
+
+	if (array != NULL)
+	{
+		for (size_t i = 0; i < vec.size(); ++i)
+			array[i] = strdup(vec[i].c_str());
+		array[vec.size()] = NULL;
+	}
+
+	return (array);
+}
+
+char **	http::Response::_map_to_array(std::map<std::string, std::string> map)
+{
+	char **		array;
+	ssize_t		i = 0;
+
+	array = static_cast<char **>(std::malloc((map.size() + 1) * sizeof(char *)));
+
+	if (array != NULL)
+	{
+		std::map<std::string, std::string>::iterator	it;
+
+		for (it = map.begin(); it != map.end(); ++it)
+		{
+			array[i] = strdup((it->first + "=" + it->second).c_str());
+			++i;
+		}
+		array[i] = NULL;
+	}
+
+	return (array);
 }
 
 std::map<int, std::string>		http::Response::_init_statuses(void)
@@ -846,60 +937,75 @@ void				http::Response::_cgi_handler(t_request const & request, std::string cons
 	}
 }
 
-void	http::Response::_init_cgi_env( char * argv[], char *env[], t_request const & request,\
+void	http::Response::_init_cgi_env( std::vector<std::string> & argv, \
+									   std::map<std::string, std::string> & env, \
+									   t_request const & request,\
 									   const std::string & path )
 {
-	std::stringstream	ss;
+	std::stringstream	content_length;
 	std::stringstream	port;
 	size_t				size = 0;
 
 	if (request.chunks.empty())
-		ss << request.content_length;
+		content_length << request.content_length;
 	else
 	{
 		for (size_t	i = 0; i < request.chunks.size(); ++i)
 			size += request.chunks[i].length();
-		ss << size;
+		content_length << size;
 	}
-	argv[0] = strdup(path.c_str());
-	argv[1] = NULL;
-	env[0] = strdup("GATEWAY_INTERFACE=CGI/1.1");
-	env[1] = strdup("REDIRECT_STATUS=200");
-	env[2] = strdup(("SCRIPT_FILENAME=" + path).c_str());
-	env[3] = strdup(("CONTENT_LENGTH=" + ss.str()).c_str());
-	env[4] = strdup(("REQUEST_METHOD=" + request.method).c_str());
-	if (request.header.count("Content-Type"))
-		env[5] = strdup(("CONTENT_TYPE=" + request.header.at("Content-Type")).c_str()); // !!!should be dynamic
-	else
-		env[5] = strdup("CONTENT_TYPE="); // !!!should be dynamic
-	env[6] = strdup(("QUERY_STRING=" + request.query).c_str());
-	env[7] = strdup(("SCRIPT_NAME=" + path).c_str());
-	if (request.query.empty())
-		env[8] = strdup(("PATH_INFO=" + path));
-	else
-		env[8] = strdup(("PATH_INFO=" + path + "?" + request.query).c_str());
-	env[9] = strdup(("SERVER_PROTOCOL=" + request.protocol).c_str());
+
+	argv.push_back(path);
+
+	env["GATEWAY_INTERFACE"] = "CGI/1.1";
+	env["REDIRECT_STATUS"] = "200";
+	env["PATH_INFO"] = request.path;
+	if (request.query.empty() == false)
+		env["PATH_INFO"] += "?" + request.query;
+	env["CONTENT_LENGTH"] = content_length.str();
+	env["REQUEST_METHOD"] = request.method;
+	env["SERVER_PROTOCOL"] = request.protocol;
 	port << request.port;
-	env[10] = strdup(("SERVER_PORT=" + port.str()).c_str());
-	env[11] = strdup(("SERVER_NAME=" + request.host).c_str());
-	env[12] = NULL;
-	std::cerr << env[8] << std::endl;
+	env["SERVER_PORT"] = port.str();
+	env["SERVER_NAME"] = request.host;
+
+	std::map<std::string, std::string>::const_iterator	it;
+	std::string		key;
+	unsigned char	tmp;
+
+	for (it = request.header.begin(); it != request.header.end(); ++it)
+	{
+		if (it->first != "Transfer-Encoding")
+		{
+			key = "";
+			if (it->first != "Content-Type")
+				key = "HTTP_";
+			for (size_t i = 0; i < it->first.size(); ++i)
+			{
+				tmp = static_cast<unsigned char>(it->first[i]);
+				if (std::isalpha(tmp))
+					key.push_back(static_cast<char>(std::toupper(tmp)));
+				else if (it->first[i] == '-')
+					key.push_back('_');
+			}
+			env[key] = it->second;
+		}
+	}
 }
 
 
 void	http::Response::_exec_cgi(t_request const & request, std::string const & path)
 {
-	char *	argv[2];
-	char *	env[13];
+	std::vector<std::string>			argv;
+	std::map<std::string, std::string>	env;
 
 	_init_cgi_env(argv, env, request, path);
 
-	execve(_cgi[path].c_str(), argv, env);
+	execve(_cgi[path].c_str(), _vector_to_array(argv), _map_to_array(env));
 	std::cerr << "execve: " << std::strerror(errno) << std::endl;
 	std::cout << "Status: 500\r\n\r\n";
 	exit(EXIT_FAILURE);
 }
-
 
 void	http::Response::_get_cgi_response(FILE * tmp_out)
 {
@@ -912,7 +1018,6 @@ void	http::Response::_get_cgi_response(FILE * tmp_out)
 		_body += tmp;
 		tmp = std::fgetc(tmp_out);
 	}
-	std::cerr << "body(" << _body << ")" << std::endl;
 
 	size_t		head_end = _body.find("\r\n\r\n");
 	size_t		line_end = _body.find("\r\n");
@@ -986,7 +1091,7 @@ void	http::Response::_upload( std::string const & target, std::string const & fi
 	target_stream.close();
 }
 
-void	http::Response::_continue_to_next_field(t_request const & request, size_t ending, std::string const & path)
+void	http::Response::_continue_to_next_field(t_request const & request, size_t ending, std::string & path)
 {
 	std::string	tmp_body = request.body.substr(ending + 2);
 

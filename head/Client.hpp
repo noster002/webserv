@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 14:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/24 17:15:39 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/05 13:54:03 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,8 +44,8 @@ namespace http
 			void							connect(int kq);
 			void							disconnect(int kq);
 
-			void				read(char const * input, ssize_t bytes, int kq);
-			std::string			write(int kq);
+			void							read(char const * input, ssize_t bytes, int kq);
+			std::string						write(int kq);
 
 			void							clear(void);
 
