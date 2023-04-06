@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 11:37:42 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 15:34:07 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@
 
 # define REQUEST_LINE_MAX_LEN 8000
 # define REQUEST_SIZE 0x10000
+# define MAX_EVENTS 100000
 
 # define OPEN_SYMBOL '{'
 # define CLOSE_SYMBOL '}'
@@ -59,13 +60,14 @@
 
 typedef struct	s_route {
 	std::set<std::string>		method;
+	size_t						client_max_body_size;
 	bool						directory_listing;
 	std::string					root;
 	std::string					index;
 	bool						upload;
 	std::string					redirect;
 	std::string					cgi_ext;
-	std::string					cgi_pass;				
+	std::string					cgi_pass;
 }				route_t;
 
 typedef struct s_params {

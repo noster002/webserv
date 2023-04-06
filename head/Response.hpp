@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 16:05:56 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 11:24:37 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 # include <dirent.h>
 # include <unistd.h>
 # include <sys/wait.h>
+# include <limits.h>
 
 // C++98
 
@@ -61,7 +62,7 @@ namespace http
 			std::map<std::string, std::string>	_header;
 			std::string							_body;
 
-			std::map<std::string, std::string>	_cgi;
+			route_t								_route;
 
 			bool								_is_cgi;
 			bool								_is_upload;
@@ -74,10 +75,9 @@ namespace http
 
 			int									_get_path(t_request const & request, std::string & path);
 			int									_directory_listing(t_request const & request, std::string const & path);
-			int									_check_directory(t_request & request);
 
 			void								_serve_error(void);
-			void								_serve_error_file(std::fstream & file);
+			void								_serve_error_file(std::ifstream & file);
 			void								_serve_error_plain(void);
 
 			void								_set_cgi(std::string const & path);
@@ -97,7 +97,8 @@ namespace http
 			int									_not_found(void);
 			int									_method_not_allowed(std::string const & path);
 			int									_gone(void);
-			int									_content_too_large(std::string const & error_msg);
+			int									_content_too_large(void);
+			int									_internal_server_error(void);
 
 			void								_cgi_handler(t_request const & request, std::string const & path);
 			void								_init_cgi_env( std::vector<std::string> & argv, \
@@ -120,6 +121,7 @@ namespace http
 												                          size_t ending,\
 																		  std::string & path );
 
+			static bool							_is_file(std::string const & path);
 			static char **						_vector_to_array(std::vector<std::string> vec);
 			static char **						_map_to_array(std::map<std::string, std::string> map);
 			static std::map<int, std::string>	_statuses;

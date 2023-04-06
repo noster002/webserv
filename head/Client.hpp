@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 14:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 13:54:03 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 13:11:22 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@
 
 // C++98
 
+# include <queue>
+# include <utility>
 # include <exception>
 # include <string>
 # include <iostream>
@@ -51,10 +53,10 @@ namespace http
 
 		private:
 
-			std::vector<Server> const &		_servers;
-			Socket							_socket;
-			Request *						_request;
-			Response *						_response;
+			std::vector<Server> const &						_servers;
+			Socket											_socket;
+			std::pair<Request *, Response *> *				_current_message;
+			std::queue<std::pair<Request *, Response *> >	_message_queue;
 
 			params_t const &				_get_server(t_request const & request);
 

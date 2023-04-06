@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/04 09:34:28 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 11:22:57 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,7 @@ void			http::Config::parse_config_file(void)
 	for (int i = 0; i < this->nb_servers; ++i)
 	{
 		std::cout << RED << "**********SERVER[ " << i + 1 << " ]*******************" << RESET << "\n";
-		this->servers[i].client_max_body_size = 1048576;
+		this->servers[i].client_max_body_size = SIZE_MAX;
 		while (this->servers[i].start_data <= this->servers[i].end_data)
 		{
 			j = 0;
@@ -105,6 +105,7 @@ void			http::Config::parse_config_file(void)
 			{
 				std::cout << *set << " ";
 			}
+			std::cout << " MAX_BODY : " << routes->second.client_max_body_size;
 			std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
 			std::cout << " ROOT : " << routes->second.root;
 			std::cout << " INDEX : " << routes->second.index;
@@ -226,6 +227,7 @@ void					http::Config::fill_routes( std::vector<std::string> & data, size_t i,\
 		this->setValidation(false);
 		return ;
 	}
+	this->servers[i].routes[route_name].client_max_body_size = this->servers[i].client_max_body_size;
 	this->servers[i].routes[route_name].directory_listing = false;
 	this->servers[i].routes[route_name].upload = false;
 	while (this->servers[i].start_data < end_route)
@@ -463,6 +465,14 @@ std::set<std::string>  http::Config::get_methods(std::string & str, size_t *curs
 	return method_set;
 }
 
+void			http::Config::set_client_max_body_size( std::string & str, route_t* route,\
+														size_t* cursor )
+{
+	*cursor += 20;
+	std::string value = this->get_inline_value(str, cursor);
+	route->client_max_body_size = std::atoi(value.substr(0, value.size()).c_str());
+}
+
 void			http::Config::set_dir_listing_options( std::string & str, route_t* route,\
 													  size_t* cursor )
 {
@@ -543,6 +553,11 @@ void			http::Config::fill_route_params( std::vector<std::string> & data, size_t 
 	{
 		this->servers[i].routes[route_name].method = \
 			this->get_methods(data[this->servers[i].start_data], cursor);
+	}
+	else if (data[this->servers[i].start_data].substr(*cursor, 20) == KEY_MAX_BODY_SIZE)
+	{
+		this->set_client_max_body_size(data[this->servers[i].start_data], \
+									   &this->servers[i].routes[route_name], cursor);
 	}
 	else if (data[this->servers[i].start_data].substr(*cursor, 17) == KEY_DIRECTORY_LISTING)
 	{

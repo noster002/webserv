@@ -6,26 +6,29 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 13:53:47 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 19:00:17 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 http::Client::Client(int fd, std::vector<Server> const & servers)\
- : _servers(servers), _socket(fd), \
-   _request(NULL), \
-   _response(NULL)
+ : _servers(servers), _socket(fd), _current_message(NULL), _message_queue()
 {
-	_request = new Request();
-	_response = new Response();
+	_current_message = new std::pair<Request *, Response *>(std::make_pair(new Request(), new Response()));
+
 	return ;
 }
 
 http::Client::~Client(void)
 {
-	delete _request;
-	delete _response;
+	delete _current_message->first;
+	delete _current_message->second;
+	delete _current_message;
+
+	while (_message_queue.empty() == false)
+		clear();
+
 	return ;
 }
 
@@ -63,17 +66,19 @@ void			http::Client::disconnect(int kq)
 
 void			http::Client::read(char const * input, ssize_t bytes, int kq)
 {
-	_request->add_buffer(input, bytes);
+	_current_message->first->add_buffer(input, bytes);
 
-	int		is_interpreted = _request->parse();
-
-	_response->set_server(_get_server(_request->get_conf()));
+	bool		is_interpreted = _current_message->first->parse();
 
 	if (is_interpreted == EXIT_FAILURE)
 		return ;
 	std::cout << GREEN << "BUILD" << RESET << std::endl;
 
-	_response->build(_request->get_error(), _request->get_conf());
+	_current_message->second->set_server(_get_server(_current_message->first->get_conf()));
+	_current_message->second->build(_current_message->first->get_error(), _current_message->first->get_conf());
+
+	_message_queue.push(*_current_message);
+	new (_current_message) std::pair<Request *, Response *>(std::make_pair(new Request(), new Response()));
 
 	try
 	{
@@ -89,9 +94,24 @@ void			http::Client::read(char const * input, ssize_t bytes, int kq)
 
 std::string		http::Client::write(int kq)
 {
+	std::cerr << ".";
 	std::string		output;
 
-	if (_response->get_buffer(output))
+	if (_message_queue.empty())
+	{
+		try
+		{
+			_socket.set_kevent(kq, EVFILT_WRITE, EV_DISABLE);
+		}
+		catch (std::exception const & e)
+		{
+			std::cerr << e.what() << std::endl;
+		}
+
+		return ("");
+	}
+
+	if (_message_queue.front().second->get_buffer(output))
 		return (output);
 
 	clear();
@@ -110,8 +130,9 @@ std::string		http::Client::write(int kq)
 
 void			http::Client::clear(void)
 {
-	new (_request) Request();
-	new (_response) Response();
+	delete _message_queue.front().first;
+	delete _message_queue.front().second;
+	_message_queue.pop();
 
 	return ;
 }
@@ -133,12 +154,8 @@ params_t const &	http::Client::_get_server(t_request const & request)
 // canonical class form
 
 http::Client::Client(Client const & other)\
- : _servers(other._servers), _socket(), \
-   _request(NULL), \
-   _response(NULL)
+ : _servers(other._servers), _socket(), _current_message(NULL), _message_queue()
 {
-	_request = new Request();
-	_response = new Response();
 	return ;
 }
 

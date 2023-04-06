@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:47 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/28 10:16:47 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 10:10:46 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,8 @@ namespace http
 			bool						is_route_well_formated( std::vector<std::string> & data,\
 														        size_t i, size_t* cursor );
 			std::set<std::string>		get_methods(std::string & str, size_t *cursor);
+			void						set_client_max_body_size( std::string & str, route_t* route,\
+																  size_t* cursor );
 			void						set_dir_listing_options( std::string & str, route_t* route,\
 													             size_t* cursor );
 			void						set_root(std::string & str, route_t* route, size_t* cursor);

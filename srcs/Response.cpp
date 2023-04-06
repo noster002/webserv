@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 18:46:11 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 13:30:31 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,42 +80,40 @@ void				http::Response::build(int error, t_request const & request)
 
 	_status = error;
 
-	if (!_status && request.body.size() > _server.client_max_body_size)
-		_content_too_large("HTTP request body: content too large");
 	if (!_status)
 		_get_path(request, path);
-	if (_status == 204)
 	{
-		std::fstream	file("logfile.txt");
+		// std::ofstream	file("logfile.txt");
 
-		if (file.is_open())
-			std::cout << "hellO" << std::endl;
-		file << "request.method:\t(" << request.method << ")" << std::endl;
-		file << "request.protocol:\t(" << request.protocol << ")" << std::endl;
-		file << "request.path:\t(" << request.path << ")" << std::endl;
-		file << "request.query:\t(" << request.query << ")" << std::endl;
-		file << "request.host:\t(" << request.host << ")" << std::endl;
-		file << "request.port:\t(" << request.port << ")" << std::endl;
-		file << "request.header:" << std::endl;
-		for (std::map<std::string, std::string>::const_iterator it = request.header.begin(); it != request.header.end(); ++it)
-			file << "\tname: " << it->first << "\n\t\tvalue: " << it->second << std::endl;
-		file << "request.transfer_encoding:" << std::endl;
-		for (std::vector<std::vector<std::string> >::const_iterator x = request.transfer_encoding.begin(); x != request.transfer_encoding.end(); ++x)
-		{
-			file << "\tencoding:\t(" << *(x->begin()) << ")" << std::endl;
-			for (std::vector<std::string>::const_iterator y = (x->begin() + 1); y != x->end(); ++y)
-				file << "\t\tparam:\t(" << *y << ")" << std::endl;
-		}
-		file << "request.content_length:\t(" << request.content_length << ")" << std::endl;
-		file << "request.body:\n(" << request.body << ")" << std::endl;
-		file << "request.chunks:" << std::endl;
-		for (std::vector<std::string>::const_iterator it = request.chunks.begin(); it != request.chunks.end(); ++it)
-			file << "\t(" << *it << ")" << std::endl;
-		file << "request.trailer:" << std::endl;
-		for (std::map<std::string, std::string>::const_iterator it = request.trailer.begin(); it != request.trailer.end(); ++it)
-			file << "\tname: " << it->first << "\n\t\tvalue: " << it->second << std::endl;
-		file.close();
+		// if (file.is_open())
+		// 	std::cout << "hellO" << std::endl;
+		// file << "request.method:\t(" << request.method << ")" << std::endl;
+		// file << "request.protocol:\t(" << request.protocol << ")" << std::endl;
+		// file << "request.path:\t(" << request.path << ")" << std::endl;
+		// file << "request.query:\t(" << request.query << ")" << std::endl;
+		// file << "request.host:\t(" << request.host << ")" << std::endl;
+		// file << "request.port:\t(" << request.port << ")" << std::endl;
+		// file << "request.header:" << std::endl;
+		// for (std::map<std::string, std::string>::const_iterator it = request.header.begin(); it != request.header.end(); ++it)
+		// 	file << "\tname: " << it->first << "\n\t\tvalue: " << it->second << std::endl;
+		// file << "request.transfer_encoding:" << std::endl;
+		// for (std::vector<std::vector<std::string> >::const_iterator x = request.transfer_encoding.begin(); x != request.transfer_encoding.end(); ++x)
+		// {
+		// 	file << "\tencoding:\t(" << *(x->begin()) << ")" << std::endl;
+		// 	for (std::vector<std::string>::const_iterator y = (x->begin() + 1); y != x->end(); ++y)
+		// 		file << "\t\tparam:\t(" << *y << ")" << std::endl;
+		// }
+		// file << "request.content_length:\t(" << request.content_length << ")" << std::endl;
+		// file << "request.body:\n(" << request.body << ")" << std::endl;
+		// file << "request.chunks:" << std::endl;
+		// for (std::vector<std::string>::const_iterator it = request.chunks.begin(); it != request.chunks.end(); ++it)
+		// 	file << "\t(" << *it << ")" << std::endl;
+		// file << "request.trailer:" << std::endl;
+		// for (std::map<std::string, std::string>::const_iterator it = request.trailer.begin(); it != request.trailer.end(); ++it)
+		// 	file << "\tname: " << it->first << "\n\t\tvalue: " << it->second << std::endl;
+		// file.close();
 	}
+
 	if (!_status)
 	{
 		if (_is_cgi)
@@ -143,53 +141,49 @@ void				http::Response::build(int error, t_request const & request)
 
 int					http::Response::_serve_get_request(t_request const & request, std::string & path)
 {
-	std::fstream		file(path.c_str());
-
-	if (file.is_open() == false)
+	if (::access(path.c_str(), F_OK) < 0 || !_is_file(path))
 	{
-		t_request	modified(request);
-
-		if (_check_directory(modified))
+		if (request.path.back() != '/')
 		{
+			t_request	modified(request);
+
+			modified.path += '/';
 			_get_path(modified, path);
 			return (_serve_get_request(modified, path));
 		}
-		else
-			return (_not_found());
+		return (_not_found());
 	}
+	else if (::access(path.c_str(), R_OK) < 0)
+		return (_forbidden());
+
+	std::ifstream		file(path.c_str());
+	std::stringstream	body;
+
+	if (file.is_open() == false)
+		return (_internal_server_error());
 
 	_set_content_type(path);
-
-	std::stringstream	body;
 
 	body << file.rdbuf();
 	_body = body.str();
 
 	_set_content_length(_body.size());
 
+	file.close();
+
 	return (_OK());
-}
-
-int					http::Response::_check_directory(t_request & request)
-{
-	if (request.path.back() == '/')
-		return (0);
-
-	request.path += '/';
-	return (1);
 }
 
 int					http::Response::_serve_post_request(t_request const & request, std::string & path)
 {
 	std::string	file_name, target, file_content, file_type;
 	size_t 		cursor = 0, ending, start, pos;
-	bool		is_open = false;
+	bool		is_created = false;
 
 	if (path.back() != '/')
 	{
-		std::fstream	try_open(path);
-
-		if (try_open.is_open() == false)
+		if ((::access(path.c_str(), F_OK) < 0 || !_is_file(path)) && \
+			request.path.back() != '/')
 		{
 			t_request	modified(request);
 
@@ -197,21 +191,25 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 			_get_path(modified, path);
 			return (_serve_post_request(modified, path));
 		}
-		else
-			try_open.close();
 	}
-	if (_is_upload == false)
-		return (_forbidden());
 	if (!request.chunks.empty())
 	{
-		target = path;
-		file_type = "application/octet-stream";
 		for (size_t i = 0; i < request.chunks.size(); ++i)
+		{
+			if (request.chunks[i].size() > _route.client_max_body_size)
+				return (_content_too_large());
 			file_content += request.chunks[i];
+		}
+		target = path;
+		if (target.back() == '/')
+			return (_no_content());
+		file_type = "application/octet-stream";
 	}
 	else
 	{
-		if (_get_filename_to_upload(request, cursor, file_name))
+		if (request.body.size() > _route.client_max_body_size)
+			return (_content_too_large());
+		else if (_get_filename_to_upload(request, cursor, file_name))
 			return (_no_content());
 
 		cursor = request.body.find("Content-Type: ");
@@ -222,22 +220,26 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 		pos = path.find_last_of('/');
 		target = path.substr(0, ++pos) + file_name;
 	}
-	std::fstream	file(target);
 
-	if (file.is_open())
-	{
-		is_open = true;
-		file.close();
-	}
+	if (::access(target.c_str(), F_OK) < 0)
+		is_created = true;
+	else if ((_is_upload == false) ||\
+			 (::access(target.c_str(), F_OK) == 0 && !_is_file(target)) ||\
+			 (::access(target.c_str(), R_OK | W_OK) < 0))
+		return (_forbidden());
+
 	_upload(target, file_type, file_content);
 	if (request.chunks.empty())
 		_continue_to_next_field(request, ending, path);
 
 	_header["Location"] = target;
 
+	std::ifstream	file(target.c_str());
 	std::string		buffer;
 
-	file.open(target);
+	if (file.is_open() == false)
+		return (_internal_server_error());
+
 	while (std::getline(file, buffer))
 		_body += buffer;
 	file.close();
@@ -245,14 +247,14 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 	_set_content_type(target);
 	_set_content_length(_body.size());
 
-	if (is_open)
-		return (_OK());
-	return (_created());
+	if (is_created)
+		return (_created());
+	return (_OK());
 }
 
 int					http::Response::_serve_delete_request(std::string const & path)
 {
-	if (remove(path.c_str()) == 0)
+	if (std::remove(path.c_str()) == 0)
 		return (_no_content());
 	return (_not_found());
 }
@@ -283,17 +285,16 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					_is_upload = true;
 				if (path.back() == '/')
 				{
-					if (_is_upload && request.chunks.empty() == false)
-						return (_no_content());
-					else if (_server.routes[match].index.empty() == false)
+					if ((_is_upload == false || request.chunks.empty()) && \
+						(_server.routes[match].index.empty() == false))
 						path += _server.routes[match].index;
-					else if ((_is_upload == false || \
-							 request.method == "GET" || request.method == "HEAD") &&\
-							 _server.routes[match].directory_listing)
-						return (_directory_listing(request, path));
 					else if (_is_upload == false || \
 							 request.method == "GET" || request.method == "HEAD")
+					{
+						if (_server.routes[match].directory_listing)
+							return (_directory_listing(request, path));
 						return (_not_found());
+					}
 				}
 				pos = path.find_last_of('.');
 
@@ -301,9 +302,9 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					_server.routes[match].cgi_pass.empty() == false && \
 					_server.routes[match].cgi_ext == path.substr(pos))
 				{
-					_cgi[path] = _server.routes[match].cgi_pass;
 					_is_cgi = true;
 				}
+				_route = _server.routes[match];
 				return (_status);
 			}
 			if (request.path.back() != '/' && request.method != "DELETE")
@@ -380,31 +381,31 @@ int					http::Response::_directory_listing(t_request const & request, std::strin
 
 void				http::Response::_serve_error(void)
 {
+	std::string		name;
+
 	if (_server.err_pages.count(_status))
+		name = _server.err_pages[_status];
+	else
+		name = _default_err_pages[_status];
+
+	if (::access(name.c_str(), F_OK | R_OK) == 0 && _is_file(name))
 	{
-		std::fstream	file(_server.err_pages[_status].c_str());
+		std::ifstream	file(name.c_str());
 
 		if (file.is_open())
 		{
-			_set_content_type(_server.err_pages[_status].c_str());
+			_set_content_type(name.c_str());
 			_serve_error_file(file);
+			file.close();
 			return ;
 		}
 	}
-	std::fstream	file(_default_err_pages[_status].c_str());
-
-	if (file.is_open())
-	{
-		_set_content_type(_default_err_pages[_status].c_str());
-		_serve_error_file(file);
-		return ;
-	}
-
 	_serve_error_plain();
+
 	return ;
 }
 
-void				http::Response::_serve_error_file(std::fstream & file)
+void				http::Response::_serve_error_file(std::ifstream & file)
 {
 	std::string			buffer;
 
@@ -570,14 +571,31 @@ int					http::Response::_gone(void)
 	return (_status);
 }
 
-int					http::Response::_content_too_large(std::string const & error_msg)
+int					http::Response::_content_too_large(void)
 {
-	std::cerr << error_msg << std::endl;
 	_status = 413;
 	return (_status);
 }
 
-char **	http::Response::_vector_to_array(std::vector<std::string> vec)
+int					http::Response::_internal_server_error(void)
+{
+	_status = 500;
+	return (_status);
+}
+
+bool				http::Response::_is_file(std::string const & path)
+{
+	DIR *	dir = opendir(path.c_str());
+
+	if (dir == NULL)
+		return (true);
+
+	closedir(dir);
+
+	return (false);
+}
+
+char **				http::Response::_vector_to_array(std::vector<std::string> vec)
 {
 	char **		array;
 
@@ -593,7 +611,7 @@ char **	http::Response::_vector_to_array(std::vector<std::string> vec)
 	return (array);
 }
 
-char **	http::Response::_map_to_array(std::map<std::string, std::string> map)
+char **				http::Response::_map_to_array(std::map<std::string, std::string> map)
 {
 	char **		array;
 	ssize_t		i = 0;
@@ -1001,7 +1019,7 @@ void	http::Response::_exec_cgi(t_request const & request, std::string const & pa
 
 	_init_cgi_env(argv, env, request, path);
 
-	execve(_cgi[path].c_str(), _vector_to_array(argv), _map_to_array(env));
+	execve(_route.cgi_pass.c_str(), _vector_to_array(argv), _map_to_array(env));
 	std::cerr << "execve: " << std::strerror(errno) << std::endl;
 	std::cout << "Status: 500\r\n\r\n";
 	exit(EXIT_FAILURE);
@@ -1074,18 +1092,18 @@ void	http::Response::_upload( std::string const & target, std::string const & fi
 								 std::string const & file_content )
 {
 	FILE* 			res;
-	std::fstream	target_stream;
+	std::ofstream	target_stream;
 	if (!file_type.compare("text/plain"))
 	{
-		res = fopen(target.c_str(), "w");
-		fclose(res);
-		target_stream.open(target, std::ios::out);
+		res = std::fopen(target.c_str(), "w");
+		std::fclose(res);
+		target_stream.open(target.c_str());
 	}
 	else
 	{
-		res = fopen(target.c_str(), "wb");
-		fclose(res);
-		target_stream.open(target, std::ios::out | std::ios::binary);
+		res = std::fopen(target.c_str(), "wb");
+		std::fclose(res);
+		target_stream.open(target.c_str(), std::ios::out | std::ios::binary);
 	}
 	target_stream << file_content;
 	target_stream.close();

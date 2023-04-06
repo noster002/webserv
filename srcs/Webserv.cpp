@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 17:46:28 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 15:36:53 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,12 +80,13 @@ void				http::Webserv::run(void)
 	}
 	std::cout << _up << " sockets are setup" << std::endl;
 
-	struct kevent	event;
+	struct kevent	event[MAX_EVENTS];
 	int				event_count;
+	int				count = -1;
 
 	while (_up)
 	{
-		event_count = ::kevent(_kq, NULL, 0, &event, 5, NULL);
+		event_count = ::kevent(_kq, NULL, 0, event, MAX_EVENTS, NULL);
 
 		if (event_count < 0)
 		{
@@ -94,14 +95,17 @@ void				http::Webserv::run(void)
 
 		for (int i = 0; i < event_count; ++i)
 		{
-			if (_servers.count(static_cast<int>(event.ident)))
-				event_client_connect(event);
-			else if (event.flags & EV_EOF)
-				event_eof(event);
-			else if (event.filter == EVFILT_READ)
-				event_read(event);
-			else if (event.filter == EVFILT_WRITE)
-				event_write(event);
+			if (_servers.count(static_cast<int>(event[i].ident)))
+				event_client_connect(event[i]);
+			else if (event[i].flags & EV_EOF)
+				event_eof(event[i]);
+			else if (event[i].filter == EVFILT_READ)
+				event_read(event[i]);
+			else if (event[i].filter == EVFILT_WRITE)
+				event_write(event[i]);
+			std::ofstream	file("logfile.txt");
+			file << ++count;
+			file.close();
 		}
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/05 08:39:44 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/06 12:42:24 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,6 +107,7 @@ bool				http::Request::parse(void)
 	// for (std::map<std::string, std::string>::iterator it = _conf.trailer.begin(); it != _conf.trailer.end(); ++it)
 	// 	std::cout << YELLOW << "\tname: " << BLUE << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
 	// std::cout << RESET << "_is_complete: " << _is_complete << std::endl;
+
 	if (_error || _is_complete)
 		return (EXIT_SUCCESS);
 	return (EXIT_FAILURE);
