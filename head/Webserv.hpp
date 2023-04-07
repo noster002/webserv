@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:53:54 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/28 10:17:10 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 08:47:59 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,8 @@ namespace http
 			unsigned int							_up;
 
 			int										_kq;
+			struct kevent							_events[MAX_CHANGES];
+			int										_event_count;
 
 			void		event_client_connect(struct kevent const & event);
 			void		event_client_disconnect(struct kevent const & event);

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 15:34:07 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 12:44:00 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,9 +31,11 @@
 # define CYAN "\033[36m"
 # define WHITE "\033[37m"
 
+# define MAX_EVENTS 1
+# define MAX_CHANGES SHRT_MAX
+# define MAX_PENDING_CLIENTS 1024
 # define REQUEST_LINE_MAX_LEN 8000
 # define REQUEST_SIZE 0x10000
-# define MAX_EVENTS 100000
 
 # define OPEN_SYMBOL '{'
 # define CLOSE_SYMBOL '}'
@@ -54,6 +56,7 @@
 # define KEY_REDIRECT "redirect"
 # define KEY_CGI_EXT "cgi_ext"
 # define KEY_CGI_PASS "cgi_pass"
+# define KEY_CGI_METHOD "cgi_methods"
 # define KEY_HOST "host"
 # define DOT '.'
 # define TAB 9
@@ -68,6 +71,7 @@ typedef struct	s_route {
 	std::string					redirect;
 	std::string					cgi_ext;
 	std::string					cgi_pass;
+	std::set<std::string>		cgi_methods;
 }				route_t;
 
 typedef struct s_params {

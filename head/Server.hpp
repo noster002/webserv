@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/28 10:13:04 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 09:29:59 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ namespace http
 
 			int		get_last_socket_fd(void) const;
 
-			int		setup(int kq, std::string const & host, std::string const & port);
+			int		setup(struct kevent * event, std::string const & host, std::string const & port);
 			void	clean(void);
 
 		private:

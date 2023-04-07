@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/28 10:09:12 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 09:30:09 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ int			http::Server::get_last_socket_fd(void) const
 	return (_sockets.back()->get_fd());
 }
 
-int			http::Server::setup(int kq, std::string const & host, std::string const & port)
+int			http::Server::setup(struct kevent * event, std::string const & host, std::string const & port)
 {
 	Socket	socket;
 
@@ -77,8 +77,8 @@ int			http::Server::setup(int kq, std::string const & host, std::string const & 
 		socket.set_non_blocking();
 		socket.set_opt(SOL_SOCKET, SO_REUSEADDR);
 		socket.bind();
-		socket.listen(1024/* max_pending_clients */);
-		socket.set_kevent(kq, EVFILT_READ, EV_ADD);
+		socket.listen(MAX_PENDING_CLIENTS);
+		socket.set_kevent(event, EVFILT_READ, EV_ADD);
 
 		_sockets.push_back(new Socket(socket));
 	}

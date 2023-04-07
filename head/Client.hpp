@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 14:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 13:11:22 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 09:53:17 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,11 +43,11 @@ namespace http
 			Client(int fd, std::vector<Server> const & servers);
 			~Client(void);
 
-			void							connect(int kq);
-			void							disconnect(int kq);
+			void							connect(struct kevent * ev1, struct kevent * ev2);
+			void							disconnect(void);
 
-			void							read(char const * input, ssize_t bytes, int kq);
-			std::string						write(int kq);
+			void							read(char const * input, ssize_t bytes, struct kevent * event);
+			std::string						write(struct kevent * event);
 
 			void							clear(void);
 

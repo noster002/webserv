@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 12:57:55 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 19:00:17 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 11:07:29 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,38 +33,21 @@ http::Client::~Client(void)
 }
 
 
-void			http::Client::connect(int kq)
+void			http::Client::connect(struct kevent * ev1, struct kevent * ev2)
 {
+	_socket.set_kevent(ev1, EVFILT_READ, EV_ADD);
+	_socket.set_kevent(ev2, EVFILT_WRITE, EV_ADD | EV_DISABLE);
 	_socket.set_non_blocking();
-	_socket.set_kevent(kq, EVFILT_READ, EV_ADD);
-	_socket.set_kevent(kq, EVFILT_WRITE, EV_ADD | EV_DISABLE);
 
 	return ;
 }
 
-void			http::Client::disconnect(int kq)
+void			http::Client::disconnect(void)
 {
-	try
-	{
-		_socket.set_kevent(kq, EVFILT_READ, EV_DELETE);
-	}
-	catch (std::exception const & e)
-	{
-		std::cerr << e.what() << std::endl;
-	}
-	try
-	{
-		_socket.set_kevent(kq, EVFILT_WRITE, EV_DELETE);
-	}
-	catch (std::exception const & e)
-	{
-		std::cerr << e.what() << std::endl;
-	}
-
 	return ;
 }
 
-void			http::Client::read(char const * input, ssize_t bytes, int kq)
+void			http::Client::read(char const * input, ssize_t bytes, struct kevent * event)
 {
 	_current_message->first->add_buffer(input, bytes);
 
@@ -80,33 +63,18 @@ void			http::Client::read(char const * input, ssize_t bytes, int kq)
 	_message_queue.push(*_current_message);
 	new (_current_message) std::pair<Request *, Response *>(std::make_pair(new Request(), new Response()));
 
-	try
-	{
-		_socket.set_kevent(kq, EVFILT_WRITE, EV_ENABLE);
-	}
-	catch (std::exception const & e)
-	{
-		std::cerr << e.what() << std::endl;
-	}
+	_socket.set_kevent(event, EVFILT_WRITE, EV_ENABLE);
 
 	return ;
 }
 
-std::string		http::Client::write(int kq)
+std::string		http::Client::write(struct kevent * event)
 {
-	std::cerr << ".";
 	std::string		output;
 
 	if (_message_queue.empty())
 	{
-		try
-		{
-			_socket.set_kevent(kq, EVFILT_WRITE, EV_DISABLE);
-		}
-		catch (std::exception const & e)
-		{
-			std::cerr << e.what() << std::endl;
-		}
+		_socket.set_kevent(event, EVFILT_WRITE, EV_DISABLE);
 
 		return ("");
 	}
@@ -116,14 +84,7 @@ std::string		http::Client::write(int kq)
 
 	clear();
 
-	try
-	{
-		_socket.set_kevent(kq, EVFILT_WRITE, EV_DISABLE);
-	}
-	catch (std::exception const & e)
-	{
-		std::cerr << e.what() << std::endl;
-	}
+	_socket.set_kevent(event, EVFILT_WRITE, EV_DISABLE);
 
 	return (output);
 }

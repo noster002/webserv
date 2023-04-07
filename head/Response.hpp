@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 11:24:37 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 12:38:33 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,10 +92,10 @@ namespace http
 			int									_OK(void);
 			int									_created(void);
 			int									_no_content(void);
-			int									_permanent_redirect(std::string const & path);
+			int									_permanent_redirect(void);
 			int									_forbidden(void);
 			int									_not_found(void);
-			int									_method_not_allowed(std::string const & path);
+			int									_method_not_allowed(void);
 			int									_gone(void);
 			int									_content_too_large(void);
 			int									_internal_server_error(void);

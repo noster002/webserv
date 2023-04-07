@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:21 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 11:05:48 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 09:29:53 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ namespace http
 			void		set_opt(int level, int option);
 			void		bind(void);
 			void		listen(int max_pending_clients);
-			void		set_kevent(int kq, int filter, int flags);
+			void		set_kevent(struct kevent * event, int filter, int flags);
 
 
 			class		Exception;
@@ -74,8 +74,7 @@ namespace http
 		e_set_non_blocking, \
 		e_set_opt, \
 		e_bind, \
-		e_listen, \
-		e_set_kevent
+		e_listen
 	};
 
 	class		Socket::Exception : public std::exception
@@ -95,7 +94,6 @@ namespace http
 			static char const *		set_opt(void);
 			static char const *		bind(void);
 			static char const *		listen(void);
-			static char const *		set_kevent(void);
 
 		private:
 

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/20 13:05:08 by nosterme          #+#    #+#             */
-/*   Updated: 2023/03/15 11:43:41 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 09:29:46 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,17 +134,9 @@ void		http::Socket::listen(int max_pending_clients)
 	}
 }
 
-void		http::Socket::set_kevent(int kq, int filter, int flags)
+void		http::Socket::set_kevent(struct kevent * event, int filter, int flags)
 {
-	struct kevent	event;
-
-	EV_SET(&event, _fd, filter, flags, 0, 0, NULL);
-
-	if (::kevent(kq, &event, 1, NULL, 0, NULL) < 0)
-	{
-		std::cerr << "kevent: " << std::strerror(errno) << std::endl;
-		throw Exception(e_set_kevent);
-	}
+	EV_SET(event, _fd, filter, flags, 0, 0, NULL);
 }
 
 
@@ -175,8 +167,6 @@ char const *		http::Socket::Exception::what(void) const throw()
 			return (Exception::bind());
 		case e_listen:
 			return (Exception::listen());
-		case e_set_kevent:
-			return (Exception::set_kevent());
 	}
 	return ("Undefined Error");
 }
@@ -214,9 +204,4 @@ char const *		http::Socket::Exception::bind(void)
 char const *		http::Socket::Exception::listen(void)
 {
 	return ("Socket: cannot listen");
-}
-
-char const *		http::Socket::Exception::set_kevent(void)
-{
-	return ("Socket: cannot set kevent");
 }

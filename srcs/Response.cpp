@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 13:30:31 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 13:50:49 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 http::Response::Response(void)\
  : _server(), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body(),\
-   _is_cgi(false), _is_upload(false), _is_chunk(false), _first_chunk(false)
+   _route(), _is_cgi(false), _is_upload(false), _is_chunk(false), _first_chunk(false)
 {
 	return ;
 }
@@ -141,18 +141,9 @@ void				http::Response::build(int error, t_request const & request)
 
 int					http::Response::_serve_get_request(t_request const & request, std::string & path)
 {
+	(void)request;
 	if (::access(path.c_str(), F_OK) < 0 || !_is_file(path))
-	{
-		if (request.path.back() != '/')
-		{
-			t_request	modified(request);
-
-			modified.path += '/';
-			_get_path(modified, path);
-			return (_serve_get_request(modified, path));
-		}
 		return (_not_found());
-	}
 	else if (::access(path.c_str(), R_OK) < 0)
 		return (_forbidden());
 
@@ -180,18 +171,6 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 	size_t 		cursor = 0, ending, start, pos;
 	bool		is_created = false;
 
-	if (path.back() != '/')
-	{
-		if ((::access(path.c_str(), F_OK) < 0 || !_is_file(path)) && \
-			request.path.back() != '/')
-		{
-			t_request	modified(request);
-
-			modified.path += '/';
-			_get_path(modified, path);
-			return (_serve_post_request(modified, path));
-		}
-	}
 	if (!request.chunks.empty())
 	{
 		for (size_t i = 0; i < request.chunks.size(); ++i)
@@ -262,59 +241,72 @@ int					http::Response::_serve_delete_request(std::string const & path)
 int					http::Response::_get_path(t_request const & request, std::string & path)
 {
 	std::string		match = request.path;
+
+	if (match.back() != '/')
+		match += '/';
+
 	size_t			pos = match.size();
 	bool			is_dir;
+	int				level = 0;
 
 	do
 	{
 		is_dir = (match.back() == '/');
 		if (_server.routes.count(match))
 		{
-			if (_server.routes[match].method.count(request.method))
-			{
-				if (_server.routes[match].redirect.empty() == false)
-					return (_permanent_redirect(match));
-				else if (_server.routes[match].root.empty())
-					return (_gone());
-				if (is_dir && _server.routes[match].root.back() != '/')
-					--pos;
-				else if (!is_dir && _server.routes[match].root.back() == '/' && pos < request.path.size())
-					++pos;
-				path = _server.routes[match].root + request.path.substr(pos);
-				if (_server.routes[match].upload)
-					_is_upload = true;
-				if (path.back() == '/')
-				{
-					if ((_is_upload == false || request.chunks.empty()) && \
-						(_server.routes[match].index.empty() == false))
-						path += _server.routes[match].index;
-					else if (_is_upload == false || \
-							 request.method == "GET" || request.method == "HEAD")
-					{
-						if (_server.routes[match].directory_listing)
-							return (_directory_listing(request, path));
-						return (_not_found());
-					}
-				}
-				pos = path.find_last_of('.');
+			_route = _server.routes[match];
 
-				if (pos != std::string::npos && \
-					_server.routes[match].cgi_pass.empty() == false && \
-					_server.routes[match].cgi_ext == path.substr(pos))
+			if (_route.method.count(request.method) == 0)
+				level += 1000;
+			else if (_route.redirect.empty() == false)
+				level += 100;
+			else if (_route.root.empty())
+				level += 10;
+
+			if (((level % 1000) < 10))
+			{
+				if (_route.upload && (request.method == "POST" || request.method == "PUT"))
+					_is_upload = true;
+				if ((is_dir && _route.root.back() != '/') || pos > request.path.length())
+					--pos;
+				else if (!is_dir && _route.root.back() == '/' && pos < request.path.length())
+					++pos;
+				path = _route.root + request.path.substr(pos);
+				std::cout << path << std::endl;
+				if (!_is_file(path) && (_is_upload == false || request.method == "GET" || request.method == "HEAD"))
 				{
+					if (path.back() != '/')
+							path += '/';
+					if (_route.index.empty() == false)
+						path += _route.index;
+					else if (_route.directory_listing)
+						level += 1;
+				}
+				std::cout << path << std::endl;
+				size_t	ext = path.find_last_of('.');
+
+				if (ext != std::string::npos && \
+					_route.cgi_methods.count(request.method) && \
+					_route.cgi_pass.empty() == false && \
+					_route.cgi_ext == path.substr(ext))
+				{
+					if (level >= 1000)
+						level -= 1000;
+					if ((level % 10) == 1)
+						level -= 1;
 					_is_cgi = true;
 				}
-				_route = _server.routes[match];
-				return (_status);
 			}
-			if (request.path.back() != '/' && request.method != "DELETE")
-			{
-				t_request	modified(request);
 
-				modified.path += '/';
-				return (_get_path(modified, path));
-			}
-			return (_method_not_allowed(match));
+			if (level >= 1000)
+				return (_method_not_allowed());
+			else if (level >= 100)
+				return (_permanent_redirect());
+			else if (level >= 10)
+				return (_gone());
+			else if (level == 1)
+				return (_directory_listing(request, path));
+			return (_status);
 		}
 		if (is_dir)
 			--pos;
@@ -528,9 +520,9 @@ int					http::Response::_no_content(void)
 	return (_status);
 }
 
-int					http::Response::_permanent_redirect(std::string const & path)
+int					http::Response::_permanent_redirect(void)
 {
-	_header["Location"] = _server.routes[path].redirect;
+	_header["Location"] = _route.redirect;
 	_status = 308;
 	return (_status);
 }
@@ -547,10 +539,10 @@ int					http::Response::_not_found(void)
 	return (_status);
 }
 
-int					http::Response::_method_not_allowed(std::string const & path)
+int					http::Response::_method_not_allowed(void)
 {
-	std::set<std::string>::iterator		it = _server.routes[path].method.begin();
-	std::set<std::string>::iterator		end = _server.routes[path].method.end();
+	std::set<std::string>::iterator		it = _route.method.begin();
+	std::set<std::string>::iterator		end = _route.method.end();
 	std::set<std::string>::iterator		last = end;
 
 	--last;

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 11:22:57 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 12:44:15 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,6 @@ void			http::Config::parse_config_file(void)
 	this->nb_servers  = this->count_servers(data);
 	if (!this->is_valid_server_nb(this->nb_servers))
 		return ;
-	std::cout << servers[4].start_data << "\n";
 	for (int i = 0; i < this->nb_servers; ++i)
 	{
 		std::cout << RED << "**********SERVER[ " << i + 1 << " ]*******************" << RESET << "\n";
@@ -445,17 +444,17 @@ std::set<std::string>  http::Config::get_methods(std::string & str, size_t *curs
 	*cursor += 6;
 	std::string data = this->get_inline_value(str, cursor);
 	methods = this->split_by_space_or_tab(std::string(data.begin(), data.end()));
-	size_t count_post = 0, count_get = 0, count_del = 0;
+	size_t count_post = 0, count_get = 0, count_head = 0, count_put = 0, count_del = 0;
 	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it)
 	{
 		if (*it == "POST" && count_post == 0)
 			count_post += 1;
 		else if (*it == "GET" && count_get == 0)
 			count_get += 1;
-		else if (*it == "HEAD" && count_get == 0)
-			count_get += 1;
-		else if (*it == "PUT" && count_del == 0)
-			count_del += 1;
+		else if (*it == "HEAD" && count_head == 0)
+			count_head += 1;
+		else if (*it == "PUT" && count_put == 0)
+			count_put += 1;
 		else if (*it == "DELETE" && count_del == 0)
 			count_del += 1;
 		else
@@ -533,6 +532,32 @@ void			http::Config::set_cgi_pass(std::string & str, route_t* route, size_t* cur
 	route->cgi_pass = value;
 }
 
+void			http::Config::set_cgi_method(std::string & str, route_t* route, size_t* cursor)
+{
+	std::vector<std::string> methods;
+	*cursor += 11;
+	std::string data = this->get_inline_value(str, cursor);
+	methods = this->split_by_space_or_tab(std::string(data.begin(), data.end()));
+	size_t count_post = 0, count_get = 0, count_head = 0, count_put = 0, count_del = 0;
+	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it)
+	{
+		if (*it == "POST" && count_post == 0)
+			count_post += 1;
+		else if (*it == "GET" && count_get == 0)
+			count_get += 1;
+		else if (*it == "HEAD" && count_head == 0)
+			count_head += 1;
+		else if (*it == "PUT" && count_put == 0)
+			count_put += 1;
+		else if (*it == "DELETE" && count_del == 0)
+			count_del += 1;
+		else
+			this->setValidation(false);
+	}
+	std::set<std::string>	method_set(methods.begin(), methods.end());
+	route->cgi_methods = method_set;
+}
+
 bool			http::Config::is_valid_server_nb(int nb_servers)
 {
 	if (nb_servers < 0)
@@ -593,6 +618,11 @@ void			http::Config::fill_route_params( std::vector<std::string> & data, size_t 
 	{
 		this->set_cgi_pass( data[this->servers[i].start_data], &this->servers[i].routes[route_name],\
 							cursor );
+	}
+	else if (data[this->servers[i].start_data].substr(*cursor, 11) == KEY_CGI_METHOD)
+	{
+		this->set_cgi_method( data[this->servers[i].start_data], &this->servers[i].routes[route_name],\
+		                   cursor );
 	}
 	else
 	{

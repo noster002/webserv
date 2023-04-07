@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:47 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 10:10:46 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 09:59:40 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,8 @@ namespace http
 			void						set_cgi_ext( std::string & str, route_t* route,\
 													 size_t* cursor );
 			void						set_cgi_pass( std::string & str, route_t* route,\
+													  size_t* cursor );
+			void						set_cgi_method( std::string & str, route_t* route,\
 													  size_t* cursor );
 			bool						is_valid_server_nb(int nb_servers);
 			void						fill_route_params( std::vector<std::string> & data, size_t i,\

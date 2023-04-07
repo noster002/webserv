@@ -6,14 +6,15 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 15:36:53 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/07 09:54:06 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
 
 http::Webserv::Webserv(void)\
- : _config(), _servers(), _clients(), _is_setup(false), _up(0)
+ : _config(), _servers(), _clients(),\
+   _is_setup(false), _up(0), _kq(-1), _event_count(-1)
 {
 	return ;
 }
@@ -58,7 +59,7 @@ void				http::Webserv::setup(std::string const & filename)
 
 			if (host_ports.count(host_port) == 0)
 			{
-				setup = server.setup(_kq, conf.host, conf.port[j]);
+				setup = server.setup(&_events[++_event_count], conf.host, conf.port[j]);
 				if (setup == EXIT_SUCCESS)
 					host_ports[host_port] = server.get_last_socket_fd();
 			}
@@ -86,7 +87,8 @@ void				http::Webserv::run(void)
 
 	while (_up)
 	{
-		event_count = ::kevent(_kq, NULL, 0, event, MAX_EVENTS, NULL);
+		event_count = ::kevent(_kq, _events, _event_count + 1, event, MAX_EVENTS, NULL);
+		_event_count = -1;
 
 		if (event_count < 0)
 		{
@@ -114,14 +116,20 @@ void				http::Webserv::clean(void)
 {
 	for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		it->second->disconnect(_kq);
+		it->second->disconnect();
 		delete it->second;
+		::close(it->first);
 	}
 	for (std::map<int, std::vector<Server> >::iterator it = _servers.begin(); it != _servers.end(); ++it)
 	{
 		for (std::vector<Server>::iterator ite = it->second.begin(); ite != it->second.end(); ++ite)
 			ite->clean();
+		it->second.clear();
+		::close(it->first);
 	}
+	_servers.clear();
+	_clients.clear();
+
 	return ;
 }
 
@@ -140,7 +148,8 @@ void				http::Webserv::event_client_connect(struct kevent const & event)
 
 	try
 	{
-		_clients[fd]->connect(_kq);
+		_event_count += 2;
+		_clients[fd]->connect(&_events[_event_count - 1], &_events[_event_count]);
 	}
 	catch (std::exception const & e)
 	{
@@ -158,7 +167,7 @@ void				http::Webserv::event_client_disconnect(struct kevent const & event)
 	std::cout << RED << "DISCONNECTING" << RESET << std::endl;
 	int		fd = event.ident;
 
-	_clients[fd]->disconnect(_kq);
+	_clients[fd]->disconnect();
 	delete _clients[fd];
 	_clients.erase(fd);
 
@@ -199,7 +208,7 @@ void				http::Webserv::event_read(struct kevent const & event)
 		std::cout << input[pos];
 	std::cout << CYAN << ")"  << RESET << std::endl;*/
 
-	_clients[fd]->read(input, bytes_read, _kq);
+	_clients[fd]->read(input, bytes_read, &_events[++_event_count]);
 
 	return ;
 }
@@ -208,7 +217,7 @@ void				http::Webserv::event_write(struct kevent const & event)
 {
 	std::cout << RED << "WRITING" << RESET << std::endl;
 	int				fd = event.ident;
-	std::string		output = _clients[fd]->write(_kq);
+	std::string		output = _clients[fd]->write(&_events[++_event_count]);
 
 	ssize_t	bytes_sent = ::send(fd, static_cast<void const *>(output.c_str()), output.size(), 0);
 
