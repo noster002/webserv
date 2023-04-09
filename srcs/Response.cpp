@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/07 13:50:49 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/10 00:59:27 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,9 +142,9 @@ void				http::Response::build(int error, t_request const & request)
 int					http::Response::_serve_get_request(t_request const & request, std::string & path)
 {
 	(void)request;
-	if (::access(path.c_str(), F_OK) < 0 || !_is_file(path))
+	if (!_is_file(path, F_OK))
 		return (_not_found());
-	else if (::access(path.c_str(), R_OK) < 0)
+	else if (!_is_file(path, R_OK))
 		return (_forbidden());
 
 	std::ifstream		file(path.c_str());
@@ -200,11 +200,11 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 		target = path.substr(0, ++pos) + file_name;
 	}
 
-	if (::access(target.c_str(), F_OK) < 0)
+	if (!_is_file(target, F_OK))
 		is_created = true;
 	else if ((_is_upload == false) ||\
-			 (::access(target.c_str(), F_OK) == 0 && !_is_file(target)) ||\
-			 (::access(target.c_str(), R_OK | W_OK) < 0))
+			 (_is_dir(target)) ||\
+			 (!_is_file(target, R_OK | W_OK)))
 		return (_forbidden());
 
 	_upload(target, file_type, file_content);
@@ -273,7 +273,7 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					++pos;
 				path = _route.root + request.path.substr(pos);
 				std::cout << path << std::endl;
-				if (!_is_file(path) && (_is_upload == false || request.method == "GET" || request.method == "HEAD"))
+				if (_is_dir(path))
 				{
 					if (path.back() != '/')
 							path += '/';
@@ -380,7 +380,7 @@ void				http::Response::_serve_error(void)
 	else
 		name = _default_err_pages[_status];
 
-	if (::access(name.c_str(), F_OK | R_OK) == 0 && _is_file(name))
+	if (_is_file(name, F_OK | R_OK))
 	{
 		std::ifstream	file(name.c_str());
 
@@ -575,8 +575,11 @@ int					http::Response::_internal_server_error(void)
 	return (_status);
 }
 
-bool				http::Response::_is_file(std::string const & path)
+bool				http::Response::_is_file(std::string const & path, int mode)
 {
+	if (::access(path.c_str(), mode))
+		return (false);
+
 	DIR *	dir = opendir(path.c_str());
 
 	if (dir == NULL)
@@ -585,6 +588,21 @@ bool				http::Response::_is_file(std::string const & path)
 	closedir(dir);
 
 	return (false);
+}
+
+bool				http::Response::_is_dir(std::string const & path)
+{
+	if (::access(path.c_str(), F_OK))
+		return (false);
+
+	DIR *	dir = opendir(path.c_str());
+
+	if (dir == NULL)
+		return (false);
+
+	closedir(dir);
+
+	return (true);
 }
 
 char **				http::Response::_vector_to_array(std::vector<std::string> vec)
@@ -967,17 +985,17 @@ void	http::Response::_init_cgi_env( std::vector<std::string> & argv, \
 
 	argv.push_back(path);
 
-	env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	env["REDIRECT_STATUS"] = "200";
-	env["PATH_INFO"] = request.path;
-	if (request.query.empty() == false)
-		env["PATH_INFO"] += "?" + request.query;
-	env["CONTENT_LENGTH"] = content_length.str();
-	env["REQUEST_METHOD"] = request.method;
+	env["GATEWAY_INTERFACE"] = "CGI/1.1";
+	env["SERVER_NAME"] = request.host;
 	env["SERVER_PROTOCOL"] = request.protocol;
 	port << request.port;
 	env["SERVER_PORT"] = port.str();
-	env["SERVER_NAME"] = request.host;
+	env["REQUEST_METHOD"] = request.method;
+	env["PATH_INFO"] = request.path;
+	env["PATH_TRANSLATED"] = path;
+	env["QUERY_STRING"] = request.query;
+	env["CONTENT_LENGTH"] = content_length.str();
 
 	std::map<std::string, std::string>::const_iterator	it;
 	std::string		key;
@@ -985,7 +1003,7 @@ void	http::Response::_init_cgi_env( std::vector<std::string> & argv, \
 
 	for (it = request.header.begin(); it != request.header.end(); ++it)
 	{
-		if (it->first != "Transfer-Encoding")
+		if (it->first != "Transfer-Encoding" && it->first != "Content-Length")
 		{
 			key = "";
 			if (it->first != "Content-Type")

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/07 09:54:06 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/09 20:37:54 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,7 +105,7 @@ void				http::Webserv::run(void)
 				event_read(event[i]);
 			else if (event[i].filter == EVFILT_WRITE)
 				event_write(event[i]);
-			std::ofstream	file("logfile.txt");
+			std::ofstream	file("logfile2.txt");
 			file << ++count;
 			file.close();
 		}
@@ -202,11 +202,11 @@ void				http::Webserv::event_read(struct kevent const & event)
 		return ;
 	}
 	std::cout << CYAN << "bytes_read: " << bytes_read << RESET << std::endl;
-	/*std::cout << "INPUT:" << std::endl;
-	std::cout << "(" << YELLOW;
-	for (ssize_t pos = 0; pos < bytes_read; ++pos)
-		std::cout << input[pos];
-	std::cout << CYAN << ")"  << RESET << std::endl;*/
+	// std::cout << "INPUT:" << std::endl;
+	// std::cout << "(" << YELLOW;
+	// for (ssize_t pos = 0; pos < bytes_read; ++pos)
+	// 	std::cout << input[pos];
+	// std::cout << CYAN << ")"  << RESET << std::endl;
 
 	_clients[fd]->read(input, bytes_read, &_events[++_event_count]);
 
@@ -226,8 +226,8 @@ void				http::Webserv::event_write(struct kevent const & event)
 		std::cerr << "send: " << std::strerror(errno) << std::endl;
 	}
 	std::cout << CYAN << "bytes_sent: " << bytes_sent << RESET << std::endl;
-	std::cout << "OUTPUT:" << std::endl;
-	std::cout << "(" << YELLOW << output << CYAN << ")"  << RESET << std::endl;
+	// std::cout << "OUTPUT:" << std::endl;
+	// std::cout << "(" << YELLOW << output << CYAN << ")"  << RESET << std::endl;
 
 	int		wait = 10000000;
 

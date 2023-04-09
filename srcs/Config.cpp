@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/07 12:44:15 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/10 01:33:37 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,8 @@ void			http::Config::parse_config_file(void)
 			j = 0;
 			http::Config::skipe_empty_line(data, &this->servers[i].start_data);
 			http::Config::skipe_spaces(data[this->servers[i].start_data], &j);
+			if (this->servers[i].start_data > this->servers[i].end_data)
+				continue;
 			if (data[this->servers[i].start_data].substr(j, 4) == KEY_HOST)
 				this->fill_host_value(data[this->servers[i].start_data], i, &j);
 			else if (data[this->servers[i].start_data].substr(j, 6) == KEY_LISTEN)
@@ -131,8 +133,8 @@ std::vector<std::string>	http::Config::get_confdata()
 		{
 			data.push_back(line);
 		}
+		conf.close();
 	}
-	conf.close();
 	return data;
 }
 
@@ -145,7 +147,7 @@ int  			http::Config::count_servers(const std::vector<std::string> & confdata)
 	{
 		j = KEY_SERVER_LEN;
 		http::Config::skipe_empty_line(confdata, &i);
-		if (confdata[i] == "" && nb >= 1)
+		if (i >= data_len && nb >= 1)
 			return (nb);
 		if (confdata[i].substr(0, j) == KEY_SERVER)
 		{

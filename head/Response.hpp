@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/07 12:38:33 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/09 20:08:23 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,7 +121,8 @@ namespace http
 												                          size_t ending,\
 																		  std::string & path );
 
-			static bool							_is_file(std::string const & path);
+			static bool							_is_file(std::string const & path, int mode);
+			static bool							_is_dir(std::string const & path);
 			static char **						_vector_to_array(std::vector<std::string> vec);
 			static char **						_map_to_array(std::map<std::string, std::string> map);
 			static std::map<int, std::string>	_statuses;
