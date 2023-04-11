@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/11 11:19:43 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/11 14:23:35 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,12 +66,13 @@ namespace http
 
 			bool								_is_cgi;
 			bool								_is_upload;
+			bool								_is_autoindex;
 			bool								_is_chunk;
 			bool								_first_chunk;
 
 			int									_serve_get_request(t_request const & request, std::string & path);
 			int									_serve_post_request(t_request const & request, std::string & path);
-			int									_serve_delete_request(std::string const & path);
+			int									_serve_delete_request(t_request const & request, std::string const & path);
 
 			int									_get_path(t_request const & request, std::string & path);
 			int									_directory_listing(t_request const & request, std::string const & path);
@@ -109,7 +110,7 @@ namespace http
 			void								_exec_cgi( t_request const & request,\
 														   std::string const & path );
 			void								_get_cgi_response( FILE * tmp_out );
-			int									_get_filename_to_upload( t_request const & request,\
+			void								_get_filename_to_upload( t_request const & request,\
 																	     size_t & cursor,\
 												                         std::string & file_name );
 			void								_get_file_type( t_request const & request,\

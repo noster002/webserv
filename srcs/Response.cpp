@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/11 11:19:19 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/11 16:47:54 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,8 @@
 
 http::Response::Response(void)\
  : _server(), _buffer(), _protocol("HTTP/1.1"), _status(), _header(), _body(),\
-   _route(), _is_cgi(false), _is_upload(false), _is_chunk(false), _first_chunk(false)
+   _route(), _is_cgi(false), _is_upload(false), _is_autoindex(false),\
+   _is_chunk(false), _first_chunk(false)
 {
 	return ;
 }
@@ -123,7 +124,7 @@ void				http::Response::build(int error, t_request const & request)
 		else if (request.method == "POST" || request.method == "PUT")
 			_serve_post_request(request, path);
 		else if (request.method == "DELETE")
-			_serve_delete_request(path);
+			_serve_delete_request(request, path);
 	}
 	if (_status >= 400)
 		_serve_error();
@@ -141,7 +142,8 @@ void				http::Response::build(int error, t_request const & request)
 
 int					http::Response::_serve_get_request(t_request const & request, std::string & path)
 {
-	(void)request;
+	if (_is_autoindex)
+		return (_directory_listing(request, path));
 	if (!_is_file(path, F_OK))
 		return (_not_found());
 	else if (!_is_file(path, R_OK))
@@ -169,10 +171,9 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 {
 	std::string	file_name, target, file_content, file_type;
 	size_t 		cursor = 0, ending, start;
-	std::string	form_end = "--" + request.content_type.second.at("boundary") + "--\r\n";
 	std::string	created;
 
-	if (!request.chunks.empty())
+	if (!request.transfer_encoding.empty())
 	{
 		for (size_t i = 0; i < request.chunks.size(); ++i)
 		{
@@ -187,8 +188,8 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 		if (!_is_file(target, F_OK))
 			created = target;
 		else if ((_is_upload == false) ||\
-				(_is_dir(target)) ||\
-				(!_is_file(target, R_OK | W_OK)))
+				 (_is_dir(target)) ||\
+				 (!_is_file(target, R_OK | W_OK)))
 			return (_forbidden());
 
 		_upload(target, file_type, file_content);
@@ -199,18 +200,20 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 			return (_content_too_large());
 		else if (_is_upload == false)
 			return (_forbidden());
-		if (request.content_type.first.find("multipart") == 0)
+		if (request.content_type.first.find("multipart") == 0 && request.content_length != 0)
 		{
-			std::string		dir = path.substr(0, path.find_last_of('/') + 1);
 			if (!request.content_type.second.count("boundary") || request.content_type.second.at("boundary").empty())
 				return (_bad_request());
+			std::string		dir = path.substr(0, path.find_last_of('/') + 1);
+			std::string		form_end = "--" + request.content_type.second.at("boundary") + "--\r\n";
+
 			cursor = request.body.find("--" + request.content_type.second.at("boundary"), 0);
 			if (cursor != 0)
 				return (_bad_request());
 			do
 			{
-				if (_get_filename_to_upload(request, cursor, file_name))
-					break ;
+				_get_filename_to_upload(request, cursor, file_name);
+				_get_file_type(request, cursor, file_type);
 				cursor = request.body.find("\r\n\r\n", cursor);
 				if (cursor == std::string::npos)
 					return (_bad_request());
@@ -219,17 +222,16 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 				if (cursor == std::string::npos)
 					return (_bad_request());
 				ending = cursor;
-				cursor += std::strlen("\r\n");
 				file_content = request.body.substr(start, ending - start);
-				_get_file_type(request, cursor, file_type);
-				target = dir + file_name;
-				if (!_is_file(target, F_OK) && created.empty())
-					created = target;
-				else if ((_is_dir(target)) ||\
-						 (!_is_file(target, R_OK | W_OK)))
-					return (_forbidden());
-
-				_upload(target, file_type, file_content);
+				cursor += std::strlen("\r\n");
+				if (file_name.empty() == false)
+				{
+					target = dir + file_name;
+					if (!_is_file(target, F_OK) && created.empty())
+						created = target;
+					if (!_is_dir(target))
+						_upload(target, file_type, file_content);
+				}
 			}
 			while (cursor != request.body.find(form_end));
 			if (cursor + form_end.length() != request.content_length)
@@ -237,7 +239,11 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 		}
 	}
 
-	_header["Location"] = created;
+	if (created.empty() == false)
+		_header["Location"] = created;
+
+	if (_is_autoindex)
+		return (_directory_listing(request, path));
 
 	std::ifstream	file(path.c_str());
 	std::string		buffer;
@@ -257,8 +263,11 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 	return (_OK());
 }
 
-int					http::Response::_serve_delete_request(std::string const & path)
+int					http::Response::_serve_delete_request(t_request const & request, std::string const & path)
 {
+	if (_is_autoindex)
+		return (_directory_listing(request, path));
+
 	if (std::remove(path.c_str()) == 0)
 		return (_no_content());
 	return (_not_found());
@@ -283,13 +292,13 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 			_route = _server.routes[match];
 
 			if (_route.method.count(request.method) == 0)
-				level += 1000;
-			else if (_route.redirect.empty() == false)
 				level += 100;
-			else if (_route.root.empty())
+			else if (_route.redirect.empty() == false)
 				level += 10;
+			else if (_route.root.empty())
+				level += 1;
 
-			if (((level % 1000) < 10))
+			if (((level % 100) == 0))
 			{
 				if (_route.upload && (request.method == "POST" || request.method == "PUT"))
 					_is_upload = true;
@@ -306,7 +315,7 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					if (_route.index.empty() == false)
 						path += _route.index;
 					else if (_route.directory_listing)
-						level += 1;
+						_is_autoindex = true;
 				}
 				std::cout << path << std::endl;
 				size_t	ext = path.find_last_of('.');
@@ -316,22 +325,18 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					_route.cgi_pass.empty() == false && \
 					_route.cgi_ext == path.substr(ext))
 				{
-					if (level >= 1000)
-						level -= 1000;
-					if ((level % 10) == 1)
-						level -= 1;
+					if (level >= 100)
+						level -= 100;
 					_is_cgi = true;
 				}
 			}
 
-			if (level >= 1000)
+			if (level >= 100)
 				return (_method_not_allowed());
-			else if (level >= 100)
-				return (_permanent_redirect());
 			else if (level >= 10)
-				return (_gone());
+				return (_permanent_redirect());
 			else if (level == 1)
-				return (_directory_listing(request, path));
+				return (_gone());
 			return (_status);
 		}
 		if (is_dir)
@@ -964,7 +969,7 @@ void				http::Response::_cgi_handler(t_request const & request, std::string cons
 
 	std::string		buffer;
 
-	if (request.chunks.empty())
+	if (request.transfer_encoding.empty())
 		buffer = request.body;
 	else
 	{
@@ -1011,7 +1016,7 @@ void	http::Response::_init_cgi_env( std::vector<std::string> & argv, \
 	std::stringstream	port;
 	size_t				size = 0;
 
-	if (request.chunks.empty())
+	if (request.transfer_encoding.empty())
 		content_length << request.content_length;
 	else
 	{
@@ -1112,27 +1117,34 @@ void	http::Response::_get_cgi_response(FILE * tmp_out)
 		_OK();
 }
 
-int		http::Response::_get_filename_to_upload( t_request const & request, size_t & cursor,\
+void	http::Response::_get_filename_to_upload( t_request const & request, size_t & cursor,\
 												 std::string & file_name )
 {
-	cursor = request.body.find("filename=\"");
-	if (cursor == std::string::npos)
-		return (_no_content());
+	size_t	tmp = request.body.find("filename=\"");
+	if (tmp == std::string::npos)
+		return ;
 
-	cursor += 10;
+	cursor += tmp + std::strlen("filename=\"");
 	file_name = request.body.substr(cursor, request.body.find("\"", cursor) - cursor);
-	if (file_name.empty())
-		return (_no_content());
 
-	return (0);
+	return ;
 }
 
 void	http::Response::_get_file_type(t_request const & request, size_t cursor, std::string & file_type)
 {
-	size_t cursor_to_content_type = cursor + 14;
-	size_t end_of_the_line = request.body.find("\n", cursor + 14);
-	size_t len = end_of_the_line - cursor - 15;
-	file_type = request.body.substr(cursor_to_content_type, len);
+	cursor = request.body.find("Content-Type:", cursor);
+
+	if (cursor == std::string::npos)
+		return ;
+	cursor = request.body.find(':', cursor);
+
+	size_t	start = request.body.find_first_not_of(" \t", ++cursor);
+	if (start == std::string::npos)
+		return ;
+	size_t end = request.body.find("\r\n", start);
+	if (end == std::string::npos)
+		return ;
+	file_type = request.body.substr(start, end - start);
 }
 
 void	http::Response::_upload( std::string const & target, std::string const & file_type,\
