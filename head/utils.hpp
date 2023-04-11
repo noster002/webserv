@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 12:16:41 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/09 20:39:45 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/11 08:19:48 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,8 @@ typedef struct			s_request
 	int										port;
 	std::vector<std::vector<std::string> >	transfer_encoding;
 	size_t									content_length;
+	std::pair<std::string, std::map<std::string, std::string> >\
+											content_type;
 	std::string								body;
 	std::vector<std::string>				chunks;
 	std::map<std::string, std::string>		trailer;

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:35:46 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/09 20:08:23 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/11 11:19:43 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,7 @@ namespace http
 			int									_created(void);
 			int									_no_content(void);
 			int									_permanent_redirect(void);
+			int									_bad_request(void);
 			int									_forbidden(void);
 			int									_not_found(void);
 			int									_method_not_allowed(void);
@@ -117,9 +118,6 @@ namespace http
 			void								_upload( std::string const & target,\
 														 std::string const & file_type,\
 														 std::string const & file_content );
-			void								_continue_to_next_field( t_request const & request,\
-												                          size_t ending,\
-																		  std::string & path );
 
 			static bool							_is_file(std::string const & path, int mode);
 			static bool							_is_dir(std::string const & path);

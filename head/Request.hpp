@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/06 12:41:59 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/11 09:14:33 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,7 @@ namespace http
 			int					_process_host(void);
 			int					_process_transfer_encoding(void);
 			int					_process_content_length(void);
+			int					_process_content_type(void);
 			int					_read_body(void);
 			void				_decode_chunk(std::string const & chunk, size_t & pos);
 			int					_read_chunk_size(std::string const & line, size_t & size);

@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/10 00:59:27 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/11 11:19:19 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -168,8 +168,9 @@ int					http::Response::_serve_get_request(t_request const & request, std::strin
 int					http::Response::_serve_post_request(t_request const & request, std::string & path)
 {
 	std::string	file_name, target, file_content, file_type;
-	size_t 		cursor = 0, ending, start, pos;
-	bool		is_created = false;
+	size_t 		cursor = 0, ending, start;
+	std::string	form_end = "--" + request.content_type.second.at("boundary") + "--\r\n";
+	std::string	created;
 
 	if (!request.chunks.empty())
 	{
@@ -183,37 +184,62 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 		if (target.back() == '/')
 			return (_no_content());
 		file_type = "application/octet-stream";
+		if (!_is_file(target, F_OK))
+			created = target;
+		else if ((_is_upload == false) ||\
+				(_is_dir(target)) ||\
+				(!_is_file(target, R_OK | W_OK)))
+			return (_forbidden());
+
+		_upload(target, file_type, file_content);
 	}
 	else
 	{
 		if (request.body.size() > _route.client_max_body_size)
 			return (_content_too_large());
-		else if (_get_filename_to_upload(request, cursor, file_name))
-			return (_no_content());
+		else if (_is_upload == false)
+			return (_forbidden());
+		if (request.content_type.first.find("multipart") == 0)
+		{
+			std::string		dir = path.substr(0, path.find_last_of('/') + 1);
+			if (!request.content_type.second.count("boundary") || request.content_type.second.at("boundary").empty())
+				return (_bad_request());
+			cursor = request.body.find("--" + request.content_type.second.at("boundary"), 0);
+			if (cursor != 0)
+				return (_bad_request());
+			do
+			{
+				if (_get_filename_to_upload(request, cursor, file_name))
+					break ;
+				cursor = request.body.find("\r\n\r\n", cursor);
+				if (cursor == std::string::npos)
+					return (_bad_request());
+				start = cursor + std::strlen("\r\n\r\n");
+				cursor = request.body.find("\r\n--" + request.content_type.second.at("boundary"), start);
+				if (cursor == std::string::npos)
+					return (_bad_request());
+				ending = cursor;
+				cursor += std::strlen("\r\n");
+				file_content = request.body.substr(start, ending - start);
+				_get_file_type(request, cursor, file_type);
+				target = dir + file_name;
+				if (!_is_file(target, F_OK) && created.empty())
+					created = target;
+				else if ((_is_dir(target)) ||\
+						 (!_is_file(target, R_OK | W_OK)))
+					return (_forbidden());
 
-		cursor = request.body.find("Content-Type: ");
-		start = request.body.find_first_of("\n", cursor) + 3;
-		ending = request.body.find("------WebKit", start) - 2;
-		file_content = request.body.substr(start, ending - start);
-		_get_file_type(request, cursor, file_type);
-		pos = path.find_last_of('/');
-		target = path.substr(0, ++pos) + file_name;
+				_upload(target, file_type, file_content);
+			}
+			while (cursor != request.body.find(form_end));
+			if (cursor + form_end.length() != request.content_length)
+				return (_bad_request());
+		}
 	}
 
-	if (!_is_file(target, F_OK))
-		is_created = true;
-	else if ((_is_upload == false) ||\
-			 (_is_dir(target)) ||\
-			 (!_is_file(target, R_OK | W_OK)))
-		return (_forbidden());
+	_header["Location"] = created;
 
-	_upload(target, file_type, file_content);
-	if (request.chunks.empty())
-		_continue_to_next_field(request, ending, path);
-
-	_header["Location"] = target;
-
-	std::ifstream	file(target.c_str());
+	std::ifstream	file(path.c_str());
 	std::string		buffer;
 
 	if (file.is_open() == false)
@@ -223,10 +249,10 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 		_body += buffer;
 	file.close();
 
-	_set_content_type(target);
+	_set_content_type(path);
 	_set_content_length(_body.size());
 
-	if (is_created)
+	if (created.empty() == false)
 		return (_created());
 	return (_OK());
 }
@@ -331,6 +357,7 @@ int					http::Response::_directory_listing(t_request const & request, std::strin
 	if (dir == NULL)
 		return (_not_found());
 	std::stringstream	body;
+	std::string			entryname;
 
 	body <<"\
 <!DOCTYPE html>\n\
@@ -347,12 +374,16 @@ int					http::Response::_directory_listing(t_request const & request, std::strin
 	{
 		if (entry->d_type == DT_DIR || entry->d_type == DT_REG)
 		{
-			body << "\t\t<p><a href=\"http://" << request.host << ":" << request.port\
-				 << request.path << entry->d_name;
+			entryname = entry->d_name;
+			if (request.path.back() != '/')
+				entryname.insert(entryname.begin(), '/');
+
+			body << "\t\t<p><a href=\"http://" << request.host << ":" << request.port
+				 << request.path << entryname;
 			if (entry->d_type == DT_DIR)
-				body << "/\">" << entry->d_name << "/</a></p>\n";
+				body << "/\">" << entryname << "/</a></p>\n";
 			else
-				body << "\">" << entry->d_name << "</a></p>\n";
+				body << "\">" << entryname << "</a></p>\n";
 		}
 	}
 
@@ -400,6 +431,8 @@ void				http::Response::_serve_error(void)
 void				http::Response::_serve_error_file(std::ifstream & file)
 {
 	std::string			buffer;
+
+	_body = "";
 
 	while (std::getline(file, buffer))
 		_body += buffer;
@@ -527,6 +560,12 @@ int					http::Response::_permanent_redirect(void)
 	return (_status);
 }
 
+int					http::Response::_bad_request(void)
+{
+	_status = 400;
+	return (_status);
+}
+
 int					http::Response::_forbidden(void)
 {
 	_status = 403;
@@ -542,15 +581,13 @@ int					http::Response::_not_found(void)
 int					http::Response::_method_not_allowed(void)
 {
 	std::set<std::string>::iterator		it = _route.method.begin();
-	std::set<std::string>::iterator		end = _route.method.end();
-	std::set<std::string>::iterator		last = end;
 
-	--last;
-	while (it != end)
+	_header["Allow"];
+	while (it != _route.method.end())
 	{
-		_header["Allow"] += *it;
-		if (it != last)
+		if (it != _route.method.begin())
 			_header["Allow"] += ", ";
+		_header["Allow"] += *it;
 		++it;
 	}
 	_status = 405;
@@ -1117,16 +1154,4 @@ void	http::Response::_upload( std::string const & target, std::string const & fi
 	}
 	target_stream << file_content;
 	target_stream.close();
-}
-
-void	http::Response::_continue_to_next_field(t_request const & request, size_t ending, std::string & path)
-{
-	std::string	tmp_body = request.body.substr(ending + 2);
-
-	if (tmp_body.substr(tmp_body.find("\n") + 2) != "")
-	{
-		t_request sub_req(request);
-		sub_req.body = tmp_body;
-		_serve_post_request(sub_req, path);
-	}
 }

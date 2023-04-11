@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/09 17:25:14 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/11 09:58:23 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,32 +81,35 @@ bool				http::Request::parse(void)
 	}
 	if (_is_body == true)
 		_read_body();
-	// std::cout << std::endl;
-	// std::cout << YELLOW << "_conf.method:\t(" << BLUE << _conf.method << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.protocol:\t(" << BLUE << _conf.protocol << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.path:\t(" << BLUE << _conf.path << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.query:\t(" << BLUE << _conf.query << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.host:\t(" << BLUE << _conf.host << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.port:\t(" << BLUE << _conf.port << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.header:" << std::endl;
-	// for (std::map<std::string, std::string>::iterator it = _conf.header.begin(); it != _conf.header.end(); ++it)
-	// 	std::cout << YELLOW << "\tname: " << BLUE << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
-	// std::cout << YELLOW << "_conf.transfer_encoding:" << std::endl;
-	// for (std::vector<std::vector<std::string> >::iterator x = _conf.transfer_encoding.begin(); x != _conf.transfer_encoding.end(); ++x)
-	// {
-	// 	std::cout << YELLOW << "\tencoding:\t(" << BLUE << *(x->begin()) << YELLOW << ")" << std::endl;
-	// 	for (std::vector<std::string>::iterator y = (x->begin() + 1); y != x->end(); ++y)
-	// 		std::cout << YELLOW << "\t\tparam:\t(" << BLUE << *y << YELLOW << ")" << std::endl;
-	// }
-	// std::cout << YELLOW << "_conf.content_length:\t(" << BLUE << _conf.content_length << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.body:\n(" << BLUE << _conf.body << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.chunks:" << std::endl;
-	// for (std::vector<std::string>::iterator it = _conf.chunks.begin(); it != _conf.chunks.end(); ++it)
-	// 	std::cout << "\t(" << BLUE << *it << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.trailer:" << std::endl;
-	// for (std::map<std::string, std::string>::iterator it = _conf.trailer.begin(); it != _conf.trailer.end(); ++it)
-	// 	std::cout << YELLOW << "\tname: " << BLUE << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
-	// std::cout << RESET << "_is_complete: " << _is_complete << std::endl;
+	std::cout << std::endl;
+	std::cout << YELLOW << "_conf.method:\t(" << BLUE << _conf.method << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.protocol:\t(" << BLUE << _conf.protocol << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.path:\t(" << BLUE << _conf.path << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.query:\t(" << BLUE << _conf.query << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.host:\t(" << BLUE << _conf.host << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.port:\t(" << BLUE << _conf.port << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.header:" << std::endl;
+	for (std::map<std::string, std::string>::iterator it = _conf.header.begin(); it != _conf.header.end(); ++it)
+		std::cout << YELLOW << "\tname: " << BLUE << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
+	std::cout << YELLOW << "_conf.transfer_encoding:" << std::endl;
+	for (std::vector<std::vector<std::string> >::iterator x = _conf.transfer_encoding.begin(); x != _conf.transfer_encoding.end(); ++x)
+	{
+		std::cout << YELLOW << "\tencoding:\t(" << BLUE << *(x->begin()) << YELLOW << ")" << std::endl;
+		for (std::vector<std::string>::iterator y = (x->begin() + 1); y != x->end(); ++y)
+			std::cout << YELLOW << "\t\tparam:\t(" << BLUE << *y << YELLOW << ")" << std::endl;
+	}
+	std::cout << YELLOW << "_conf.content_length:\t(" << BLUE << _conf.content_length << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.content_type:\t(" << BLUE << _conf.content_type.first << YELLOW << ")" << std::endl;
+	for (std::map<std::string, std::string>::iterator it = _conf.content_type.second.begin(); it != _conf.content_type.second.end(); ++it)
+		std::cout << YELLOW << "\tname: " << BLUE  << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
+	std::cout << YELLOW << "_conf.body:\n(" << BLUE << _conf.body << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.chunks:" << std::endl;
+	for (std::vector<std::string>::iterator it = _conf.chunks.begin(); it != _conf.chunks.end(); ++it)
+		std::cout << "\t(" << BLUE << *it << YELLOW << ")" << std::endl;
+	std::cout << YELLOW << "_conf.trailer:" << std::endl;
+	for (std::map<std::string, std::string>::iterator it = _conf.trailer.begin(); it != _conf.trailer.end(); ++it)
+		std::cout << YELLOW << "\tname: " << BLUE << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
+	std::cout << RESET << "_is_complete: " << _is_complete << std::endl;
 
 	if (_error || _is_complete)
 		return (EXIT_SUCCESS);
@@ -270,6 +273,8 @@ int					http::Request::_process_header_fields(void)
 		_process_transfer_encoding();
 	else if (_conf.header.count("Content-Length"))
 		_process_content_length();
+	if (_conf.header.count("Content-Type"))
+		_process_content_type();
 
 	return (_error);
 }
@@ -397,7 +402,7 @@ int					http::Request::_process_transfer_encoding(void)
 							is_quote = true;
 						++pos;
 					}
-					else if (_is_token((*ite)[pos]))
+					else if (_is_token((*ite)[pos]) || is_quote)
 						++pos;
 					else
 						return (_bad_request("HTTP request header: invalid transfer parameter"));
@@ -451,6 +456,80 @@ int					http::Request::_process_content_length(void)
 
 	return (0);
 }
+
+int					http::Request::_process_content_type(void)
+{
+	std::string							type;
+	std::map<std::string, std::string>	parameter;
+	std::vector<std::string>			tmp = _split(_conf.header["Content-Type"], ";");
+	std::vector<std::string>::iterator	it = tmp.begin();
+	std::string							key;
+	size_t								pos;
+	bool								is_quote = false;
+
+	if (tmp.empty())
+		type = "application/octet-stream";
+	else
+	{
+		pos = it->find_first_of(" \t");
+
+		if (pos != std::string::npos)
+			it->erase(pos);
+		pos = 0;
+		while (_is_token((*it)[pos]))
+			++pos;
+		if ((*it)[pos] != '/')
+			return (_bad_request("HTTP request header: invalid media type"));
+		++pos;
+		while (_is_token((*it)[pos]))
+			++pos;
+		if (pos != it->length())
+			return (_bad_request("HTTP request header: invalid media subtype"));
+
+		type = *it;
+
+		while (++it != tmp.end())
+		{
+			pos = it->find_first_not_of(" \t");
+
+			if (pos == std::string::npos)
+				continue ;
+			it->erase(0, pos);
+			pos = it->length();
+			while (_is_whitespace((*it)[pos - 1]))
+				--pos;
+			it->erase(pos);
+			pos = 0;
+			while (_is_token((*it)[pos]))
+				++pos;
+			if ((*it)[pos] != '=')
+				return (_bad_request("HTTP request header: invalid type parameter name"));
+			key = it->substr(0, pos);
+			it->erase(0, ++pos);
+			for (pos = 0; pos < it->length(); ++pos)
+			{
+				if ((*it)[pos] == '"')
+				{
+					if (is_quote && (*it)[pos - 1] != '\\')
+						is_quote = false;
+					else
+						is_quote = true;
+				}
+				else if (!_is_token((*it)[pos]) && !is_quote)
+					return (_bad_request("HTTP request header: invalid type parameter value"));
+			}
+			if (is_quote == true)
+				return (_bad_request("HTTP request header: type parameter dquote not terminated"));
+			if (parameter.count(key))
+				parameter[key] += ", ";
+			parameter[key] += *it;
+		}
+	}
+
+	_conf.content_type = std::make_pair(type, parameter);
+
+	return (0)
+;}
 
 int					http::Request::_read_body(void)
 {
@@ -647,7 +726,6 @@ std::vector<std::string>	http::Request::_split(std::string const & str, char con
 	std::vector<std::string>	split;
 	size_t						pos = 0;
 	size_t						pos2 = str.find_first_of('"');
-	size_t						pos3 = pos2 + 1;
 
 	if (pos2 == std::string::npos)
 	{
@@ -665,6 +743,8 @@ std::vector<std::string>	http::Request::_split(std::string const & str, char con
 		}
 		return (split);
 	}
+	size_t						pos3 = pos2 + 1;
+
 	do
 	{
 		pos = str.find_first_of('"', pos3);
