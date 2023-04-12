@@ -1,5 +1,5 @@
 <?php
-	$dir = "upload/";
+	$dir = "../uploads/";
 	$file = $dir . $_FILES['file']['name'];
 	$anotherfile = $dir . $_FILES['anotherfile']['name'];
 	move_uploaded_file($_FILES['file']["tmp_name"], $file);
@@ -16,7 +16,7 @@
 	<title>Index</title>
 </head>
 <body>
-	<h1>index file</h1>
+	<h1>PHP result</h1>
 	<p>file: <a href="<?= $file?>">click here to see file</a></p>
 	<p>anotherfile: <a href="<?= $anotherfile?>">click here to see anotherfile</a></p>
 	<p>text: <?= $text?></p>

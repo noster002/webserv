@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 11:43:34 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/11 09:14:33 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/12 15:30:52 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,6 +86,7 @@ namespace http
 			int					_not_implemented(std::string const & error_msg);
 			int					_HTTP_version_not_supported(std::string const & error_msg);
 
+			static bool			_binary(std::string const & str);
 			static bool			_section_complete(std::string const & str);
 			static std::vector<std::string>\
 								_split(std::string const & str, char const * delim);

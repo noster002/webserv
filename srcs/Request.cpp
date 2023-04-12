@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/11 14:49:03 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/12 17:02:57 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,11 @@ bool				http::Request::parse(void)
 		return (EXIT_FAILURE);
 	if (_is_body == false)
 	{
+		if (_binary(_buffer))
+		{
+			_bad_request("HTTP request: binary data detected");
+			return (EXIT_SUCCESS);
+		}
 		if (_section_complete(_buffer))
 			_is_body = true;
 		else
@@ -714,6 +719,20 @@ int					http::Request::_HTTP_version_not_supported(std::string const & error_msg
 	std::cerr << error_msg << std::endl;
 	_error = 505;
 	return (_error);
+}
+
+bool				http::Request::_binary(std::string const & str)
+{
+	unsigned char	c;
+	for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
+	{
+		c = static_cast<unsigned char>(*it);
+		if (!std::isprint(c) && !std::iscntrl(c))
+			return (true);
+		if (c == '\n')
+			break ;
+	}
+	return (false);
 }
 
 bool				http::Request::_section_complete(std::string const & str)

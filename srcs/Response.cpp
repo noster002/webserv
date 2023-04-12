@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/11 16:47:54 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/12 17:00:43 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -237,6 +237,22 @@ int					http::Response::_serve_post_request(t_request const & request, std::stri
 			if (cursor + form_end.length() != request.content_length)
 				return (_bad_request());
 		}
+		else
+		{
+			file_content = request.body;
+			target = path;
+			if (target.back() == '/')
+				return (_no_content());
+			file_type = "application/octet-stream";
+			if (!_is_file(target, F_OK))
+				created = target;
+			else if ((_is_upload == false) ||\
+					(_is_dir(target)) ||\
+					(!_is_file(target, R_OK | W_OK)))
+				return (_forbidden());
+
+			_upload(target, file_type, file_content);
+		}
 	}
 
 	if (created.empty() == false)
@@ -307,7 +323,6 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 				else if (!is_dir && _route.root.back() == '/' && pos < request.path.length())
 					++pos;
 				path = _route.root + request.path.substr(pos);
-				std::cout << path << std::endl;
 				if (_is_dir(path))
 				{
 					if (path.back() != '/')
@@ -317,7 +332,6 @@ int					http::Response::_get_path(t_request const & request, std::string & path)
 					else if (_route.directory_listing)
 						_is_autoindex = true;
 				}
-				std::cout << path << std::endl;
 				size_t	ext = path.find_last_of('.');
 
 				if (ext != std::string::npos && \
