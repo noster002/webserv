@@ -1,5 +1,5 @@
 <?php require_once "header.php"; ?>
-<form action="http://localhost:8082/users_app/add.php" method="post">
+<form action="http://localhost:8082/users_app/add.php" method="post" enctype="multipart/form-data" id="myForm">
 	<div class="row m-5">
 		<div class="col">
 			<input type="text" class="form-control" placeholder="First name" aria-label="First name" name="first" required>
@@ -17,7 +17,7 @@
 		<div class="col">
 			<button class="btn btn-primary">
 				Save
-				<i class="fa fa-save"></i>
+				<i class="fa fa-save" ></i>
 			</button>
 			<a class="btn btn-danger" href="index.php">
 				Cancel

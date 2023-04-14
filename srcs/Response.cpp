@@ -1082,7 +1082,7 @@ void	http::Response::_exec_cgi(t_request const & request, std::string const & pa
 {
 	std::vector<std::string>			argv;
 	std::map<std::string, std::string>	env;
-
+	std::cerr << request.method << "\n";
 	_init_cgi_env(argv, env, request, path);
 
 	execve(_route.cgi_pass.c_str(), _vector_to_array(argv), _map_to_array(env));
@@ -1102,7 +1102,6 @@ void	http::Response::_get_cgi_response(FILE * tmp_out)
 		_body += tmp;
 		tmp = std::fgetc(tmp_out);
 	}
-	std::cout << _body << "\n";
 	
 	size_t		head_end = _body.find("\r\n\r\n");
 	size_t		line_end = _body.find("\r\n");

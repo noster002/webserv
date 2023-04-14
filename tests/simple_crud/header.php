@@ -8,7 +8,15 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
 	<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">	<title><?= $title ?></title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<style>
+		.profile-image {
+			width: 50px; 
+			height: 50px; 
+			border-radius: 50%;
+		}
+	</style>
+	<title><?= $title ?></title>
 </head>
 <body>
 	<nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -26,7 +34,7 @@
 			<a class="nav-link" href="http://localhost:8082/users_app/addForm.php">Add</a>
 			</li>
 			<li class="nav-item">
-			<a class="nav-link" href="/">List</a>
+			<a class="nav-link" href="http://localhost:8082/users_app/">List</a>
 			</li>
 		</ul>
 		</div>
