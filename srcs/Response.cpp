@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/12 17:00:43 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/14 14:45:04 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1112,7 +1112,12 @@ void	http::Response::_get_cgi_response(FILE * tmp_out)
 	{
 		while (pos != head_end + std::strlen("\r\n"))
 		{
-			if (_body.substr(pos, line_end - pos).find("Content-type: ") == 0)
+			if (_body.substr(pos, line_end - pos).find("Location: ") == 0)
+			{
+				pos += std::strlen("Location: ");
+				_header["Location"] = _body.substr(pos, line_end - pos);
+			}
+			else if (_body.substr(pos, line_end - pos).find("Content-type: ") == 0)
 			{
 				pos += std::strlen("Content-type: ");
 				_header["Content-Type"] = _body.substr(pos, line_end - pos);
