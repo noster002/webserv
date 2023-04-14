@@ -1,5 +1,5 @@
 <?php require_once "header.php"; ?>
-<form action="add.php" method="post">
+<form action="http://localhost:8082/users_app/add.php" method="post">
 	<div class="row m-5">
 		<div class="col">
 			<input type="text" class="form-control" placeholder="First name" aria-label="First name" name="first" required>

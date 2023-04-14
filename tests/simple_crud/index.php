@@ -12,7 +12,10 @@
 			</tr>
 		</thead>
 		<tbody>
-			<?php $data = readfile("db_user.txt"); ?>
+			<?php $tmp = readfile("db_user.txt"); 
+				$data = explode("\n", $tmp);
+				foreach($data as $item)
+			?>
 			<tr>
 				<td>Tiger Nixon</td>
 				<td>System Architect</td>

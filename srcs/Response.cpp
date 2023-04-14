@@ -1102,7 +1102,8 @@ void	http::Response::_get_cgi_response(FILE * tmp_out)
 		_body += tmp;
 		tmp = std::fgetc(tmp_out);
 	}
-
+	std::cout << _body << "\n";
+	
 	size_t		head_end = _body.find("\r\n\r\n");
 	size_t		line_end = _body.find("\r\n");
 	size_t		pos = 0;

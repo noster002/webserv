@@ -13,7 +13,7 @@
 <body>
 	<nav class="navbar navbar-expand-lg bg-body-tertiary">
 	<div class="container-fluid">
-		<a class="navbar-brand" href="index.php">CRUD APP</a>
+		<a class="navbar-brand" href="http://localhost:8082/users_app/">CRUD APP</a>
 		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
 		<span class="navbar-toggler-icon"></span>
 		</button>
@@ -23,10 +23,10 @@
 				<a class="nav-link active" aria-current="page" href="#"><i class="fa fa-home"></i> Home</a>
 			</li>
 			<li class="nav-item">
-			<a class="nav-link" href="addForm.php">Add</a>
+			<a class="nav-link" href="http://localhost:8082/users_app/addForm.php">Add</a>
 			</li>
 			<li class="nav-item">
-			<a class="nav-link" href="index.php">List</a>
+			<a class="nav-link" href="/">List</a>
 			</li>
 		</ul>
 		</div>
