@@ -3,3 +3,4 @@ test/*
 webserv
 logfile.txt
 logfile2.txt
+tests/a.out
