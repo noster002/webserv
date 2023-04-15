@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:43:02 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/14 14:45:04 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/15 13:23:57 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,38 +83,6 @@ void				http::Response::build(int error, t_request const & request)
 
 	if (!_status)
 		_get_path(request, path);
-	{
-		// std::ofstream	file("logfile.txt");
-
-		// if (file.is_open())
-		// 	std::cout << "hellO" << std::endl;
-		// file << "request.method:\t(" << request.method << ")" << std::endl;
-		// file << "request.protocol:\t(" << request.protocol << ")" << std::endl;
-		// file << "request.path:\t(" << request.path << ")" << std::endl;
-		// file << "request.query:\t(" << request.query << ")" << std::endl;
-		// file << "request.host:\t(" << request.host << ")" << std::endl;
-		// file << "request.port:\t(" << request.port << ")" << std::endl;
-		// file << "request.header:" << std::endl;
-		// for (std::map<std::string, std::string>::const_iterator it = request.header.begin(); it != request.header.end(); ++it)
-		// 	file << "\tname: " << it->first << "\n\t\tvalue: " << it->second << std::endl;
-		// file << "request.transfer_encoding:" << std::endl;
-		// for (std::vector<std::vector<std::string> >::const_iterator x = request.transfer_encoding.begin(); x != request.transfer_encoding.end(); ++x)
-		// {
-		// 	file << "\tencoding:\t(" << *(x->begin()) << ")" << std::endl;
-		// 	for (std::vector<std::string>::const_iterator y = (x->begin() + 1); y != x->end(); ++y)
-		// 		file << "\t\tparam:\t(" << *y << ")" << std::endl;
-		// }
-		// file << "request.content_length:\t(" << request.content_length << ")" << std::endl;
-		// file << "request.body:\n(" << request.body << ")" << std::endl;
-		// file << "request.chunks:" << std::endl;
-		// for (std::vector<std::string>::const_iterator it = request.chunks.begin(); it != request.chunks.end(); ++it)
-		// 	file << "\t(" << *it << ")" << std::endl;
-		// file << "request.trailer:" << std::endl;
-		// for (std::map<std::string, std::string>::const_iterator it = request.trailer.begin(); it != request.trailer.end(); ++it)
-		// 	file << "\tname: " << it->first << "\n\t\tvalue: " << it->second << std::endl;
-		// file.close();
-	}
-
 	if (!_status)
 	{
 		if (_is_cgi)
@@ -1003,7 +971,7 @@ void				http::Response::_cgi_handler(t_request const & request, std::string cons
 
 	pid = fork();
 	if (pid < 0)
-		std::cout << "Error: starting process\n";
+		std::cerr << "CGI handler: fork\n";
 	else if (pid == 0)
 	{
 		dup2(fd_in, STDIN_FILENO);
@@ -1082,7 +1050,7 @@ void	http::Response::_exec_cgi(t_request const & request, std::string const & pa
 {
 	std::vector<std::string>			argv;
 	std::map<std::string, std::string>	env;
-	std::cerr << request.method << "\n";
+
 	_init_cgi_env(argv, env, request, path);
 
 	execve(_route.cgi_pass.c_str(), _vector_to_array(argv), _map_to_array(env));

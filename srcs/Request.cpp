@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/22 12:41:12 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/12 17:02:57 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/15 12:13:28 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,35 +86,6 @@ bool				http::Request::parse(void)
 	}
 	if (_is_body == true)
 		_read_body();
-	// std::cout << std::endl;
-	// std::cout << YELLOW << "_conf.method:\t(" << BLUE << _conf.method << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.protocol:\t(" << BLUE << _conf.protocol << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.path:\t(" << BLUE << _conf.path << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.query:\t(" << BLUE << _conf.query << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.host:\t(" << BLUE << _conf.host << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.port:\t(" << BLUE << _conf.port << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.header:" << std::endl;
-	// for (std::map<std::string, std::string>::iterator it = _conf.header.begin(); it != _conf.header.end(); ++it)
-	// 	std::cout << YELLOW << "\tname: " << BLUE << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
-	// std::cout << YELLOW << "_conf.transfer_encoding:" << std::endl;
-	// for (std::vector<std::vector<std::string> >::iterator x = _conf.transfer_encoding.begin(); x != _conf.transfer_encoding.end(); ++x)
-	// {
-	// 	std::cout << YELLOW << "\tencoding:\t(" << BLUE << *(x->begin()) << YELLOW << ")" << std::endl;
-	// 	for (std::vector<std::string>::iterator y = (x->begin() + 1); y != x->end(); ++y)
-	// 		std::cout << YELLOW << "\t\tparam:\t(" << BLUE << *y << YELLOW << ")" << std::endl;
-	// }
-	// std::cout << YELLOW << "_conf.content_length:\t(" << BLUE << _conf.content_length << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.content_type:\t(" << BLUE << _conf.content_type.first << YELLOW << ")" << std::endl;
-	// for (std::map<std::string, std::string>::iterator it = _conf.content_type.second.begin(); it != _conf.content_type.second.end(); ++it)
-	// 	std::cout << YELLOW << "\tname: " << BLUE  << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
-	// std::cout << YELLOW << "_conf.body:\n(" << BLUE << _conf.body << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.chunks:" << std::endl;
-	// for (std::vector<std::string>::iterator it = _conf.chunks.begin(); it != _conf.chunks.end(); ++it)
-	// 	std::cout << "\t(" << BLUE << *it << YELLOW << ")" << std::endl;
-	// std::cout << YELLOW << "_conf.trailer:" << std::endl;
-	// for (std::map<std::string, std::string>::iterator it = _conf.trailer.begin(); it != _conf.trailer.end(); ++it)
-	// 	std::cout << YELLOW << "\tname: " << BLUE << it->first << YELLOW << "\n\t\tvalue: " << BLUE << it->second << std::endl;
-	// std::cout << RESET << "_is_complete: " << _is_complete << std::endl;
 
 	if (_error || _is_complete)
 		return (EXIT_SUCCESS);

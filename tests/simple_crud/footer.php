@@ -13,10 +13,10 @@
 		if (confirm("Are you sure to delete your profile image ?"))
 		{
 			const res = e.id;
-			const base = "http://localhost:8082/users_app/";
+			const base = "http://localhost:8082/";
 			const url = base + res;
 			fetch(url, {
-			  	method: 'DELETE'
+				method: 'DELETE'
 			})
 			.then(res => {
 				alert("Your profile image sucessfully deleted!");

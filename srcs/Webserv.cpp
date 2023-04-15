@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/13 11:59:56 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/12 15:39:54 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/15 12:51:43 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@ http::Webserv::~Webserv(void)
 
 void				http::Webserv::setup(std::string const & filename)
 {
+	std::cout << GREEN << "PARSING" << RESET << std::endl;
+
 	_config.parse(filename);
 
 	if (_config.getValidation() == false)
@@ -35,7 +37,6 @@ void				http::Webserv::setup(std::string const & filename)
 		std::cerr << "configuration file: bad syntax" << std::endl;
 		throw SetupException();
 	}
-	std::cout << "PARSING FINISHED" << std::endl;
 
 	_kq = ::kqueue();
 
@@ -76,14 +77,13 @@ void				http::Webserv::run(void)
 {
 	if (!_is_setup)
 	{
-		std::cout << "run loop: no servers setup" << std::endl;
+		std::cerr << "run loop: no servers setup" << std::endl;
 		throw SetupException();
 	}
-	std::cout << _up << " sockets are setup" << std::endl;
+	std::cout << BLUE << _up << " sockets are setup" << RESET << std::endl;
 
 	struct kevent	event[MAX_EVENTS];
 	int				event_count;
-	int				count = -1;
 
 	while (_up)
 	{
@@ -105,9 +105,6 @@ void				http::Webserv::run(void)
 				event_read(event[i]);
 			else if (event[i].filter == EVFILT_WRITE)
 				event_write(event[i]);
-			std::ofstream	file("logfile2.txt");
-			file << ++count;
-			file.close();
 		}
 	}
 }
@@ -136,6 +133,7 @@ void				http::Webserv::clean(void)
 void				http::Webserv::event_client_connect(struct kevent const & event)
 {
 	std::cout << RED << "CONNECTING" << RESET << std::endl;
+
 	int		fd = ::accept(event.ident, NULL, NULL);
 
 	if (fd < 0)
@@ -157,7 +155,8 @@ void				http::Webserv::event_client_connect(struct kevent const & event)
 		event_client_disconnect(event);
 		return ;
 	}
-	std::cout << fd << " connected" << std::endl;
+
+	std::cout << BLUE << fd << " connected" << RESET << std::endl;
 
 	return ;
 }
@@ -165,6 +164,7 @@ void				http::Webserv::event_client_connect(struct kevent const & event)
 void				http::Webserv::event_client_disconnect(struct kevent const & event)
 {
 	std::cout << RED << "DISCONNECTING" << RESET << std::endl;
+
 	int		fd = event.ident;
 
 	_clients[fd]->disconnect();
@@ -175,7 +175,8 @@ void				http::Webserv::event_client_disconnect(struct kevent const & event)
 	{
 		std::cerr << "close: " << fd << ": " << std::strerror(errno) << std::endl;
 	}
-	std::cout << fd << " disconnected" << std::endl;
+
+	std::cout << BLUE << fd << " disconnected" << RESET << std::endl;
 
 	return ;
 }
@@ -191,6 +192,7 @@ void				http::Webserv::event_eof(struct kevent const & event)
 void				http::Webserv::event_read(struct kevent const & event)
 {
 	std::cout << RED << "READING" << RESET << std::endl;
+
 	int				fd = event.ident;
 	char			input[REQUEST_SIZE];
 
@@ -201,12 +203,8 @@ void				http::Webserv::event_read(struct kevent const & event)
 		std::cerr << "recv: " << std::strerror(errno) << std::endl;
 		return ;
 	}
-	std::cout << CYAN << "bytes_read: " << bytes_read << RESET << std::endl;
-	// std::cout << "INPUT:" << std::endl;
-	// std::cout << "(" << YELLOW;
-	// for (ssize_t pos = 0; pos < bytes_read; ++pos)
-	// 	std::cout << input[pos];
-	// std::cout << CYAN << ")"  << RESET << std::endl;
+
+	std::cout << BLUE << "bytes_read: " << bytes_read << RESET << std::endl;
 
 	_clients[fd]->read(input, bytes_read, &_events[++_event_count]);
 
@@ -216,6 +214,7 @@ void				http::Webserv::event_read(struct kevent const & event)
 void				http::Webserv::event_write(struct kevent const & event)
 {
 	std::cout << RED << "WRITING" << RESET << std::endl;
+
 	int				fd = event.ident;
 	std::string		output = _clients[fd]->write(&_events[++_event_count]);
 
@@ -225,9 +224,8 @@ void				http::Webserv::event_write(struct kevent const & event)
 	{
 		std::cerr << "send: " << std::strerror(errno) << std::endl;
 	}
-	std::cout << CYAN << "bytes_sent: " << bytes_sent << RESET << std::endl;
-	// std::cout << "OUTPUT:" << std::endl;
-	// std::cout << "(" << YELLOW << output << CYAN << ")"  << RESET << std::endl;
+
+	std::cout << BLUE << "bytes_sent: " << bytes_sent << RESET << std::endl;
 
 	int		wait = 10000000;
 

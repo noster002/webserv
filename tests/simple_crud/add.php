@@ -6,4 +6,4 @@ $user = $_POST["first"]. " ".$_POST["last"]. " ". $uploadfile."\n";
 $db = fopen("db_user.txt", "a");
 fwrite($db, $user);
 fclose($db);
-header('Location: http://localhost:8082/users_app/', 302);
+header('Location: http://localhost:8082/', 302);

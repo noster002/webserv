@@ -6,11 +6,11 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:49 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/07 09:30:09 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/15 13:00:15 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../head/Server.hpp"
+#include "Server.hpp"
 
 // constructor & destructor
 

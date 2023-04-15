@@ -6,7 +6,7 @@
 /*   By: nosterme <nosterme@student.42wolfsburg.de> +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/04 12:31:52 by nosterme          #+#    #+#             */
-/*   Updated: 2023/04/10 01:33:37 by nosterme         ###   ########.fr       */
+/*   Updated: 2023/04/15 12:15:40 by nosterme         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,6 @@ void			http::Config::parse_config_file(void)
 		return ;
 	for (int i = 0; i < this->nb_servers; ++i)
 	{
-		std::cout << RED << "**********SERVER[ " << i + 1 << " ]*******************" << RESET << "\n";
 		this->servers[i].client_max_body_size = SIZE_MAX;
 		while (this->servers[i].start_data <= this->servers[i].end_data)
 		{
@@ -84,38 +83,6 @@ void			http::Config::parse_config_file(void)
 			if (!this->getValidation())
 				return ;
 			this->servers[i].start_data += 1;
-		}
-		std::cout << "HOST :\t" << this->servers[i].host << "\n";
-		for (size_t k = 0; k < this->servers[i].port.size(); ++k)
-			std::cout << "PORT " << k + 1 << ":\t" << this->servers[i].port[k] << "\n";
-		for (size_t l = 0; l < this->servers[i].s_names.size(); ++l)
-			std::cout << "SERVER NAME " << l + 1 << ":\t" << this->servers[i].s_names[l] << "\n";
-		std::cout << "ERROR PAGE" << "\n";
-		std::map<int, std::string>::iterator err = this->servers[i].err_pages.begin();
-		while (err != this->servers[i].err_pages.end())
-		{
-			std::cout << err->first << " == > " << err->second << "\n";
-			++err;
-		}
-		std::cout << "MAX BODY : " << "  " << this->servers[i].client_max_body_size << "\n";
-		std::map<std::string, route_t>::iterator routes = this->servers[i].routes.begin();
-		while (routes != this->servers[i].routes.end())
-		{
-			std::cout << "--ROUTE =>  " << routes->first << "  Methods:  ";
-			for (std::set<std::string>::iterator set = routes->second.method.begin(); set != routes->second.method.end(); ++set)
-			{
-				std::cout << *set << " ";
-			}
-			std::cout << " MAX_BODY : " << routes->second.client_max_body_size;
-			std::cout << " LISTING : " << ((routes->second.directory_listing) ? "on" : "of");
-			std::cout << " ROOT : " << routes->second.root;
-			std::cout << " INDEX : " << routes->second.index;
-			std::cout << " UPLOAD : " << ((routes->second.upload) ? "on" : "of");
-			std::cout << " REDIRECT : " << routes->second.redirect;
-			std::cout << " CGI_EXT : " << routes->second.cgi_ext;
-			std::cout << " CGI_PASS : " << routes->second.cgi_pass;
-			std::cout << "--\n";
-			++routes;
 		}
 	}
 
