@@ -6,8 +6,8 @@ HTTP webserver written in C++98
 ## Info
 
 As the server uses `kqueue` as an event notification interface, the server can only be run on [certain operating systems](https://en.wikipedia.org/wiki/Kqueue).  
-The HTTP/1.1 is implemented to a certain extend as in [RFC9110](https://datatracker.ietf.org/doc/html/rfc9110).
-Usable methods are GET, HEAD, POST, PUT and DELETE.
+The HTTP/1.1 is implemented to a certain extend as in [RFC9110](https://datatracker.ietf.org/doc/html/rfc9110).  
+Usable methods are GET, HEAD, POST, PUT and DELETE.  
 The configuration file is oriented towards [nginx](https://nginx.org/en/docs/).
 
 The default error pages are located in `error/`.  
