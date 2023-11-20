@@ -42,7 +42,7 @@ The configuration file has some requirements:
   + Execute certain CGI based on certain file extension for spefific methods. (_cgi_ext_, _cgi_method_, _cgi_pass_)
   + Make the route able to accept uploaded files and configure where they should be saved. (_upload_)
  
-E.g.:
+E.g.:  
 configuration.file
 ```
 server {
